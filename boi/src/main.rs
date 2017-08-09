@@ -4,6 +4,7 @@ mod system;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
+use std::env;
 use opcode::*;
 use system::*;
 
@@ -13,17 +14,18 @@ static MAX_SPRITE: u8 = 40;
 fn main()
  {
     //Initialize Emulator
+    let args: Vec<String> = env::args().collect();
     let emulator_type: String = String::from("CLASSIC");
-    let file_name: String = String::from("");
+    let file_name: &String = &args[1];
     let mut system_data : SystemData = get_system_data(&emulator_type);
-    system_data.mem_map = read_gb_file(&file_name);
+    system_data.mem_map = read_gb_file(file_name);
     let mut registers: Registers = init_registers();
     //Operation loop
     let mut emulator_loop = true;
     let mut cycles = 0;
     while emulator_loop
     {
-        cycles = parse_opcode(&system_data, &mut registers);
+        cycles = parse_opcode(&mut system_data, &mut registers);
         if(cycles == 0) 
         {
             emulator_loop = false;
