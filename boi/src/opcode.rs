@@ -84,6 +84,19 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers) -> 
             println!("No Opcode Found");
         }
     }
+    else if (opcode == 0x20)
+    {
+        if (registers.flags & 0x80) != 0x80 {
+            cycles = 3;
+            let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize] + 2) as i8;
+            registers.program_counter = (registers.program_counter as i32 + pc_dest as i32) as u16;
+        }
+        else {
+            cycles = 2;
+            registers.program_counter += 2;
+        }
+    }
+
     //LDD (HL), A - 32
     else if (opcode == 0x32)
     {
