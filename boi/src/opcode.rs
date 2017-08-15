@@ -34,6 +34,47 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers) -> 
             println!("No Opcode Found");
         }
     }
+    //8bit ld group
+    //ld r, n
+    else if (opcode & 0xC7) == 0x06
+    {
+        cycles = 2;
+
+        if(opcode & 0x38) == 0x38
+        {
+            registers.accumulator = system_data.mem_map[(registers.program_counter + 1) as usize];
+        }
+        else if(opcode & 0x38) == 0x00
+        {
+            registers.b_register = system_data.mem_map[(registers.program_counter + 1) as usize];
+        }
+        else if(opcode & 0x38) == 0x08
+        {
+            registers.c_register = system_data.mem_map[(registers.program_counter + 1) as usize];
+        }
+        else if(opcode & 0x38) == 0x10
+        {
+            registers.d_register = system_data.mem_map[(registers.program_counter + 1) as usize];
+        }
+        else if(opcode & 0x38) == 0x18
+        {
+            registers.e_register = system_data.mem_map[(registers.program_counter + 1) as usize];
+        }
+        else if(opcode & 0x38) == 0x20
+        {
+            registers.h_register = system_data.mem_map[(registers.program_counter + 1) as usize];
+        }
+        else if(opcode & 0x38) == 0x28
+        {
+            registers.l_register = system_data.mem_map[(registers.program_counter + 1) as usize];
+        }
+        else 
+        {
+            cycles = 0;
+            println!("No Opcode Found");
+        }
+        registers.program_counter += 2;
+    }
     //16 bit ld group
     else if (opcode & 0xCF) == 0x01
     {
