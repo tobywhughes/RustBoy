@@ -253,4 +253,233 @@ mod opcode_test
         load_accumulator_to_io_port_with_n_offset(&mut system_data, &mut registers);
         assert_eq!(system_data.mem_map[0xFF01], 1);
     }
+
+    #[test]
+    fn load_8_bit_register_with_register_test() 
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        registers.accumulator = 1;
+        registers.b_register = 2;
+        registers.c_register = 3;
+        registers.d_register = 4;
+        registers.e_register = 5;
+        registers.h_register = 6;
+        registers.l_register = 7;
+        //A Loads
+        //A
+        let opcode = 0x7F;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.accumulator, 1);
+        //B
+        let opcode = 0x78;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.accumulator, 2);
+        //C
+        let opcode = 0x79;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.accumulator, 3);
+        //D
+        let opcode = 0x7A;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.accumulator, 4);
+        //E
+        let opcode = 0x7B;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.accumulator, 5);
+        //H
+        let opcode = 0x7C;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.accumulator, 6);
+        //L
+        let opcode = 0x7D;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.accumulator, 7);
+
+        //B Loads
+        registers.accumulator = 1;
+        //B
+        let opcode = 0x40;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.b_register, 2);
+        //A
+        let opcode = 0x47;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.b_register, 1);
+        //C
+        let opcode = 0x41;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.b_register, 3);
+        //D
+        let opcode = 0x42;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.b_register, 4);
+        //E
+        let opcode = 0x43;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.b_register, 5);
+        //H
+        let opcode = 0x44;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.b_register, 6);
+        //L
+        let opcode = 0x45;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.b_register, 7);
+
+        //C Loads
+        registers.b_register = 2;
+        //C
+        let opcode = 0x49;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.c_register, 3);
+        //A
+        let opcode = 0x4F;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.c_register, 1);
+        //B
+        let opcode = 0x48;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.c_register, 2);
+        //D
+        let opcode = 0x4A;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.c_register, 4);
+        //E
+        let opcode = 0x4B;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.c_register, 5);
+        //H
+        let opcode = 0x4C;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.c_register, 6);
+        //L
+        let opcode = 0x4D;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.c_register, 7);
+
+        //D Loads
+        registers.c_register = 3;
+        //D
+        let opcode = 0x52;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.d_register, 4);
+        //A
+        let opcode = 0x57;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.d_register, 1);
+        //B
+        let opcode = 0x50;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.d_register, 2);
+        //C
+        let opcode = 0x51;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.d_register, 3);
+        //E
+        let opcode = 0x53;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.d_register, 5);
+        //H
+        let opcode = 0x54;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.d_register, 6);
+        //L
+        let opcode = 0x55;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.d_register, 7);
+
+        //E Loads
+        registers.d_register = 4;
+        //E
+        let opcode = 0x5B;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.e_register, 5);
+        //A
+        let opcode = 0x5F;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.e_register, 1);
+        //B
+        let opcode = 0x58;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.e_register, 2);
+        //C
+        let opcode = 0x59;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.e_register, 3);
+        //D
+        let opcode = 0x5A;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.e_register, 4);
+        //H
+        let opcode = 0x5C;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.e_register, 6);
+        //L
+        let opcode = 0x5D;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.e_register, 7);
+
+        //H Loads
+        registers.e_register = 5;
+        //H
+        let opcode = 0x64;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.h_register, 6);
+        //A
+        let opcode = 0x67;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.h_register, 1);
+        //B
+        let opcode = 0x60;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.h_register, 2);
+        //C
+        let opcode = 0x61;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.h_register, 3);
+        //D
+        let opcode = 0x62;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.h_register, 4);
+        //E
+        let opcode = 0x63;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.h_register, 5);
+        //L
+        let opcode = 0x65;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.h_register, 7);
+
+        //L Loads
+        registers.h_register = 6;
+        //L
+        let opcode = 0x6D;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.l_register, 7);
+        //A
+        let opcode = 0x6F;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.l_register, 1);
+        //B
+        let opcode = 0x68;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.l_register, 2);
+        //C
+        let opcode = 0x69;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.l_register, 3);
+        //D
+        let opcode = 0x6A;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.l_register, 4);
+        //E
+        let opcode = 0x6B;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.l_register, 5);
+        //H
+        let opcode = 0x6C;
+        load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.l_register, 6);
+    }
 }

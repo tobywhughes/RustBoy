@@ -20,10 +20,23 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         increment(&mut system_data, &mut registers, opcode);
     }
     //8bit ld group
-    //ld r, n
     else if (opcode & 0xC7) == 0x06
     {
         load_n_to_8bit_register(&mut system_data, &mut registers, opcode);
+    }
+    //0b01xxxxxx group    
+    else if (opcode & 0xC0) == 0x40
+    {
+        //LD (HL), r
+        if (opcode & 0xF8) == 0x70
+        {
+            load_hl_address_with_register(&mut system_data, &mut registers, opcode);
+        }
+        //ld r, r'
+        else 
+        {
+            load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
+        }
     }
     //ld (FF00+C), A
     else if opcode == 0xE2
@@ -50,11 +63,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         jump_displacement_on_nonzero_flag(&mut system_data, &mut registers);
     }
-    //LD (HL), r
-    else if (opcode & 0xF8) == 0x70
-    {
-        load_hl_address_with_register(&mut system_data, &mut registers, opcode);
-    }
+
     //LDD (HL), A
     else if (opcode == 0x32)
     {
@@ -202,6 +211,82 @@ pub fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Reg
             println!("No Opcode Found");
         }
         registers.program_counter += 2;
+}
+
+pub fn load_8_bit_register_to_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+        system_data.cycles = 1;
+        let mut register_value = 0;
+        //Load value from register
+        if (opcode & 0x07) == 0x07
+        {
+            register_value = registers.accumulator;
+        }
+        else if (opcode & 0x07) == 0x00
+        {
+            register_value = registers.b_register;
+        }
+        else if (opcode & 0x07) == 0x01
+        {
+            register_value = registers.c_register;
+        }
+        else if (opcode & 0x07) == 0x02
+        {
+            register_value = registers.d_register;
+        }
+        else if (opcode & 0x07) == 0x03
+        {
+            register_value = registers.e_register;
+        }
+        else if (opcode & 0x07) == 0x04
+        {
+            register_value = registers.h_register;
+        }
+        else if (opcode & 0x07) == 0x05
+        {
+            register_value = registers.l_register;
+        }
+        else
+        {
+            system_data.cycles = 0;
+            println!("No Opcode Found");
+        }
+
+        //Load into new register
+        if (opcode & 0x38) == 0x38
+        {
+            registers.accumulator = register_value;
+        }
+        else if (opcode & 0x38) == 0x00
+        {
+            registers.b_register = register_value;
+        }
+        else if (opcode & 0x38) == 0x08
+        {
+            registers.c_register = register_value;
+        }
+        else if (opcode & 0x38) == 0x10
+        {
+            registers.d_register = register_value;
+        }
+        else if (opcode & 0x38) == 0x18
+        {
+            registers.e_register = register_value;
+        }
+        else if (opcode & 0x38) == 0x20
+        {
+           registers.h_register = register_value;
+        }
+        else if (opcode & 0x38) == 0x28
+        {
+            registers.l_register = register_value;
+        }
+        else
+        {
+            system_data.cycles = 0;
+            println!("No Opcode Found");
+        }
+        registers.program_counter += 1;
 }
 
 pub fn load_accumulator_to_io_port_with_c_offset(system_data: &mut SystemData, registers: &mut Registers)
