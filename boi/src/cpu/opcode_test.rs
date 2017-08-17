@@ -243,4 +243,14 @@ mod opcode_test
         load_hl_address_with_register(&mut system_data, &mut registers, opcode);
         assert_eq!(system_data.mem_map[0xFFFF], 0xFF);
     }
+
+    #[test]
+    fn load_accumulator_to_io_port_with_a_offset_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        registers.accumulator = 1;
+        system_data.mem_map[1] = 1;
+        load_accumulator_to_io_port_with_n_offset(&mut system_data, &mut registers);
+        assert_eq!(system_data.mem_map[0xFF01], 1);
+    }
 }

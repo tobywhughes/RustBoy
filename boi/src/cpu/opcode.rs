@@ -30,6 +30,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         load_accumulator_to_io_port_with_c_offset(&mut system_data, &mut registers);
     }
+    //ld (FF00+n), A
+    else if opcode == 0xE0
+    {
+        load_accumulator_to_io_port_with_n_offset(&mut system_data, &mut registers);
+    }
     //16 bit ld group
     else if (opcode & 0xCF) == 0x01
     {
@@ -68,32 +73,89 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 pub fn increment(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
         system_data.cycles = 1;
+        registers.flags = registers.flags & 0x10;
         if (opcode & 0x38) == 0x38{
             registers.accumulator += 1;
+            if registers.accumulator == 0
+            {
+                registers.flags = registers.flags | 0x80;
+            }
+            if registers.b_register == 0x10
+            {
+                registers.flags = registers.flags | 0x20;
+            }
             registers.program_counter += 1;
         }
         else if (opcode & 0x38) == 0x00{
             registers.b_register += 1;
+            if registers.b_register == 0
+            {
+                registers.flags = registers.flags | 0x80;
+            }
+            if registers.b_register == 0x10
+            {
+                registers.flags = registers.flags | 0x20;
+            }
             registers.program_counter += 1;
         }
         else if (opcode & 0x38) == 0x08{
             registers.c_register += 1;
+            if registers.c_register == 0
+            {
+                registers.flags = registers.flags | 0x80;
+            }
+            if registers.c_register == 0x10
+            {
+                registers.flags = registers.flags | 0x20;
+            }
             registers.program_counter += 1;
         }
         else if (opcode & 0x38) == 0x10{
             registers.d_register += 1;
+            if registers.d_register == 0
+            {
+                registers.flags = registers.flags | 0x80;
+            }
+            if registers.d_register == 0x10
+            {
+                registers.flags = registers.flags | 0x20;
+            }
             registers.program_counter += 1;
         }
         else if (opcode & 0x38) == 0x18{
             registers.e_register += 1;
+            if registers.e_register == 0
+            {
+                registers.flags = registers.flags | 0x80;
+            }
+            if registers.e_register == 0x10
+            {
+                registers.flags = registers.flags | 0x20;
+            }
             registers.program_counter += 1;
         }
         else if (opcode & 0x38) == 0x20{
             registers.h_register += 1;
+            if registers.h_register == 0
+            {
+                registers.flags = registers.flags | 0x80;
+            }
+            if registers.h_register == 0x10
+            {
+                registers.flags = registers.flags | 0x20;
+            }
             registers.program_counter += 1;
         }
         else if (opcode & 0x38) == 0x28{
             registers.l_register += 1;
+            if registers.l_register == 0
+            {
+                registers.flags = registers.flags | 0x80;
+            }
+            if registers.l_register == 0x10
+            {
+                registers.flags = registers.flags | 0x20;
+            }
             registers.program_counter += 1;
         }
         else
@@ -148,6 +210,16 @@ pub fn load_accumulator_to_io_port_with_c_offset(system_data: &mut SystemData, r
         system_data.mem_map[(0xFF00 + registers.c_register as u16) as usize] = registers.accumulator;
         registers.program_counter += 1;  
 }
+
+pub fn load_accumulator_to_io_port_with_n_offset(system_data: &mut SystemData, registers: &mut Registers)
+{
+        system_data.cycles = 3;
+        let n = system_data.mem_map[(registers.program_counter + 1) as usize];
+        system_data.mem_map[(0xFF00 + n as u16) as usize] = registers.accumulator;
+        registers.program_counter += 1;  
+}
+
+
 
 pub fn load_nn_to_16bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8){
     system_data.cycles = 2;
