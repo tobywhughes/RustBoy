@@ -24,13 +24,18 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers) -> 
     //inc
     if (opcode & 0xC7) == 0x04
     {
+        cycles = 1;
         if (opcode & 0x38) == 0x38{
             registers.accumulator += 1;
             registers.program_counter += 1;
-            cycles = 1;
         }
+        // else if (opcode & 0x38)== 
+        // {
+
+        // }
         else
         {
+            cycles = 0;
             println!("No Opcode Found");
         }
     }
@@ -74,6 +79,13 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers) -> 
             println!("No Opcode Found");
         }
         registers.program_counter += 2;
+    }
+    //ld (FF00+C), A
+    else if opcode == 0xE2
+    {
+        cycles = 2;
+        system_data.mem_map[(0xFF00 + registers.c_register) as usize] = registers.accumulator;
+        registers.program_counter += 1;  
     }
     //16 bit ld group
     else if (opcode & 0xCF) == 0x01
