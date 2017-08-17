@@ -22,11 +22,10 @@ fn main()
     let mut registers: Registers = init_registers();
     //Operation loop
     let mut emulator_loop = true;
-    let mut cycles = 0;
     while emulator_loop
     {
-        cycles = parse_opcode(&mut system_data, &mut registers);
-        if(cycles == 0) 
+        parse_opcode(&mut system_data, &mut registers);
+        if(system_data.cycles == 0) 
         {
             emulator_loop = false;
         }
