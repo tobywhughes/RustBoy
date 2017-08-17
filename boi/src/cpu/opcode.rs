@@ -12,7 +12,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
     system_data.cycles = 0;
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
-    println!("{:x}", opcode);
+    println!("{:x}: {:x}", registers.program_counter, opcode);
 
     //inc
     if (opcode & 0xC7) == 0x04
@@ -66,6 +66,30 @@ pub fn increment(system_data: &mut SystemData, registers: &mut Registers, opcode
         system_data.cycles = 1;
         if (opcode & 0x38) == 0x38{
             registers.accumulator += 1;
+            registers.program_counter += 1;
+        }
+        else if (opcode & 0x38) == 0x00{
+            registers.b_register += 1;
+            registers.program_counter += 1;
+        }
+        else if (opcode & 0x38) == 0x08{
+            registers.c_register += 1;
+            registers.program_counter += 1;
+        }
+        else if (opcode & 0x38) == 0x10{
+            registers.d_register += 1;
+            registers.program_counter += 1;
+        }
+        else if (opcode & 0x38) == 0x18{
+            registers.e_register += 1;
+            registers.program_counter += 1;
+        }
+        else if (opcode & 0x38) == 0x20{
+            registers.h_register += 1;
+            registers.program_counter += 1;
+        }
+        else if (opcode & 0x38) == 0x28{
+            registers.l_register += 1;
             registers.program_counter += 1;
         }
         else

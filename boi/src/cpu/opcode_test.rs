@@ -10,9 +10,40 @@ mod opcode_test
 
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = init_registers();
+        //A
         let opcode = 0x3C;
         increment(&mut system_data, &mut registers, opcode);
         assert_eq!(registers.accumulator, 1);
+        //B
+        registers.program_counter -= 1;
+        let opcode = 0x04;
+        increment(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.b_register, 1);
+        //C
+        registers.program_counter -= 1;
+        let opcode = 0x0C;
+        increment(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.c_register, 1);
+        //D
+        registers.program_counter -= 1;
+        let opcode = 0x14;
+        increment(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.d_register, 1);
+        //E
+        registers.program_counter -= 1;
+        let opcode = 0x1C;
+        increment(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.e_register, 1);
+        //H
+        registers.program_counter -= 1;
+        let opcode = 0x24;
+        increment(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.h_register, 1);
+        //L
+        registers.program_counter -= 1;
+        let opcode = 0x2C;
+        increment(&mut system_data, &mut registers, opcode);
+        assert_eq!(registers.l_register, 1);
     }
 
     #[test]
