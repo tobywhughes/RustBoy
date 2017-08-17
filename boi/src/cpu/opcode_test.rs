@@ -201,4 +201,46 @@ mod opcode_test
         bit_check_register(&mut system_data, &mut registers, opcode, test_bit);
         assert_eq!(registers.flags, 0x20);
     }
+    
+    #[test]
+    fn load_hl_address_with_register_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        registers.h_register = 0xFF;
+        registers.l_register = 0xFF;
+        registers.accumulator = 1;
+        registers.b_register = 2;
+        registers.c_register = 3;
+        registers.d_register = 4;
+        registers.e_register = 5;
+        
+        //A
+        let opcode = 0x77;
+        load_hl_address_with_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(system_data.mem_map[0xFFFF], 1);
+        //B
+        let opcode = 0x70;
+        load_hl_address_with_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(system_data.mem_map[0xFFFF], 2);
+        //C
+        let opcode = 0x71;
+        load_hl_address_with_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(system_data.mem_map[0xFFFF], 3);
+        //D
+        let opcode = 0x72;
+        load_hl_address_with_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(system_data.mem_map[0xFFFF], 4);
+        //E
+        let opcode = 0x73;
+        load_hl_address_with_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(system_data.mem_map[0xFFFF], 5);
+        //H
+        let opcode = 0x74;
+        load_hl_address_with_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(system_data.mem_map[0xFFFF], 0xFF);
+        //L
+        let opcode = 0x75;
+        load_hl_address_with_register(&mut system_data, &mut registers, opcode);
+        assert_eq!(system_data.mem_map[0xFFFF], 0xFF);
+    }
 }

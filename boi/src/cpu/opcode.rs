@@ -45,7 +45,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         jump_displacement_on_nonzero_flag(&mut system_data, &mut registers);
     }
-
+    //LD (HL), r
+    else if (opcode & 0xF8) == 0x70
+    {
+        load_hl_address_with_register(&mut system_data, &mut registers, opcode);
+    }
     //LDD (HL), A
     else if (opcode == 0x32)
     {
@@ -217,6 +221,51 @@ pub fn load_decrement_hl_register_location_with_accumulator(system_data: &mut Sy
     system_data.cycles = 2;
     registers.program_counter += 1;
 }
+
+
+pub fn load_hl_address_with_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let mut mem_loc: u16 = registers.l_register as u16 | (registers.h_register as u16) << 8;
+    system_data.cycles = 2;
+    if (opcode & 0x07) == 0x07 
+    {
+        system_data.mem_map[mem_loc as usize] = registers.accumulator;
+    }
+    else if (opcode & 0x07) == 0x00 
+    {
+        system_data.mem_map[mem_loc as usize] = registers.b_register;
+    }
+    else if (opcode & 0x07) == 0x01 
+    {
+        system_data.mem_map[mem_loc as usize] = registers.c_register;
+    }
+    else if (opcode & 0x07) == 0x02 
+    { 
+        system_data.mem_map[mem_loc as usize] = registers.d_register;
+    }
+    else if (opcode & 0x07) == 0x03 
+    {
+        system_data.mem_map[mem_loc as usize] = registers.e_register;
+    }
+    else if (opcode & 0x07) == 0x04 
+    {
+        system_data.mem_map[mem_loc as usize] = registers.h_register;
+    }
+    else if (opcode & 0x07) == 0x05 
+    {
+        system_data.mem_map[mem_loc as usize] = registers.l_register;
+    }
+    else 
+    {
+        system_data.cycles = 0;
+        println!("No Opcode Found");
+    }
+    registers.program_counter += 1;   
+}
+
+///////////////////
+//CB
+///////////////////
 
 pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut Registers)
 {
