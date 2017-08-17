@@ -10,6 +10,21 @@ pub struct SystemData
     pub vertical_sync: f64,
 }
 
+pub struct Registers 
+{
+    pub accumulator:u8,
+    pub flags:u8,  
+    pub b_register:u8,  
+    pub c_register:u8,  
+    pub d_register:u8,
+    pub e_register:u8,
+    pub h_register:u8,
+    pub l_register:u8,
+    pub stack_pointer: u16,
+    pub program_counter: u16, 
+}
+
+
 pub fn get_system_data(emulator_type: &str) -> SystemData
 {
     match emulator_type.as_ref()
@@ -40,6 +55,23 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
 
     }
 
+}
+
+pub fn init_registers() -> Registers
+{
+    return Registers 
+    {
+        accumulator: 0,
+        flags: 0,  
+        b_register:0,  
+        c_register:0,  
+        d_register:0,
+        e_register:0,
+        h_register:0,
+        l_register:0,
+        stack_pointer: 0,
+        program_counter: 0,  
+    };
 }
 
 #[cfg(test)]
