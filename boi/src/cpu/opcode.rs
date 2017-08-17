@@ -1,10 +1,15 @@
 use system::SystemData;
 use system::Registers;
 
+
+
 // Returns clock system_data.cycle passed during opcode
-pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers)
+pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &mut Registers)
 {
-    
+    //Borrow splitting
+    let mut system_data = system_data_original;
+    let mut registers = registers_original;
+
     system_data.cycles = 0;
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
     println!("{:x}", opcode);
@@ -12,6 +17,52 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers)
     //inc
     if (opcode & 0xC7) == 0x04
     {
+        increment(&mut system_data, &mut registers, opcode);
+    }
+    //8bit ld group
+    //ld r, n
+    else if (opcode & 0xC7) == 0x06
+    {
+        load_n_to_8bit_register(&mut system_data, &mut registers, opcode);
+    }
+    //ld (FF00+C), A
+    else if opcode == 0xE2
+    {
+        load_accumulator_to_io_port_with_c_offset(&mut system_data, &mut registers);
+    }
+    //16 bit ld group
+    else if (opcode & 0xCF) == 0x01
+    {
+        load_nn_to_16bit_register(&mut system_data, &mut registers, opcode);
+    }
+    //xor
+    else if (opcode & 0xF8) == 0xA8
+    {
+        xor_register(&mut system_data, &mut registers, opcode);
+    }
+    //jump nz, dis
+    else if (opcode == 0x20)
+    {
+        jump_displacement_on_nonzero_flag(&mut system_data, &mut registers);
+    }
+
+    //LDD (HL), A
+    else if (opcode == 0x32)
+    {
+        load_decrement_hl_register_by_accumulator(&mut system_data, &mut registers);        
+    }
+    //cb codes
+    else if (opcode == 0xCB){
+        cb_codes(&mut system_data, &mut registers);
+    }
+    else
+    {
+        println!("No Opcode Found");
+    }
+}
+
+fn increment(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
         system_data.cycles = 1;
         if (opcode & 0x38) == 0x38{
             registers.accumulator += 1;
@@ -22,13 +73,11 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers)
             system_data.cycles = 0;
             println!("No Opcode Found");
         }
-    }
-    //8bit ld group
-    //ld r, n
-    else if (opcode & 0xC7) == 0x06
-    {
-        system_data.cycles = 2;
+}
 
+fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+        system_data.cycles = 2;
         if(opcode & 0x38) == 0x38
         {
             registers.accumulator = system_data.mem_map[(registers.program_counter + 1) as usize];
@@ -63,18 +112,17 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers)
             println!("No Opcode Found");
         }
         registers.program_counter += 2;
-    }
-    //ld (FF00+C), A
-    else if opcode == 0xE2
-    {
+}
+
+fn load_accumulator_to_io_port_with_c_offset(system_data: &mut SystemData, registers: &mut Registers)
+{
         system_data.cycles = 2;
         system_data.mem_map[(0xFF00 + registers.c_register) as usize] = registers.accumulator;
         registers.program_counter += 1;  
-    }
-    //16 bit ld group
-    else if (opcode & 0xCF) == 0x01
-    {
-        system_data.cycles = 2;
+}
+
+fn load_nn_to_16bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8){
+    system_data.cycles = 2;
 
         if (opcode & 0x30) == 0x30 
         {
@@ -102,10 +150,10 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers)
         }
 
         registers.program_counter += 3;
-    }
-    //xor
-    else if (opcode & 0xF8) == 0xA8
-    {
+}
+
+fn xor_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
         if (opcode & 0x07) == 0x07 
         {
             registers.accumulator = registers.accumulator ^ registers.accumulator;
@@ -120,9 +168,10 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers)
         {
             println!("No Opcode Found");
         }
-    }
-    else if (opcode == 0x20)
-    {
+}
+
+fn jump_displacement_on_nonzero_flag(system_data: &mut SystemData, registers: &mut Registers)
+{
         if (registers.flags & 0x80) != 0x80 {
             system_data.cycles = 3;
             let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize] + 2) as i8;
@@ -132,54 +181,57 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers)
             system_data.cycles = 2;
             registers.program_counter += 2;
         }
-    }
+}
 
-    //LDD (HL), A - 32
-    else if (opcode == 0x32)
+fn load_decrement_hl_register_by_accumulator(system_data: &mut SystemData, registers: &mut Registers)
+{
+    let mut mem_loc: u16 = registers.l_register as u16 | (registers.h_register as u16) << 8;
+    system_data.mem_map[mem_loc as usize] = registers.accumulator;
+    mem_loc -= 1;
+    registers.l_register = (mem_loc & 0x0F) as u8;
+    registers.h_register = ((mem_loc & 0xF0) >> 8) as u8;
+    system_data.cycles = 2;
+    registers.program_counter += 1;
+}
+
+fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut Registers)
+{
+    //Borrow splitting
+    let mut system_data = system_data_original;
+    let mut registers = registers_original;
+    let opcode :u8 = system_data.mem_map[(registers.program_counter + 1) as usize];
+    //bit b, r
+    if (opcode & 0xC0) == 0x40
     {
-        let mut mem_loc: u16 = registers.l_register as u16 | (registers.h_register as u16) << 8;
-        system_data.mem_map[mem_loc as usize] = registers.accumulator;
-        mem_loc -= 1;
-        registers.l_register = (mem_loc & 0x0F) as u8;
-        registers.h_register = ((mem_loc & 0xF0) >> 8) as u8;
         system_data.cycles = 2;
-        registers.program_counter += 1;
+        let test_bit: u8 = (opcode & 0x38) >> 3;
+        bit_check_register(&mut system_data, &mut registers, opcode, test_bit)
     }
-    //cb codes
-    else if (opcode == 0xCB){
-        let opcode_next :u8 = system_data.mem_map[(registers.program_counter + 1) as usize];
-        //bit b, r
-        if (opcode_next & 0xC0) == 0x40
-        {
-            system_data.cycles = 2;
-            let test_bit: u8 = (opcode_next & 0x38) >> 3;
-            if (opcode_next & 0x07) == 0x04
-            {
-                registers.flags = registers.flags & 0x10;
-                
-                if ((registers.h_register >> test_bit) & 0x01) == 0x00
-                {
-                    registers.flags = registers.flags | 0xA0;
-                }
-                else
-                {
-                    registers.flags = registers.flags | 0x20;
-                }
-            }
-            else
-            {
-                system_data.cycles = 0;
-                println!("No Opcode Found");
-            }
-            registers.program_counter += 2;
-        }
-        else 
-        {
-            println!("No Opcode Found");
-        }
-    }
-    else
+    else 
     {
         println!("No Opcode Found");
     }
+}
+
+fn bit_check_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8, test_bit: u8)
+{
+        if (opcode & 0x07) == 0x04
+        {
+            registers.flags = registers.flags & 0x10;
+            
+            if ((registers.h_register >> test_bit) & 0x01) == 0x00
+            {
+                registers.flags = registers.flags | 0xA0;
+            }
+            else
+            {
+                registers.flags = registers.flags | 0x20;
+            }
+        }
+        else
+        {
+            system_data.cycles = 0;
+            println!("No Opcode Found");
+        }
+        registers.program_counter += 2;
 }
