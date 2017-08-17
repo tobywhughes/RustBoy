@@ -53,6 +53,10 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         load_nn_to_16bit_register(&mut system_data, &mut registers, opcode);
     }
+    else if opcode == 0x1A
+    {
+        load_accumulator_with_de_address(&mut system_data, &mut registers);
+    }
     //xor
     else if (opcode & 0xF8) == 0xA8
     {
