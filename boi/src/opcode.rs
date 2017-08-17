@@ -1,18 +1,5 @@
 use system::SystemData;
-
-pub struct Registers 
-{
-    pub accumulator:u8,
-    pub flags:u8,  
-    pub b_register:u8,  
-    pub c_register:u8,  
-    pub d_register:u8,
-    pub e_register:u8,
-    pub h_register:u8,
-    pub l_register:u8,
-    pub stack_pointer: u16,
-    pub program_counter: u16, 
-}
+use system::Registers;
 
 // Returns clock cycles passed during opcode
 pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers) -> u8
@@ -200,21 +187,4 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers) -> 
     }
 
     return cycles;
-}
-
-pub fn init_registers() -> Registers
-{
-    return Registers 
-    {
-        accumulator: 0,
-        flags: 0,  
-        b_register:0,  
-        c_register:0,  
-        d_register:0,
-        e_register:0,
-        h_register:0,
-        l_register:0,
-        stack_pointer: 0,
-        program_counter: 0,  
-    };
 }
