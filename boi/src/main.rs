@@ -1,11 +1,11 @@
-mod opcode;
+mod cpu;
 mod system;
 
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::env;
-use opcode::*;
+use cpu::opcode::*;
 use system::*;
 
 static MAX_SPRITE: u8 = 40;
