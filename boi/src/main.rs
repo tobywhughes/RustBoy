@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::env;
-use cpu::opcode::*;
+use cpu::cpu::*;
 use system::*;
 
 static MAX_SPRITE: u8 = 40;
@@ -24,7 +24,7 @@ fn main()
     let mut emulator_loop = true;
     while emulator_loop
     {
-        parse_opcode(&mut system_data, &mut registers);
+        cpu_continue(&mut system_data, &mut registers);
         if(system_data.cycles == 0) 
         {
             emulator_loop = false;

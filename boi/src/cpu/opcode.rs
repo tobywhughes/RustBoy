@@ -2,7 +2,7 @@ use system::SystemData;
 use system::Registers;
 
 // Returns clock system_data.cycle passed during opcode
-pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers) -> u8
+pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers)
 {
     
     system_data.cycles = 0;
@@ -182,6 +182,4 @@ pub fn parse_opcode(system_data: &mut SystemData, registers: &mut Registers) -> 
     {
         println!("No Opcode Found");
     }
-
-    return system_data.cycles ;
 }
