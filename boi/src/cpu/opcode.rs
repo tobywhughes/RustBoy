@@ -420,6 +420,14 @@ pub fn load_hl_address_with_register(system_data: &mut SystemData, registers: &m
     registers.program_counter += 1;   
 }
 
+pub fn load_accumulator_with_de_address(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 2;
+    let mut mem_loc: u16 = registers.e_register as u16 | (registers.d_register as u16) << 8;
+    registers.accumulator = system_data.mem_map[mem_loc as usize];
+    registers.program_counter += 1;
+}
+
 ///////////////////
 //CB
 ///////////////////

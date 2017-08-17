@@ -482,4 +482,15 @@ mod opcode_test
         load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
         assert_eq!(registers.l_register, 6);
     }
+
+    #[test]
+    fn load_accumulator_with_de_address_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        registers.d_register = 0xFF;
+        registers.e_register = 0xEE;
+        system_data.mem_map[0xFFEE] = 1;
+        load_accumulator_with_de_address(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 1);
+    }
 }
