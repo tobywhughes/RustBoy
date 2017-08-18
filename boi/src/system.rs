@@ -1,3 +1,5 @@
+use std::ptr;
+
 pub struct SystemData
 {
     pub mem_map: Vec<u8>,
@@ -22,7 +24,31 @@ pub struct Registers
     pub h_register:u8,
     pub l_register:u8,
     pub stack_pointer: u16,
-    pub program_counter: u16, 
+    pub program_counter: u16,
+}
+impl Registers{
+    pub fn mapped_register_setter(&mut self, index: u8, value: u8)
+    {
+        if (index == 0){self.accumulator = value;}
+        else if (index == 1){self.b_register = value;}
+        else if (index == 2){self.c_register = value;}
+        else if (index == 3){self.d_register = value;}
+        else if (index == 4){self.e_register = value;}
+        else if (index == 5){self.h_register = value;}
+        else if (index == 6){self.l_register = value;}
+    }
+
+    pub fn mapped_register_getter(&self, index: u8) -> u8
+    {
+        if (index == 0){return self.accumulator;}
+        else if (index == 1){return self.b_register;}
+        else if (index == 2){return self.c_register;}
+        else if (index == 3){return self.d_register;}
+        else if (index == 4){return self.e_register;}
+        else if (index == 5){return self.h_register;}
+        else if (index == 6){return self.l_register;}
+        else {return 0xFF}
+    }
 }
 
 

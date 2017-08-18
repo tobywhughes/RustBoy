@@ -2,7 +2,9 @@
 mod opcode_test
 {
     extern crate csv;
+    extern crate hex;
 
+    use self::hex::FromHex;
     use system::*;
     use cpu::opcode::*;
     use std::env;
@@ -496,9 +498,41 @@ mod opcode_test
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = init_registers();
         let asserts = File::open("src/cpu/ld_r_r_asserts.csv").unwrap();
-        let mut rdr_asserts = csv::Reader::from_reader(asserts);
+        let mut rdr_asserts = csv::ReaderBuilder::new()
+            .has_headers(false)
+            .from_reader(asserts);
         let opcodes = File::open("src/cpu/ld_r_r_opcodes.csv").unwrap();
         let mut rdr_opcodes = csv::Reader::from_reader(opcodes);
+        let mut asserts: Vec<String> = Vec::new();
+        let mut opcodes: Vec<String> = Vec::new();
+        for record in rdr_asserts.records()
+        {
+            asserts.push(String::from(&(record.unwrap())[0]));
+        }
+        for record in rdr_opcodes.records()
+        {
+            opcodes.push(String::from(&(record.unwrap())[0]));
+        }
+
+        let mut count : u8 = 0;
+        for index in 0..asserts.len()
+        {
+            if(index % 7 == 0){
+                for i in 0..7 
+                {
+                    registers.mapped_register_setter(i, i + 1)
+                }
+                if index > 0
+                {
+                    count += 1;
+                }
+            }
+            let opcode = opcodes[index].unwrap();
+            println!("{}", index);
+            println!("{:x}", opcode);
+           // assert_eq!(asserts[index].parse::<u8>().unwrap(), registers.mapped_register_getter(count));
+        }
+        
     }
 
     #[test]
