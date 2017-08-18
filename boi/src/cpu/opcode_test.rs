@@ -1,8 +1,15 @@
 #[cfg(test)]
 mod opcode_test
 {
+    extern crate csv;
+
     use system::*;
     use cpu::opcode::*;
+    use std::env;
+    use std::error::Error;
+    use std::ffi::OsString;
+    use std::fs::File;
+    use std::process;
 
     #[test]
     fn increments_propper_register()
@@ -254,7 +261,7 @@ mod opcode_test
         assert_eq!(system_data.mem_map[0xFF01], 1);
     }
 
-    #[test]
+    /*#[test]
     fn load_8_bit_register_with_register_test() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
@@ -482,6 +489,17 @@ mod opcode_test
         load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
         assert_eq!(registers.l_register, 6);
     }
+*/
+    #[test]
+    fn temp()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        let asserts = File::open("src/cpu/ld_r_r_asserts.csv").unwrap();
+        let mut rdr_asserts = csv::Reader::from_reader(asserts);
+        let opcodes = File::open("src/cpu/ld_r_r_opcodes.csv").unwrap();
+        let mut rdr_opcodes = csv::Reader::from_reader(opcodes);
+    }
 
     #[test]
     fn load_accumulator_with_de_address_test() {
@@ -493,4 +511,9 @@ mod opcode_test
         load_accumulator_with_de_address(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 1);
     }
+
+    // #[test]
+    // fn call_nn_test() {
+    //     unimplemented!();
+    // }
 }
