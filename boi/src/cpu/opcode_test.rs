@@ -269,13 +269,9 @@ mod opcode_test
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = init_registers();
         let asserts = File::open("src/cpu/ld_r_r_asserts.csv").unwrap();
-        let mut rdr_asserts = csv::ReaderBuilder::new()
-            .has_headers(false)
-            .from_reader(asserts);
+        let mut rdr_asserts = csv::ReaderBuilder::new().has_headers(false).from_reader(asserts);
         let opcodes = File::open("src/cpu/ld_r_r_opcodes.csv").unwrap();
-        let mut rdr_opcodes = csv::ReaderBuilder::new()
-            .has_headers(false)
-            .from_reader(opcodes);
+        let mut rdr_opcodes = csv::ReaderBuilder::new().has_headers(false).from_reader(opcodes);
         let mut asserts: Vec<String> = Vec::new();
         let mut opcodes: Vec<String> = Vec::new();
         for record in rdr_asserts.records()
