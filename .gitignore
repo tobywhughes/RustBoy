@@ -1,3 +1,4 @@
 *.gba
 *.gb
 pandocs.txt
+.vscode
