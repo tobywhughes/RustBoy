@@ -340,6 +340,11 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
         let test_bit: u8 = (opcode & 0x38) >> 3;
         bit_check_register(&mut system_data, &mut registers, opcode, test_bit)
     }
+    else if (opcode & 0xF8) == 0x10
+    {
+        system_data.cycles = 2;
+        rotate_left_through_carry(&mut system_data, &mut registers, opcode);
+    }
     else 
     {
         println!("No Opcode Found");
@@ -368,4 +373,33 @@ pub fn bit_check_register(system_data: &mut SystemData, registers: &mut Register
             println!("No Opcode Found");
         }
         registers.program_counter += 2;
+}
+
+pub fn rotate_left_through_carry(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let carry_bit = (registers.flags & 0x10) >> 4;
+    registers.flags = 0x00;
+    let mut register_code = (opcode & 0x07) + 1;
+    if register_code == 8 
+    {
+        register_code = 0;
+    }
+    if register_code == 7{
+        system_data.cycles = 0;
+        println!("No Opcode Found");
+    }
+    else {
+        let mut val = registers.mapped_register_getter(register_code);
+        if (val & 0x80) == 0x80{
+            registers.flags = registers.flags | 0x10;
+        }
+        val = val << 1;
+        val = val | carry_bit;
+        if val == 0
+        {
+            registers.flags = registers.flags | 0x80;
+        }
+        registers.mapped_register_setter(register_code, val);
+        registers.program_counter += 2;
+    }
 }

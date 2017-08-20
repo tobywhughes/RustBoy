@@ -238,7 +238,7 @@ mod opcode_test
     }
 
     #[test]
-    fn puah_16_bit_register_test() {
+    fn push_16_bit_register_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = init_registers();
         let opcodes: Vec<u8> = vec![0xF5, 0xC5, 0xD5, 0xE5];
@@ -251,6 +251,26 @@ mod opcode_test
             push_16_bit_register(&mut system_data, &mut registers, opcodes[i]);
             assert_eq!(system_data.mem_map[registers.stack_pointer as usize + 1], i as u8 * 2);
             assert_eq!(system_data.mem_map[registers.stack_pointer as usize], (i as u8 * 2) + 1);
+        }
+    }
+
+    #[test]
+    fn rotate_left_through_carry_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        let opcodes : Vec<u8> = vec![0x17, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15];
+        for i in 0..7
+        {
+            registers.mapped_register_setter(i as u8, 0xBF);
+            registers.flags = 0x00;
+            //Carry
+            rotate_left_through_carry(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.flags, 0x10);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x7E);
+            //No Carry
+            rotate_left_through_carry(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.flags, 0x00);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0xFD);
         }
     }
 }
