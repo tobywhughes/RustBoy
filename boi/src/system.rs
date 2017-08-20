@@ -26,6 +26,7 @@ pub struct Registers
     pub stack_pointer: u16,
     pub program_counter: u16,
 }
+
 impl Registers{
     pub fn mapped_register_setter(&mut self, index: u8, value: u8)
     {
