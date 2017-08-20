@@ -73,7 +73,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         load_decrement_hl_register_location_with_accumulator(&mut system_data, &mut registers);        
     }
-
+    //rla
+    else if opcode == 0x17
+    {
+        rotate_accumulator_left_through_carry(&mut system_data, &mut registers);
+    }
     //call nn
     else if opcode == 0xCD
     {
@@ -323,6 +327,22 @@ pub fn push_16_bit_register(system_data: &mut SystemData, registers: &mut Regist
     registers.program_counter += 1;
 }
 
+pub fn rotate_accumulator_left_through_carry(system_data: &mut SystemData, registers: &mut Registers)
+{  
+    let carry_bit = (registers.flags & 0x10) >> 4;
+    registers.flags = 0x00;
+    let mut val = registers.accumulator;
+    if (val & 0x80) == 0x80
+    {
+            registers.flags = registers.flags | 0x10;
+    }
+    val = val << 1;
+    val = val | carry_bit;
+    registers.accumulator = val;
+    registers.program_counter += 1;
+    system_data.cycles = 1;
+}
+
 ///////////////////
 //CB
 ///////////////////
@@ -403,3 +423,4 @@ pub fn rotate_left_through_carry(system_data: &mut SystemData, registers: &mut R
         registers.program_counter += 2;
     }
 }
+

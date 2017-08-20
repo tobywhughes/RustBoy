@@ -273,4 +273,18 @@ mod opcode_test
             assert_eq!(registers.mapped_register_getter(i as u8), 0xFD);
         }
     }
+
+    #[test]
+    fn rotate_accumulator_left_through_carry_test() 
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        //Carry
+        registers.accumulator = 0x80;
+        rotate_accumulator_left_through_carry(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0);
+        //No Carry
+        rotate_accumulator_left_through_carry(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 1);
+    }
 }
