@@ -87,133 +87,52 @@ pub fn increment(system_data: &mut SystemData, registers: &mut Registers, opcode
 {
         system_data.cycles = 1;
         registers.flags = registers.flags & 0x10;
-        if (opcode & 0x38) == 0x38{
-            registers.accumulator += 1;
-            if registers.accumulator == 0
-            {
-                registers.flags = registers.flags | 0x80;
-            }
-            if registers.b_register == 0x10
-            {
-                registers.flags = registers.flags | 0x20;
-            }
-            registers.program_counter += 1;
+        let mut register_code = ((opcode & 0x38) >> 3) + 1;
+        if register_code == 8 
+        {
+            register_code = 0;
         }
-        else if (opcode & 0x38) == 0x00{
-            registers.b_register += 1;
-            if registers.b_register == 0
-            {
-                registers.flags = registers.flags | 0x80;
-            }
-            if registers.b_register == 0x10
-            {
-                registers.flags = registers.flags | 0x20;
-            }
-            registers.program_counter += 1;
-        }
-        else if (opcode & 0x38) == 0x08{
-            registers.c_register += 1;
-            if registers.c_register == 0
-            {
-                registers.flags = registers.flags | 0x80;
-            }
-            if registers.c_register == 0x10
-            {
-                registers.flags = registers.flags | 0x20;
-            }
-            registers.program_counter += 1;
-        }
-        else if (opcode & 0x38) == 0x10{
-            registers.d_register += 1;
-            if registers.d_register == 0
-            {
-                registers.flags = registers.flags | 0x80;
-            }
-            if registers.d_register == 0x10
-            {
-                registers.flags = registers.flags | 0x20;
-            }
-            registers.program_counter += 1;
-        }
-        else if (opcode & 0x38) == 0x18{
-            registers.e_register += 1;
-            if registers.e_register == 0
-            {
-                registers.flags = registers.flags | 0x80;
-            }
-            if registers.e_register == 0x10
-            {
-                registers.flags = registers.flags | 0x20;
-            }
-            registers.program_counter += 1;
-        }
-        else if (opcode & 0x38) == 0x20{
-            registers.h_register += 1;
-            if registers.h_register == 0
-            {
-                registers.flags = registers.flags | 0x80;
-            }
-            if registers.h_register == 0x10
-            {
-                registers.flags = registers.flags | 0x20;
-            }
-            registers.program_counter += 1;
-        }
-        else if (opcode & 0x38) == 0x28{
-            registers.l_register += 1;
-            if registers.l_register == 0
-            {
-                registers.flags = registers.flags | 0x80;
-            }
-            if registers.l_register == 0x10
-            {
-                registers.flags = registers.flags | 0x20;
-            }
-            registers.program_counter += 1;
-        }
-        else
+                
+        if register_code == 7
         {
             system_data.cycles = 0;
             println!("No Opcode Found");
+        }
+        else
+        {
+            let current_register_value = registers.mapped_register_getter(register_code);
+            registers.mapped_register_setter(register_code, current_register_value + 1);
+            if registers.mapped_register_getter(register_code) == 0
+            {
+                registers.flags = registers.flags | 0x80;
+            }
+            else if registers.mapped_register_getter(register_code) == 0x10
+            {
+                registers.flags = registers.flags | 0x20;
+            }
+            registers.program_counter += 1;
         }
 }
 
 pub fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
         system_data.cycles = 2;
-        if(opcode & 0x38) == 0x38
+        let mut register_code = ((opcode & 0x38) >> 3) + 1;
+        if register_code == 8 
         {
-            registers.accumulator = system_data.mem_map[(registers.program_counter + 1) as usize];
+            register_code = 0;
         }
-        else if(opcode & 0x38) == 0x00
-        {
-            registers.b_register = system_data.mem_map[(registers.program_counter + 1) as usize];
-        }
-        else if(opcode & 0x38) == 0x08
-        {
-            registers.c_register = system_data.mem_map[(registers.program_counter + 1) as usize];
-        }
-        else if(opcode & 0x38) == 0x10
-        {
-            registers.d_register = system_data.mem_map[(registers.program_counter + 1) as usize];
-        }
-        else if(opcode & 0x38) == 0x18
-        {
-            registers.e_register = system_data.mem_map[(registers.program_counter + 1) as usize];
-        }
-        else if(opcode & 0x38) == 0x20
-        {
-            registers.h_register = system_data.mem_map[(registers.program_counter + 1) as usize];
-        }
-        else if(opcode & 0x38) == 0x28
-        {
-            registers.l_register = system_data.mem_map[(registers.program_counter + 1) as usize];
-        }
-        else 
-        {
+
+        if register_code == 7{
             system_data.cycles = 0;
             println!("No Opcode Found");
         }
+        else
+        {
+            let mem_loc: usize = registers.program_counter as usize + 1;
+            registers.mapped_register_setter(register_code, system_data.mem_map[mem_loc])
+        }
+
         registers.program_counter += 2;
 }
 
@@ -222,74 +141,27 @@ pub fn load_8_bit_register_to_register(system_data: &mut SystemData, registers: 
         system_data.cycles = 1;
         let mut register_value = 0;
         //Load value from register
-        if (opcode & 0x07) == 0x07
+        let mut register_set_code = ((opcode & 0x38) >> 3) + 1;
+        if register_set_code == 8 
         {
-            register_value = registers.accumulator;
+            register_set_code = 0;
         }
-        else if (opcode & 0x07) == 0x00
+        let mut register_get_code = (opcode & 0x07) + 1;
+        if register_get_code == 8 
         {
-            register_value = registers.b_register;
-        }
-        else if (opcode & 0x07) == 0x01
-        {
-            register_value = registers.c_register;
-        }
-        else if (opcode & 0x07) == 0x02
-        {
-            register_value = registers.d_register;
-        }
-        else if (opcode & 0x07) == 0x03
-        {
-            register_value = registers.e_register;
-        }
-        else if (opcode & 0x07) == 0x04
-        {
-            register_value = registers.h_register;
-        }
-        else if (opcode & 0x07) == 0x05
-        {
-            register_value = registers.l_register;
-        }
-        else
-        {
-            system_data.cycles = 0;
-            println!("No Opcode Found");
+            register_get_code = 0;
         }
 
-        //Load into new register
-        if (opcode & 0x38) == 0x38
-        {
-            registers.accumulator = register_value;
-        }
-        else if (opcode & 0x38) == 0x00
-        {
-            registers.b_register = register_value;
-        }
-        else if (opcode & 0x38) == 0x08
-        {
-            registers.c_register = register_value;
-        }
-        else if (opcode & 0x38) == 0x10
-        {
-            registers.d_register = register_value;
-        }
-        else if (opcode & 0x38) == 0x18
-        {
-            registers.e_register = register_value;
-        }
-        else if (opcode & 0x38) == 0x20
-        {
-           registers.h_register = register_value;
-        }
-        else if (opcode & 0x38) == 0x28
-        {
-            registers.l_register = register_value;
-        }
-        else
+        if register_set_code == 7 || register_get_code == 7
         {
             system_data.cycles = 0;
             println!("No Opcode Found");
         }
+        else {
+            register_value = registers.mapped_register_getter(register_get_code);
+            registers.mapped_register_setter(register_set_code, register_value)
+        }
+
         registers.program_counter += 1;
 }
 
@@ -388,39 +260,22 @@ pub fn load_hl_address_with_register(system_data: &mut SystemData, registers: &m
 {
     let mut mem_loc: u16 = registers.l_register as u16 | (registers.h_register as u16) << 8;
     system_data.cycles = 2;
-    if (opcode & 0x07) == 0x07 
+    let mut register_code = (opcode & 0x07) + 1;
+    if register_code == 8 
     {
-        system_data.mem_map[mem_loc as usize] = registers.accumulator;
+        register_code = 0;
     }
-    else if (opcode & 0x07) == 0x00 
-    {
-        system_data.mem_map[mem_loc as usize] = registers.b_register;
-    }
-    else if (opcode & 0x07) == 0x01 
-    {
-        system_data.mem_map[mem_loc as usize] = registers.c_register;
-    }
-    else if (opcode & 0x07) == 0x02 
-    { 
-        system_data.mem_map[mem_loc as usize] = registers.d_register;
-    }
-    else if (opcode & 0x07) == 0x03 
-    {
-        system_data.mem_map[mem_loc as usize] = registers.e_register;
-    }
-    else if (opcode & 0x07) == 0x04 
-    {
-        system_data.mem_map[mem_loc as usize] = registers.h_register;
-    }
-    else if (opcode & 0x07) == 0x05 
-    {
-        system_data.mem_map[mem_loc as usize] = registers.l_register;
-    }
-    else 
+    if register_code == 7
     {
         system_data.cycles = 0;
         println!("No Opcode Found");
     }
+    else
+    {
+        system_data.mem_map[mem_loc as usize] = registers.mapped_register_getter(register_code);
+    }
+
+
     registers.program_counter += 1;   
 }
 
