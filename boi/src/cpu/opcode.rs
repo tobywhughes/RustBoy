@@ -12,7 +12,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
     system_data.cycles = 0;
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
-    println!("{:x}: {:x}", registers.program_counter, opcode);
+    println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}", registers.program_counter, opcode, opcode);
 
     //inc
     if (opcode & 0xC7) == 0x04
