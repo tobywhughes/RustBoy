@@ -1,8 +1,9 @@
+#![allow(dead_code)]
+
 mod cpu;
 mod system;
 
 use std::fs::File;
-use std::io::BufReader;
 use std::io::prelude::*;
 use std::env;
 use cpu::cpu::*;
@@ -25,7 +26,7 @@ fn main()
     while emulator_loop
     {
         cpu_continue(&mut system_data, &mut registers);
-        if(system_data.cycles == 0) 
+        if system_data.cycles == 0 
         {
             emulator_loop = false;
         }
@@ -36,7 +37,7 @@ fn main()
 fn read_gb_file(file_name: &str) -> Vec<u8>
 {
     let mut buffer : Vec<u8> = vec![0; 0x10000];
-    let mut file = File::open(file_name);
+    let file = File::open(file_name);
     if file.is_ok()
     {
         if file.unwrap().read(&mut buffer).is_ok()

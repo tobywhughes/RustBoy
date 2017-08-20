@@ -7,11 +7,7 @@ mod opcode_test
     use self::hex::FromHex;
     use system::*;
     use cpu::opcode::*;
-    use std::env;
-    use std::error::Error;
-    use std::ffi::OsString;
     use std::fs::File;
-    use std::process;
 
     #[test]
     fn increments_propper_register()
@@ -204,7 +200,7 @@ mod opcode_test
 
         for index in 0..asserts.len()
         {
-            if(index % 7 == 0){
+            if index % 7 == 0 {
                 for i in 0..7 
                 {
                     registers.mapped_register_setter(i, i + 1)
@@ -227,8 +223,34 @@ mod opcode_test
         assert_eq!(registers.accumulator, 1);
     }
 
-    // #[test]
-    // fn call_nn_test() {
-    //     unimplemented!();
-    // }
+    #[test]
+    fn call_nn_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        registers.program_counter = 1;
+        system_data.mem_map[2] = 0xCD;
+        system_data.mem_map[3] = 0xAB;
+        registers.stack_pointer = 0xFFFE;
+        call_nn(&mut system_data, &mut registers);
+        assert_eq!(registers.program_counter, 0xABCD);
+        assert_eq!(registers.stack_pointer, 0xFFFC);
+        assert_eq!(system_data.mem_map[registers.stack_pointer as usize], 1);
+    }
+
+    #[test]
+    fn puah_16_bit_register_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        let opcodes: Vec<u8> = vec![0xF5, 0xC5, 0xD5, 0xE5];
+        registers.stack_pointer = 0xFFFE;
+        for i in 0..8
+        {
+            registers.mapped_register_setter_with_flags(i, i);
+        }
+        for i in 0..4{
+            push_16_bit_register(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(system_data.mem_map[registers.stack_pointer as usize + 1], i as u8 * 2);
+            assert_eq!(system_data.mem_map[registers.stack_pointer as usize], (i as u8 * 2) + 1);
+        }
+    }
 }

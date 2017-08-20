@@ -63,18 +63,32 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         xor_register(&mut system_data, &mut registers, opcode);
     }
     //jump nz, dis
-    else if (opcode == 0x20)
+    else if opcode == 0x20
     {
         jump_displacement_on_nonzero_flag(&mut system_data, &mut registers);
     }
 
     //LDD (HL), A
-    else if (opcode == 0x32)
+    else if opcode == 0x32
     {
         load_decrement_hl_register_location_with_accumulator(&mut system_data, &mut registers);        
     }
+
+    //call nn
+    else if opcode == 0xCD
+    {
+        call_nn(&mut system_data, &mut registers);
+    }
+
+    //push qq
+    else if (opcode & 0xCF) == 0xC5
+    {
+        push_16_bit_register(&mut system_data, &mut registers, opcode);
+    }
+
     //cb codes
-    else if (opcode == 0xCB){
+    else if opcode == 0xCB
+    {
         cb_codes(&mut system_data, &mut registers);
     }
     else
@@ -139,7 +153,6 @@ pub fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Reg
 pub fn load_8_bit_register_to_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
         system_data.cycles = 1;
-        let mut register_value = 0;
         //Load value from register
         let mut register_set_code = ((opcode & 0x38) >> 3) + 1;
         if register_set_code == 8 
@@ -158,7 +171,7 @@ pub fn load_8_bit_register_to_register(system_data: &mut SystemData, registers: 
             println!("No Opcode Found");
         }
         else {
-            register_value = registers.mapped_register_getter(register_get_code);
+            let register_value = registers.mapped_register_getter(register_get_code);
             registers.mapped_register_setter(register_set_code, register_value)
         }
 
@@ -258,7 +271,7 @@ pub fn load_decrement_hl_register_location_with_accumulator(system_data: &mut Sy
 
 pub fn load_hl_address_with_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    let mut mem_loc: u16 = registers.l_register as u16 | (registers.h_register as u16) << 8;
+    let mem_loc: u16 = registers.l_register as u16 | (registers.h_register as u16) << 8;
     system_data.cycles = 2;
     let mut register_code = (opcode & 0x07) + 1;
     if register_code == 8 
@@ -282,8 +295,31 @@ pub fn load_hl_address_with_register(system_data: &mut SystemData, registers: &m
 pub fn load_accumulator_with_de_address(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 2;
-    let mut mem_loc: u16 = registers.e_register as u16 | (registers.d_register as u16) << 8;
+    let mem_loc: u16 = registers.e_register as u16 | (registers.d_register as u16) << 8;
     registers.accumulator = system_data.mem_map[mem_loc as usize];
+    registers.program_counter += 1;
+}
+
+pub fn call_nn(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 4;
+    registers.stack_pointer -= 2;
+    system_data.mem_map[registers.stack_pointer as usize + 1] = ((registers.program_counter & 0xFF00) >> 8) as u8;
+    system_data.mem_map[registers.stack_pointer as usize] = (registers.program_counter & 0x00FF) as u8;
+    registers.program_counter = (system_data.mem_map[registers.program_counter as usize + 1] as u16) | (system_data.mem_map[registers.program_counter as usize + 2] as u16) << 8;
+}
+
+pub fn push_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    system_data.cycles = 3;
+    let mut register_code = ((opcode & 0x30) >> 4) + 1;
+    if register_code == 4 
+    {
+        register_code = 0;
+    }
+    registers.stack_pointer -= 2;
+    system_data.mem_map[registers.stack_pointer as usize + 1] = registers.mapped_register_getter_with_flags(register_code * 2);
+    system_data.mem_map[registers.stack_pointer as usize] = registers.mapped_register_getter_with_flags((register_code * 2) + 1);
     registers.program_counter += 1;
 }
 
@@ -307,6 +343,7 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
     else 
     {
         println!("No Opcode Found");
+        println!("Next Opcode: {:x}", system_data.mem_map[registers.program_counter as usize + 1]);
     }
 }
 
