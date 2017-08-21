@@ -201,6 +201,7 @@ mod opcode_test
         assert_eq!(registers.l_register, 0xFF);
     }
 
+    //TODO: Write a better test for this
     #[test]
     fn bit_check_register_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
