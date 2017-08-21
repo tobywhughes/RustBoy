@@ -10,18 +10,70 @@ mod opcode_test
     use std::fs::File;
 
     #[test]
-    fn increments_propper_register()
+    fn increments_8_bit_register_test()
     {   
 
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = init_registers();
         let opcodes: Vec<u8> = vec![0x3C, 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C];
 
+        //Normal flag
         for i in 0..7
         {
-            increment(&mut system_data, &mut registers, opcodes[i as usize]);
+            increment_8_bit_register(&mut system_data, &mut registers, opcodes[i as usize]);
             assert_eq!(registers.mapped_register_getter(i), 1);
-            registers.program_counter -= 1;
+            assert_eq!(registers.flags, 0x00);
+        }
+        //Half flag
+        for i in 0..7
+        {
+            registers.mapped_register_setter(i as u8, 0x0F);
+            increment_8_bit_register(&mut system_data, &mut registers, opcodes[i as usize]);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x10);
+            assert_eq!(registers.flags, 0x20);
+        }
+
+        //Zero flag
+        for i in 0..7
+        {
+            registers.mapped_register_setter(i as u8, 0xFF);
+            increment_8_bit_register(&mut system_data, &mut registers, opcodes[i as usize]);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x00);
+            assert_eq!(registers.flags, 0x80);
+        }
+    }
+
+    #[test]
+    fn decrement_8_bit_register_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        let opcodes: Vec<u8> = vec![0x3D, 0x05, 0x0D, 0x15, 0x1D, 0x25, 0x2D];
+        
+        //Normal flag
+        for i in 0..7
+        {
+            registers.mapped_register_setter(i as u8, 2);
+            decrement_8_bit_register(&mut system_data, &mut registers, opcodes[i as usize]);
+            assert_eq!(registers.mapped_register_getter(i), 1);
+            assert_eq!(registers.flags, 0x40);
+        }
+
+        //Half Flag
+        for i in 0..7
+        {
+            registers.mapped_register_setter(i as u8, 0x10);
+            decrement_8_bit_register(&mut system_data, &mut registers, opcodes[i as usize]);
+            assert_eq!(registers.mapped_register_getter(i), 0x0F);
+            assert_eq!(registers.flags, 0x60);
+        }
+
+        //Zero Flag
+        for i in 0..7
+        {
+            registers.mapped_register_setter(i as u8, 1);
+            decrement_8_bit_register(&mut system_data, &mut registers, opcodes[i as usize]);
+            assert_eq!(registers.mapped_register_getter(i), 0);
+            assert_eq!(registers.flags, 0xC0);
         }
     }
 
@@ -136,6 +188,20 @@ mod opcode_test
     }
 
     #[test]
+    fn load_increment_hl_register_location_with_accumulator_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        registers.h_register = 0xFF;
+        registers.l_register = 0xFE;
+        registers.accumulator = 1;
+        load_increment_hl_register_location_with_accumulator(&mut system_data, &mut registers);
+        assert_eq!(system_data.mem_map[0xFFFE], 1);
+        assert_eq!(registers.h_register, 0xFF);
+        assert_eq!(registers.l_register, 0xFF);
+    }
+
+    #[test]
     fn bit_check_register_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = init_registers();
@@ -247,11 +313,32 @@ mod opcode_test
         {
             registers.mapped_register_setter_with_flags(i, i);
         }
-        for i in 0..4{
+        for i in 0..4
+        {
             push_16_bit_register(&mut system_data, &mut registers, opcodes[i]);
             assert_eq!(system_data.mem_map[registers.stack_pointer as usize + 1], i as u8 * 2);
             assert_eq!(system_data.mem_map[registers.stack_pointer as usize], (i as u8 * 2) + 1);
         }
+    }
+
+    #[test]
+    fn pop_16_bit_register_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        let opcodes: Vec<u8> = vec![0xF1, 0xC1, 0xD1, 0xE1];
+        registers.stack_pointer = 0xFFF0;
+        for i in 0..8
+        {
+            system_data.mem_map[registers.stack_pointer as usize + i] = i as u8; 
+        }
+        for i in 0..4
+        {
+            pop_16_bit_register(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.mapped_register_getter_with_flags(i as u8 * 2), (i as u8 * 2) + 1);
+            assert_eq!(registers.mapped_register_getter_with_flags((i as u8 * 2) + 1), i as u8 * 2);
+        }
+
     }
 
     #[test]

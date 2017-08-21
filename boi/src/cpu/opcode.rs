@@ -17,8 +17,14 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     //inc
     if (opcode & 0xC7) == 0x04
     {
-        increment(&mut system_data, &mut registers, opcode);
+        increment_8_bit_register(&mut system_data, &mut registers, opcode);
     }
+    //dec
+    else if (opcode & 0xC7) == 0x05
+    {
+        decrement_8_bit_register(&mut system_data, &mut registers, opcode);
+    }
+
     //8bit ld group
     else if (opcode & 0xC7) == 0x06
     {
@@ -73,6 +79,12 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         load_decrement_hl_register_location_with_accumulator(&mut system_data, &mut registers);        
     }
+    //LDI (HL), A
+    else if opcode == 0x22
+    {
+        load_increment_hl_register_location_with_accumulator(&mut system_data, &mut registers);        
+    }
+
     //rla
     else if opcode == 0x17
     {
@@ -90,6 +102,12 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         push_16_bit_register(&mut system_data, &mut registers, opcode);
     }
 
+    //pop qq
+    else if (opcode & 0xCF) == 0xC1
+    {
+        pop_16_bit_register(&mut system_data, &mut registers, opcode);
+    }
+
     //cb codes
     else if opcode == 0xCB
     {
@@ -101,7 +119,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     }
 }
 
-pub fn increment(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
         system_data.cycles = 1;
         registers.flags = registers.flags & 0x10;
@@ -118,8 +136,14 @@ pub fn increment(system_data: &mut SystemData, registers: &mut Registers, opcode
         }
         else
         {
-            let current_register_value = registers.mapped_register_getter(register_code);
-            registers.mapped_register_setter(register_code, current_register_value + 1);
+            let mut current_register_value = registers.mapped_register_getter(register_code);
+            if current_register_value == 0xFF{
+                current_register_value = 0;
+            }
+            else {
+                current_register_value += 1;
+            }
+            registers.mapped_register_setter(register_code, current_register_value);
             if registers.mapped_register_getter(register_code) == 0
             {
                 registers.flags = registers.flags | 0x80;
@@ -130,6 +154,44 @@ pub fn increment(system_data: &mut SystemData, registers: &mut Registers, opcode
             }
             registers.program_counter += 1;
         }
+}
+
+pub fn decrement_8_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    system_data.cycles = 1;
+    registers.flags = registers.flags & 0x10;
+    registers.flags = registers.flags | 0x40;
+    let mut register_code = ((opcode & 0x38) >> 3) + 1;
+    if register_code == 8 
+    {
+        register_code = 0;
+    }
+            
+    if register_code == 7
+    {
+        system_data.cycles = 0;
+        println!("No Opcode Found");
+    }
+    else 
+    {
+        let mut current_register_value = registers.mapped_register_getter(register_code);
+        if current_register_value == 0x00{
+            current_register_value = 0xFF;
+        }
+        else {
+            current_register_value -= 1;
+        }
+        registers.mapped_register_setter(register_code, current_register_value);
+        if registers.mapped_register_getter(register_code) == 0
+        {
+            registers.flags = registers.flags | 0x80;
+        }
+        else if registers.mapped_register_getter(register_code) == 0x0F
+        {
+            registers.flags = registers.flags | 0x20;
+        }
+    }
+    registers.program_counter += 1;
 }
 
 pub fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
@@ -272,6 +334,17 @@ pub fn load_decrement_hl_register_location_with_accumulator(system_data: &mut Sy
     registers.program_counter += 1;
 }
 
+pub fn load_increment_hl_register_location_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
+{
+    let mut mem_loc: u16 = registers.l_register as u16 | (registers.h_register as u16) << 8;
+    system_data.mem_map[mem_loc as usize] = registers.accumulator;
+    mem_loc += 1;
+    registers.l_register = (mem_loc & 0x00FF) as u8;
+    registers.h_register = ((mem_loc & 0xFF00) >> 8) as u8;
+    system_data.cycles = 2;
+    registers.program_counter += 1;
+}
+
 
 pub fn load_hl_address_with_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
@@ -315,7 +388,7 @@ pub fn call_nn(system_data: &mut SystemData, registers: &mut Registers)
 
 pub fn push_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 3;
+    system_data.cycles = 4;
     let mut register_code = ((opcode & 0x30) >> 4) + 1;
     if register_code == 4 
     {
@@ -325,6 +398,21 @@ pub fn push_16_bit_register(system_data: &mut SystemData, registers: &mut Regist
     system_data.mem_map[registers.stack_pointer as usize + 1] = registers.mapped_register_getter_with_flags(register_code * 2);
     system_data.mem_map[registers.stack_pointer as usize] = registers.mapped_register_getter_with_flags((register_code * 2) + 1);
     registers.program_counter += 1;
+}
+
+pub fn pop_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    system_data.cycles = 3;
+    let mut register_code = ((opcode & 0x30) >> 4) + 1;
+    if register_code == 4 
+    {
+        register_code = 0;
+    }
+    let stack_pointer = registers.stack_pointer;
+    registers.mapped_register_setter_with_flags(register_code * 2, system_data.mem_map[stack_pointer as usize + 1]);
+    registers.mapped_register_setter_with_flags((register_code * 2) + 1, system_data.mem_map[stack_pointer as usize]);
+    registers.program_counter += 1;
+    registers.stack_pointer += 2;
 }
 
 pub fn rotate_accumulator_left_through_carry(system_data: &mut SystemData, registers: &mut Registers)
