@@ -462,24 +462,30 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
 
 pub fn bit_check_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8, test_bit: u8)
 {
-        if (opcode & 0x07) == 0x04
+    let mut register_code = (opcode & 0x07) + 1;
+    if register_code == 8 
+    {
+        register_code = 0;
+    }
+
+    if register_code == 7
+    {
+        system_data.cycles = 0;
+        println!("No Opcode Found");
+    }
+    else
+    {
+        registers.flags = registers.flags & 0x10;
+        if (registers.mapped_register_getter(register_code) >> test_bit) & 0x01 == 0x00
         {
-            registers.flags = registers.flags & 0x10;
-            
-            if ((registers.h_register >> test_bit) & 0x01) == 0x00
-            {
-                registers.flags = registers.flags | 0xA0;
-            }
-            else
-            {
-                registers.flags = registers.flags | 0x20;
-            }
+            registers.flags = registers.flags | 0xA0;
         }
         else
         {
-            system_data.cycles = 0;
-            println!("No Opcode Found");
+            registers.flags = registers.flags | 0x20;
         }
+    }
+
         registers.program_counter += 2;
 }
 

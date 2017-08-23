@@ -206,17 +206,46 @@ mod opcode_test
     fn bit_check_register_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = init_registers();
-        //H
-        //Zero Flag
-        let opcode = 0x7C;
-        let test_bit = 7;
-        registers.h_register = 0x00;
-        bit_check_register(&mut system_data, &mut registers, opcode, test_bit);
-        assert_eq!(registers.flags, 0xA0);
-        //No Zero Flag
-        registers.h_register = 0xFF;
-        bit_check_register(&mut system_data, &mut registers, opcode, test_bit);
-        assert_eq!(registers.flags, 0x20);
+        let test_file_raw = File::open("src/cpu/test_csvs/bit_check.csv").unwrap();
+        let mut test_file = csv::ReaderBuilder::new().has_headers(false).from_reader(test_file_raw);
+        let mut opcodes: Vec<String> = Vec::new();
+        for record_raw in test_file.records()
+        {
+            let record = &(record_raw.unwrap());
+            opcodes.push(record[0].to_string());
+        }
+
+        for i in 0..8
+        {
+            for j in 0..7
+            {
+                let opcode = Vec::from_hex(&opcodes[(i * 7) + j]).unwrap();
+                registers.mapped_register_setter(j as u8, 0x00);
+                registers.flags = 0x00;
+                bit_check_register(&mut system_data, &mut registers, opcode[0], j as u8);
+                assert_eq!(registers.flags, 0xA0);
+                registers.mapped_register_setter(j as u8, 0xFF);
+                registers.flags = 0x00;
+                bit_check_register(&mut system_data, &mut registers, opcode[0], j as u8);
+                assert_eq!(registers.flags, 0x20)
+            }
+        }
+
+
+
+
+
+        // //H
+        // //Zero Flag
+        // let opcode = 0x7C;
+        // let test_bit = 7;
+        // registers.h_register = 0x00;
+        // bit_check_register(&mut system_data, &mut registers, opcode, test_bit);
+        // assert_eq!(registers.flags, 0xA0);
+        // //No Zero Flag
+        // registers.h_register = 0xFF;
+        // bit_check_register(&mut system_data, &mut registers, opcode, test_bit);
+        // assert_eq!(registers.flags, 0x20);
     }
     
     #[test]
@@ -254,7 +283,7 @@ mod opcode_test
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = init_registers();
-        let test_file_raw = File::open("src/cpu/ld_r_r.csv").unwrap();
+        let test_file_raw = File::open("src/cpu/test_csvs/ld_r_r.csv").unwrap();
         let mut test_file = csv::ReaderBuilder::new().has_headers(false).from_reader(test_file_raw);
         let mut asserts: Vec<String> = Vec::new();
         let mut opcodes: Vec<String> = Vec::new();
