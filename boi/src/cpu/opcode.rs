@@ -162,7 +162,7 @@ pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Re
             {
                 registers.flags = registers.flags | 0x80;
             }
-            else if registers.mapped_register_getter(register_code) == 0x10
+            else if registers.mapped_register_getter(register_code) &0x0F == 0x0
             {
                 registers.flags = registers.flags | 0x20;
             }
@@ -173,7 +173,6 @@ pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Re
 pub fn increment_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
     registers.program_counter += 1;
-    registers.flags = registers.flags & 0x10;
     let register_code = ((opcode & 0x30) >> 4) + 1; 
     let mut current_register_value = registers.mapped_16_bit_register_getter(register_code);
     if current_register_value == 0xFFFF
@@ -185,15 +184,6 @@ pub fn increment_16_bit_register(system_data: &mut SystemData, registers: &mut R
         current_register_value += 1;
     }
     registers.mapped_16_bit_register_setter(register_code, current_register_value);
-
-    if registers.mapped_16_bit_register_getter(register_code) == 0
-    {
-        registers.flags = registers.flags | 0x80;
-    }
-    else if registers.mapped_16_bit_register_getter(register_code) == 0x100
-    {
-        registers.flags = registers.flags | 0x20;
-    }
     system_data.cycles = 1;
 }
 
@@ -227,7 +217,7 @@ pub fn decrement_8_bit_register(system_data: &mut SystemData, registers: &mut Re
         {
             registers.flags = registers.flags | 0x80;
         }
-        else if registers.mapped_register_getter(register_code) == 0x0F
+        else if registers.mapped_register_getter(register_code) & 0x0F == 0x0F
         {
             registers.flags = registers.flags | 0x20;
         }

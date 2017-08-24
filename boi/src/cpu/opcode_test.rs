@@ -55,14 +55,9 @@ mod opcode_test
             registers.mapped_16_bit_register_setter(i as u8, 0x00FE);
             increment_16_bit_register(&mut system_data, &mut registers, opcodes[i - 1]);
             assert_eq!(registers.mapped_16_bit_register_getter(i as u8), 0x00FF);
-            assert_eq!(registers.flags, 0x00);
-            increment_16_bit_register(&mut system_data, &mut registers, opcodes[i - 1]);
-            assert_eq!(registers.mapped_16_bit_register_getter(i as u8), 0x0100);
-            assert_eq!(registers.flags, 0x20);
             registers.mapped_16_bit_register_setter(i as u8, 0xFFFF);
             increment_16_bit_register(&mut system_data, &mut registers, opcodes[i - 1]);
             assert_eq!(registers.mapped_16_bit_register_getter(i as u8), 0x0000);
-            assert_eq!(registers.flags, 0x80);
         }
     }
 
