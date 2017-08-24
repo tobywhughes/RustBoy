@@ -494,4 +494,18 @@ mod opcode_test
         jump_displacement_on_zero_flag(&mut system_data, &mut registers);
         assert_eq!(registers.program_counter, 0x102);
     }
+
+    #[test]
+    fn jump_displacement_test() 
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        system_data.mem_map[1] = 0xE;
+        jump_displacement(&mut system_data, &mut registers);
+        assert_eq!(registers.program_counter, 0x10);
+        system_data.mem_map[0x11] = 0xFA;
+        jump_displacement(&mut system_data, &mut registers);
+        assert_eq!(registers.program_counter, 0xC);
+        
+    }
 }
