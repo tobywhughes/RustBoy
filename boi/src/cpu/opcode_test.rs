@@ -458,4 +458,16 @@ mod opcode_test
         compare_with_n(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0xC0);
     }
+
+    #[test]
+    fn load_nn_with_accumulator_test() 
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        registers.accumulator = 1;
+        system_data.mem_map[1] = 0xEE;
+        system_data.mem_map[2] = 0xFF;
+        load_nn_with_accumulator(&mut system_data, &mut registers);
+        assert_eq!(system_data.mem_map[0xFFEE], 1);
+    }
 }

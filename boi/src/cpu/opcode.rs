@@ -94,7 +94,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         load_increment_hl_register_location_with_accumulator(&mut system_data, &mut registers);        
     }
-
+    //ld (nn), a
+    else if opcode == 0xEA
+    {
+        load_nn_with_accumulator(&mut system_data, &mut registers);
+    }
     //rla
     else if opcode == 0x17
     {
@@ -490,6 +494,15 @@ pub fn compare_with_n(system_data: &mut SystemData, registers: &mut Registers)
         registers.flags = registers.flags | 0x80;
     }
     registers.program_counter += 2;
+}
+
+pub fn load_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 4;
+    let mem_loc = (system_data.mem_map[registers.program_counter as usize + 1] as u16) | (system_data.mem_map[registers.program_counter as usize + 2] as u16) << 8;
+    system_data.mem_map[mem_loc as usize] =  registers.accumulator;
+    registers.program_counter += 3;
+
 }
 
 
