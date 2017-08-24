@@ -19,6 +19,10 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         increment_8_bit_register(&mut system_data, &mut registers, opcode);
     }
+    else if (opcode & 0xCF) == 0x03
+    {
+        increment_16_bit_register(&mut system_data, &mut registers, opcode);
+    }
     //dec
     else if (opcode & 0xC7) == 0x05
     {
@@ -154,6 +158,33 @@ pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Re
             }
             registers.program_counter += 1;
         }
+}
+
+pub fn increment_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    registers.program_counter += 1;
+    registers.flags = registers.flags & 0x10;
+    let register_code = ((opcode & 0x30) >> 4) + 1; 
+    let mut current_register_value = registers.mapped_16_bit_register_getter(register_code);
+    if current_register_value == 0xFFFF
+    {
+        current_register_value = 0;
+    }    
+    else
+    {
+        current_register_value += 1;
+    }
+    registers.mapped_16_bit_register_setter(register_code, current_register_value);
+
+    if registers.mapped_16_bit_register_getter(register_code) == 0
+    {
+        registers.flags = registers.flags | 0x80;
+    }
+    else if registers.mapped_16_bit_register_getter(register_code) == 0x100
+    {
+        registers.flags = registers.flags | 0x20;
+    }
+    system_data.cycles = 1;
 }
 
 pub fn decrement_8_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
@@ -380,9 +411,10 @@ pub fn load_accumulator_with_de_address(system_data: &mut SystemData, registers:
 pub fn call_nn(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 4;
+    let incremented_program_counter = registers.program_counter + 3;
     registers.stack_pointer -= 2;
-    system_data.mem_map[registers.stack_pointer as usize + 1] = ((registers.program_counter & 0xFF00) >> 8) as u8;
-    system_data.mem_map[registers.stack_pointer as usize] = (registers.program_counter & 0x00FF) as u8;
+    system_data.mem_map[registers.stack_pointer as usize + 1] = ((incremented_program_counter & 0xFF00) >> 8) as u8;
+    system_data.mem_map[registers.stack_pointer as usize] = (incremented_program_counter & 0x00FF) as u8;
     registers.program_counter = (system_data.mem_map[registers.program_counter as usize + 1] as u16) | (system_data.mem_map[registers.program_counter as usize + 2] as u16) << 8;
 }
 

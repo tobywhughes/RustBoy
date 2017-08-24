@@ -73,6 +73,41 @@ impl Registers{
         else if index == 7 {return self.l_register;}
         else {return 0xFF}
     }
+
+    pub fn mapped_16_bit_register_getter(&self, index: u8) -> u16
+    {
+             if index == 0 {return ((self.accumulator as u16) << 8) | self.flags as u16 ;}
+        else if index == 1 {return ((self.b_register as u16) << 8) | self.c_register as u16 ;}
+        else if index == 2 {return ((self.d_register as u16) << 8) | self.e_register as u16 ;}
+        else if index == 3 {return ((self.h_register as u16) << 8) | self.l_register as u16 ;}
+        else if index == 4 {return self.stack_pointer ;}
+        else {return 0xFFFF}
+    }
+
+    pub fn mapped_16_bit_register_setter(&mut self, index: u8, value: u16)
+    {
+        if index == 0 
+        {
+            self.accumulator = ((value & 0xFF00) >> 8) as u8;
+            self.flags = (value & 0x00FF) as u8;
+        }
+        else if index == 1 
+        {
+            self.b_register = ((value & 0xFF00) >> 8) as u8;
+            self.c_register = (value & 0x00FF) as u8;
+        }
+        else if index == 2 
+        {
+            self.d_register = ((value & 0xFF00) >> 8) as u8;
+            self.e_register = (value & 0x00FF) as u8;
+        }
+        else if index == 3 
+        {
+            self.h_register = ((value & 0xFF00) >> 8) as u8;
+            self.l_register = (value & 0x00FF) as u8;
+        }
+        else if index == 4 {self.stack_pointer = value ;}
+    }
 }
 
 
