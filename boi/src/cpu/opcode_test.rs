@@ -440,4 +440,27 @@ mod opcode_test
         rotate_accumulator_left_through_carry(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 1);
     }
+
+    #[test]
+    fn compare_with_n_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        registers.accumulator = 0xF1;
+        //Normal
+        system_data.mem_map[1] = 0x01;
+        compare_with_n(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x40);
+        //Carry
+        system_data.mem_map[3] = 0x0F2;
+        compare_with_n(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x70);
+        //Half Carry
+        system_data.mem_map[5] = 0x02;
+        compare_with_n(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x60);
+        //Zero
+        system_data.mem_map[7] = 0xF1;
+        compare_with_n(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0xC0);
+    }
 }

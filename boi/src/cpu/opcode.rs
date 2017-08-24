@@ -29,6 +29,12 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         decrement_8_bit_register(&mut system_data, &mut registers, opcode);
     }
 
+    //compare
+    else if opcode == 0xFE
+    {
+        compare_with_n(&mut system_data, &mut registers);
+    }
+
     //8bit ld group
     else if (opcode & 0xC7) == 0x06
     {
@@ -474,9 +480,39 @@ pub fn rotate_accumulator_left_through_carry(system_data: &mut SystemData, regis
     system_data.cycles = 1;
 }
 
+pub fn compare_with_n(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 2;
+    registers.flags = 0x40;
+    let n_value = system_data.mem_map[registers.program_counter as usize + 1];
+    if registers.accumulator < n_value
+    {
+        registers.flags = registers.flags | 0x10;
+    }
+ 
+    if (n_value & 0x0F) > (registers.accumulator & 0x0F)
+    {
+        registers.flags = registers.flags | 0x20; 
+    }
+
+    if registers.accumulator == n_value
+    {
+        registers.flags = registers.flags | 0x80;
+    }
+    registers.program_counter += 2;
+}
+
+
+
+
+
 ///////////////////
 //CB
 ///////////////////
+
+
+
+
 
 pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut Registers)
 {
