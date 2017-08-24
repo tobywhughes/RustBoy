@@ -470,4 +470,28 @@ mod opcode_test
         load_nn_with_accumulator(&mut system_data, &mut registers);
         assert_eq!(system_data.mem_map[0xFFEE], 1);
     }
+
+    #[test]
+    fn jump_displacement_on_zero_flag_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        registers.program_counter = 0x100;
+        //Forward
+        registers.flags = 0xFF;
+        system_data.mem_map[0x101] = 0x02;
+        jump_displacement_on_zero_flag(&mut system_data, &mut registers);
+        assert_eq!(registers.program_counter, 0x104);
+        registers.program_counter = 0x100;
+        //Backward
+        registers.flags = 0xFF;
+        system_data.mem_map[0x101] = 0xF0;
+        jump_displacement_on_zero_flag(&mut system_data, &mut registers);
+        assert_eq!(registers.program_counter, 0xF2);
+        registers.program_counter = 0x100;
+        //Nonzero 
+        registers.flags = 0x00;
+        system_data.mem_map[0x101] = 0xFF;
+        jump_displacement_on_zero_flag(&mut system_data, &mut registers);
+        assert_eq!(registers.program_counter, 0x102);
+    }
 }

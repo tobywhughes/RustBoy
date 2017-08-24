@@ -83,6 +83,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         jump_displacement_on_nonzero_flag(&mut system_data, &mut registers);
     }
+    //jump z, dis
+    else if opcode == 0x28
+    {
+        jump_displacement_on_zero_flag(&mut system_data, &mut registers);
+    }
 
     //LDD (HL), A
     else if opcode == 0x32
@@ -356,6 +361,20 @@ pub fn jump_displacement_on_nonzero_flag(system_data: &mut SystemData, registers
             system_data.cycles = 2;
             registers.program_counter += 2;
         }
+}
+
+pub fn jump_displacement_on_zero_flag(system_data: &mut SystemData, registers: &mut Registers)
+{
+    if (registers.flags & 0x80) == 0x80
+    {
+            system_data.cycles = 3;
+            let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize] + 2) as i8;
+            registers.program_counter = (registers.program_counter as i32 + pc_dest as i32) as u16;   
+    }
+    else {
+        system_data.cycles = 2;
+        registers.program_counter += 2;
+    }
 }
 
 pub fn load_decrement_hl_register_location_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
