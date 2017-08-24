@@ -358,6 +358,18 @@ mod opcode_test
     }
 
     #[test]
+    fn return_from_calltest() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        system_data.mem_map[0x2000] = 0xFF;
+        system_data.mem_map[0x2001] = 0xEE;
+        registers.stack_pointer = 0x2000;
+        return_from_call(&mut system_data, &mut registers);
+        assert_eq!(registers.program_counter, 0xEEFF);
+        assert_eq!(registers.stack_pointer, 0x2002);
+    }
+
+    #[test]
     fn push_16_bit_register_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = init_registers();

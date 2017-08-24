@@ -99,7 +99,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         call_nn(&mut system_data, &mut registers);
     }
-
+    //ret
+    else if opcode == 0xC9
+    {
+        return_from_call(&mut system_data, &mut registers);
+    } 
     //push qq
     else if (opcode & 0xCF) == 0xC5
     {
@@ -410,12 +414,19 @@ pub fn load_accumulator_with_de_address(system_data: &mut SystemData, registers:
 
 pub fn call_nn(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 4;
+    system_data.cycles = 6;
     let incremented_program_counter = registers.program_counter + 3;
     registers.stack_pointer -= 2;
     system_data.mem_map[registers.stack_pointer as usize + 1] = ((incremented_program_counter & 0xFF00) >> 8) as u8;
     system_data.mem_map[registers.stack_pointer as usize] = (incremented_program_counter & 0x00FF) as u8;
     registers.program_counter = (system_data.mem_map[registers.program_counter as usize + 1] as u16) | (system_data.mem_map[registers.program_counter as usize + 2] as u16) << 8;
+}
+
+pub fn return_from_call(system_data: &mut SystemData, registers: &mut Registers)
+{
+   system_data.cycles = 4;
+   registers.program_counter = (system_data.mem_map[registers.stack_pointer as usize] as u16) | (system_data.mem_map[registers.stack_pointer as usize + 1] as u16) << 8;
+   registers.stack_pointer += 2;
 }
 
 pub fn push_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
