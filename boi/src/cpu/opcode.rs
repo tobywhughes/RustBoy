@@ -64,6 +64,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         load_accumulator_to_io_port_with_n_offset(&mut system_data, &mut registers);
     }
+    //ld A, (ff00 + n)
+    else if opcode == 0xF0
+    {
+        load_accumulator_with_io_port_with_n_offset(&mut system_data, &mut registers);
+    }
     //16 bit ld group
     else if (opcode & 0xCF) == 0x01
     {
@@ -292,7 +297,7 @@ pub fn load_accumulator_to_io_port_with_c_offset(system_data: &mut SystemData, r
 {
         system_data.cycles = 2;
         system_data.mem_map[(0xFF00 + registers.c_register as u16) as usize] = registers.accumulator;
-        registers.program_counter += 1;  
+        registers.program_counter += 2;  
 }
 
 pub fn load_accumulator_to_io_port_with_n_offset(system_data: &mut SystemData, registers: &mut Registers)
@@ -300,10 +305,16 @@ pub fn load_accumulator_to_io_port_with_n_offset(system_data: &mut SystemData, r
         system_data.cycles = 3;
         let n = system_data.mem_map[(registers.program_counter + 1) as usize];
         system_data.mem_map[(0xFF00 + n as u16) as usize] = registers.accumulator;
-        registers.program_counter += 1;  
+        registers.program_counter += 2;  
 }
 
-
+pub fn load_accumulator_with_io_port_with_n_offset(system_data: &mut SystemData, registers: &mut Registers)
+{
+        system_data.cycles = 3;
+        let n = system_data.mem_map[(registers.program_counter + 1) as usize];
+        registers.accumulator = system_data.mem_map[(0xFF00 + n as u16) as usize];
+        registers.program_counter += 2;  
+} 
 
 pub fn load_nn_to_16bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8){
     system_data.cycles = 2;

@@ -470,6 +470,15 @@ mod opcode_test
         load_nn_with_accumulator(&mut system_data, &mut registers);
         assert_eq!(system_data.mem_map[0xFFEE], 1);
     }
+    #[test]
+    fn load_accumulator_with_io_port_with_n_offset_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        system_data.mem_map[0xFF0F] = 1;
+        system_data.mem_map[1] = 0x0F;
+        load_accumulator_with_io_port_with_n_offset(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 1);
+    }
 
     #[test]
     fn jump_displacement_on_zero_flag_test() {
