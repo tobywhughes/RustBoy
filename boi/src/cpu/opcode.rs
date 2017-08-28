@@ -12,7 +12,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
     system_data.cycles = 0;
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
-    println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}", registers.program_counter, opcode, opcode);
+    //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
 
     //inc
     if (opcode & 0xC7) == 0x04
@@ -567,7 +567,6 @@ pub fn subtract_8_bit(system_data: &mut SystemData, registers: &mut Registers, o
     }
     else
     {
-        println!("{}", register_code);
         let sub_register = registers.mapped_register_getter(register_code as u8);
         if sub_register & 0x0F > registers.accumulator & 0x0F
         {

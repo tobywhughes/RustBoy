@@ -28,11 +28,14 @@ fn main()
     let mut emulator_loop = true;
     while emulator_loop
     {
+        let opcode = system_data.mem_map[registers.program_counter as usize];
+        let address = registers.program_counter;
         cpu_continue(&mut system_data, &mut registers);
         update_gpu(&mut system_data, &mut registers, &mut gpu_registers);
-        if system_data.cycles == 0 
+        if system_data.cycles == 0  //|| registers.program_counter == 0x6d 
         {
             emulator_loop = false;
+            println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}", address, opcode, opcode);
         }
     }
     //Cleanup?
