@@ -110,6 +110,25 @@ impl Registers{
     }
 }
 
+pub struct GPU_Registers
+{
+    pub ly_register: u8,
+    pub ly_cycle_count: u32,
+    pub ly_sub_cycle_count: u16,
+}
+
+impl GPU_Registers
+{
+    pub fn new() -> GPU_Registers
+    {
+        return GPU_Registers
+        {
+            ly_register: 0,
+            ly_cycle_count: 0,
+            ly_sub_cycle_count: 0,
+        }
+    }
+}
 
 pub fn get_system_data(emulator_type: &str) -> SystemData
 {

@@ -1,12 +1,14 @@
 #![allow(dead_code)]
 
 mod cpu;
+mod gpu;
 mod system;
 
 use std::fs::File;
 use std::io::prelude::*;
 use std::env;
 use cpu::cpu::*;
+use gpu::gpu::*;
 use system::*;
 
 static MAX_SPRITE: u8 = 40;
@@ -21,11 +23,13 @@ fn main()
     let mut system_data : SystemData = get_system_data(&emulator_type);
     system_data.mem_map = read_gb_file(file_name);
     let mut registers: Registers = init_registers();
+    let mut gpu_registers: GPU_Registers = GPU_Registers::new();
     //Operation loop
     let mut emulator_loop = true;
     while emulator_loop
     {
         cpu_continue(&mut system_data, &mut registers);
+        update_gpu(&mut system_data, &mut registers, &mut gpu_registers);
         if system_data.cycles == 0 
         {
             emulator_loop = false;
