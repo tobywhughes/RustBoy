@@ -517,4 +517,36 @@ mod opcode_test
         assert_eq!(registers.program_counter, 0xC);
         
     }
+
+    #[test]
+    fn subract_8_bit_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        let opcodes: Vec<u8> = vec![0x97, 0x90, 0x91,0x92,0x93,0x94,0x95];
+        //normal
+        for i in 1..7
+        {
+            registers.accumulator = 7;
+            registers.mapped_register_setter(i as u8, i);        
+            subtract_8_bit(&mut system_data, &mut registers, opcodes[i as usize]);
+            assert_eq!(registers.accumulator, 7 - i);
+            assert_eq!(registers.flags, 0x40);
+        }
+        //zero flag
+        registers.accumulator = 1;
+        subtract_8_bit(&mut system_data, &mut registers, opcodes[0]);
+        assert_eq!(registers.accumulator, 0);
+        assert_eq!(registers.flags, 0xC0);
+        //Half carry
+        registers.accumulator = 0x10;
+        registers.b_register = 0x01;
+        subtract_8_bit(&mut system_data, &mut registers, opcodes[1]);
+        assert_eq!(registers.flags, 0x60);
+        //Carry
+        registers.accumulator = 0x00;
+        registers.b_register = 0x01;
+        subtract_8_bit(&mut system_data, &mut registers, opcodes[1]);
+        assert_eq!(registers.accumulator, 0xFF);
+        assert_eq!(registers.flags, 0x70);
+    }
 }

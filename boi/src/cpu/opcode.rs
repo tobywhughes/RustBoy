@@ -78,6 +78,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         load_accumulator_with_de_address(&mut system_data, &mut registers);
     }
+    //sub r
+    else if (opcode & 0xF8) == 0x90
+    {
+        subtract_8_bit(&mut system_data, &mut registers, opcode)
+    }
     //xor
     else if (opcode & 0xF8) == 0xA8
     {
@@ -546,7 +551,43 @@ pub fn load_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Re
 
 }
 
-
+pub fn subtract_8_bit(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    system_data.cycles = 1;
+    registers.flags = 0x40;
+    let mut register_code = (opcode & 0x07) + 1;
+    if register_code == 8 
+    {
+        register_code = 0;
+    }
+    if register_code == 7
+    {
+        system_data.cycles = 0;
+        println!("No Opcode Found");
+    }
+    else
+    {
+        println!("{}", register_code);
+        let sub_register = registers.mapped_register_getter(register_code as u8);
+        if sub_register & 0x0F > registers.accumulator & 0x0F
+        {
+            registers.flags = registers.flags | 0x20;
+        }
+        if sub_register > registers.accumulator
+        {
+            registers.flags = registers.flags | 0x10;
+            registers.accumulator = ((0x100 + registers.accumulator as u16) - sub_register as u16) as u8
+        }
+        else {
+            registers.accumulator -= sub_register
+        }        
+        if registers.accumulator == 0
+        {
+            registers.flags = registers.flags | 0x80;
+        }
+    }
+    registers.program_counter += 1;
+}
 
 
 
