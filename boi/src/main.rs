@@ -1,5 +1,8 @@
 #![allow(dead_code)]
 
+extern crate csv;
+extern crate hex;
+
 mod cpu;
 mod gpu;
 mod system;
@@ -10,6 +13,7 @@ use std::env;
 use cpu::cpu::*;
 use gpu::gpu::*;
 use system::*;
+use self::hex::FromHex;
 
 static MAX_SPRITE: u8 = 40;
 
@@ -64,6 +68,7 @@ fn output_mem_selection(mem_map: &Vec<u8>, start: u16, end:u16)
     }
     print!("\n");
 }
+
 
 #[cfg(test)]
 mod main_tests

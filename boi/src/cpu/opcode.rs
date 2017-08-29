@@ -28,11 +28,20 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         decrement_8_bit_register(&mut system_data, &mut registers, opcode);
     }
-
+    //add r or (hl)
+    else if (opcode & 0xF8) == 0x80
+    {
+        add_8_bit(&mut system_data, &mut registers, opcode);
+    }
     //compare
     else if opcode == 0xFE
     {
         compare_with_n(&mut system_data, &mut registers);
+    }
+
+    else if opcode == 0xBE
+    {
+        compare_with_hl_address(&mut system_data, &mut registers);
     }
 
     //8bit ld group
@@ -248,6 +257,45 @@ pub fn decrement_8_bit_register(system_data: &mut SystemData, registers: &mut Re
     registers.program_counter += 1;
 }
 
+pub fn add_8_bit(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    system_data.cycles = 1;
+    registers.flags = 0x00;
+    let mut register_code = (opcode & 0x07) + 1;
+    if register_code == 8
+    {
+        register_code = 0;
+    }
+
+    let mut add_num;
+    if register_code == 7
+    {
+        system_data.cycles += 1;
+        add_num = system_data.mem_map[(((registers.h_register as u16) << 8)|(registers.l_register as u16)) as usize];
+    }
+    else
+    {
+        add_num = registers.mapped_register_getter(register_code as u8);
+    }
+    if (registers.accumulator & 0x0F) + (add_num & 0x0F) > 0x0F
+    {
+        registers.flags = registers.flags | 0x20;
+    }
+    if (registers.accumulator as u16 + add_num as u16) > 0xFF
+    {
+        registers.accumulator = ((registers.accumulator as u16 + add_num as u16) - 0x100) as u8;
+        registers.flags = registers.flags | 0x10;
+    }
+    else {
+        registers.accumulator += add_num;
+    }
+    if registers.accumulator == 0
+    {
+        registers.flags = registers.flags | 0x80;
+    }
+    registers.program_counter += 1;
+}
+
 pub fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
         system_data.cycles = 2;
@@ -373,9 +421,12 @@ pub fn xor_register(system_data: &mut SystemData, registers: &mut Registers, opc
 pub fn jump_displacement_on_nonzero_flag(system_data: &mut SystemData, registers: &mut Registers)
 {
         if (registers.flags & 0x80) != 0x80 {
+            if registers.program_counter != 0x68{
+                println!("{:x}", registers.program_counter);
+            }
             system_data.cycles = 3;
-            let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize] + 2) as i8;
-            registers.program_counter = (registers.program_counter as i32 + pc_dest as i32) as u16;
+            let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize]) as i8;
+            registers.program_counter = ((registers.program_counter as i32 + pc_dest as i32) as u16) + 2;
         }
         else {
             system_data.cycles = 2;
@@ -388,8 +439,8 @@ pub fn jump_displacement_on_zero_flag(system_data: &mut SystemData, registers: &
     if (registers.flags & 0x80) == 0x80
     {
             system_data.cycles = 3;
-            let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize] + 2) as i8;
-            registers.program_counter = (registers.program_counter as i32 + pc_dest as i32) as u16;   
+            let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize]) as i8;
+            registers.program_counter = ((registers.program_counter as i32 + pc_dest as i32) as u16) + 2;   
     }
     else {
         system_data.cycles = 2;
@@ -400,8 +451,8 @@ pub fn jump_displacement_on_zero_flag(system_data: &mut SystemData, registers: &
 pub fn jump_displacement(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 3;
-    let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize] + 2) as i8;
-    registers.program_counter = (registers.program_counter as i32 + pc_dest as i32) as u16;
+    let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize]) as i8;
+    registers.program_counter = ((registers.program_counter as i32 + pc_dest as i32) as u16) + 2;
 }
 
 pub fn load_decrement_hl_register_location_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
@@ -540,6 +591,28 @@ pub fn compare_with_n(system_data: &mut SystemData, registers: &mut Registers)
         registers.flags = registers.flags | 0x80;
     }
     registers.program_counter += 2;
+}
+
+pub fn compare_with_hl_address(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 2;
+    registers.flags = 0x40;
+    let hl_value = system_data.mem_map[(((registers.h_register as u16) << 8) | (registers.l_register as u16)) as usize];
+    if registers.accumulator < hl_value
+    {
+        registers.flags = registers.flags | 0x10;
+    }
+ 
+    if (hl_value & 0x0F) > (registers.accumulator & 0x0F)
+    {
+        registers.flags = registers.flags | 0x20; 
+    }
+
+    if registers.accumulator == hl_value
+    {
+        registers.flags = registers.flags | 0x80;
+    }
+    registers.program_counter += 1;
 }
 
 pub fn load_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)

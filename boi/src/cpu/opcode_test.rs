@@ -249,22 +249,6 @@ mod opcode_test
                 assert_eq!(registers.flags, 0x20)
             }
         }
-
-
-
-
-
-        // //H
-        // //Zero Flag
-        // let opcode = 0x7C;
-        // let test_bit = 7;
-        // registers.h_register = 0x00;
-        // bit_check_register(&mut system_data, &mut registers, opcode, test_bit);
-        // assert_eq!(registers.flags, 0xA0);
-        // //No Zero Flag
-        // registers.h_register = 0xFF;
-        // bit_check_register(&mut system_data, &mut registers, opcode, test_bit);
-        // assert_eq!(registers.flags, 0x20);
     }
     
     #[test]
@@ -548,5 +532,73 @@ mod opcode_test
         subtract_8_bit(&mut system_data, &mut registers, opcodes[1]);
         assert_eq!(registers.accumulator, 0xFF);
         assert_eq!(registers.flags, 0x70);
+    }
+
+    #[test]
+    fn compare_with_hl_address_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        registers.accumulator = 0x19;
+        registers.h_register = 0x12;
+        registers.l_register = 0x34;
+        system_data.mem_map[0x1234] = 0x04;
+        //Normal
+        compare_with_hl_address(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x40);
+        //Carry
+        system_data.mem_map[0x1234] = 0xFF;
+        compare_with_hl_address(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x70);
+        //Half Carry
+        system_data.mem_map[0x1234] = 0x0F;
+        compare_with_hl_address(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x60);
+        //Zero
+        system_data.mem_map[0x1234] = 0x19;
+        compare_with_hl_address(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0xC0);
+    }
+
+    #[test]
+    fn add_8_bit_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = init_registers();
+        let opcodes: Vec<u8> = vec![0x87, 0x80, 0x81,0x82,0x83,0x84,0x85,0x86];
+        for i in 1..7
+        {
+            registers.mapped_register_setter(i as u8, 1);
+        }
+
+        //normal
+        for i in 0..7
+        {
+            registers.accumulator = 1;
+            add_8_bit(&mut system_data, &mut registers, opcodes[i as usize]);
+            assert_eq!(registers.accumulator, 2);
+            assert_eq!(registers.flags, 0x00);
+        }
+
+        registers.h_register = 0xFF;
+        registers.l_register = 0xEE;
+        system_data.mem_map[0xFFEE] = 1;
+        registers.accumulator = 1;
+        add_8_bit(&mut system_data, &mut registers, opcodes[7]);
+        assert_eq!(registers.accumulator, 2);
+        assert_eq!(registers.flags, 0x00);
+
+        //zero
+        registers.accumulator = 0;
+        add_8_bit(&mut system_data, &mut registers, opcodes[0]);
+        assert_eq!(registers.flags, 0x80);
+
+        //half
+        registers.accumulator = 0x0F;
+        add_8_bit(&mut system_data, &mut registers, opcodes[0]);
+        assert_eq!(registers.flags, 0x20);
+
+        //carry
+        registers.accumulator = 0xFF;
+        add_8_bit(&mut system_data, &mut registers, opcodes[0]);
+        assert_eq!(registers.flags, 0x30);
     }
 }
