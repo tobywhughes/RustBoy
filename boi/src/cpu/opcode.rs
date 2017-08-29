@@ -431,7 +431,7 @@ pub fn jump_displacement_on_nonzero_flag(system_data: &mut SystemData, registers
 {
         if (registers.flags & 0x80) != 0x80 {
             if registers.program_counter != 0x68{
-                println!("{:x}", registers.program_counter);
+                //println!("{:x}", registers.program_counter);
             }
             system_data.cycles = 3;
             let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize]) as i8;

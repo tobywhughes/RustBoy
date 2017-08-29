@@ -1,5 +1,38 @@
 use system::*;
 
+pub struct TileData
+{
+    pub data: Vec<u8>,
+    pub mem_loc: u16,
+}
+
+impl TileData
+{
+    pub fn new() -> TileData
+    {
+        return TileData
+        {
+            data: vec![0; 64],
+            mem_loc: 0
+        }
+    }
+}
+
+
+pub fn get_tile_data(tile_index: u8, system_data: &mut SystemData) -> TileData
+{
+    let mut tile_data = TileData::new();
+    tile_data.mem_loc = 0x8000 + (tile_index * 16);
+    for byte_pair in 0..8
+    {
+        for bit in 0..8
+        {
+            
+        }
+    }
+    return tile_data;
+}
+
 pub fn update_gpu(system_data_original: &mut SystemData, registers_original: &mut Registers, gpu_registers_original: &mut GPU_Registers)
 {
     let mut system_data = system_data_original;
