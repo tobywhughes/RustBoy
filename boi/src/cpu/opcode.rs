@@ -14,8 +14,12 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
     //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
 
+    if opcode == 0x00
+    {
+        no_operation(&mut system_data);
+    }
     //inc
-    if (opcode & 0xC7) == 0x04
+    else if (opcode & 0xC7) == 0x04
     {
         increment_8_bit_register(&mut system_data, &mut registers, opcode);
     }
@@ -163,6 +167,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         println!("No Opcode Found");
     }
+}
+
+pub fn no_operation(system_data: &mut SystemData)
+{
+    system_data.cycles = 1;
 }
 
 pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)

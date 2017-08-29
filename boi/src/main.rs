@@ -2,11 +2,20 @@
 
 extern crate csv;
 extern crate hex;
+extern crate piston;
+extern crate graphics;
+extern crate glutin_window;
+extern crate opengl_graphics;
 
 mod cpu;
 mod gpu;
 mod system;
 
+use piston::window::WindowSettings;
+use piston::event_loop::*;
+use piston::input::*;
+use glutin_window::GlutinWindow as Window;
+use opengl_graphics::{ GlGraphics, OpenGL };
 use std::fs::File;
 use std::io::prelude::*;
 use std::env;
@@ -28,6 +37,15 @@ fn main()
     system_data.mem_map = read_gb_file(file_name);
     let mut registers: Registers = init_registers();
     let mut gpu_registers: GPU_Registers = GPU_Registers::new();
+  
+    //Initialize Screen
+    let opengl = OpenGL::V3_2;
+    let mut window: Window = WindowSettings::new("Boi", [system_data.width as u32, system_data.height as u32]).opengl(opengl).exit_on_esc(true).build().unwrap();
+    let mut app = App
+    {
+        gl: GlGraphics::new(opengl),
+    };
+  
     //Operation loop
     let mut emulator_loop = true;
     while emulator_loop
@@ -43,6 +61,20 @@ fn main()
         }
     }
     //Cleanup?
+}
+
+
+pub struct App
+{
+    gl: GlGraphics
+}
+
+impl App
+{
+    fn render(&mut self, args: &RenderArgs)
+    {
+            use graphics::*;
+    }
 }
 
 fn read_gb_file(file_name: &str) -> Vec<u8>
