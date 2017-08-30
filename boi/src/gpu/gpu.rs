@@ -21,7 +21,6 @@ pub fn get_tile_data(tile_index: u8, system_data: &mut SystemData) -> TileData
 {
     let mut tile_data = TileData::new();
     let mem_loc: u16 = 0x8000 + (tile_index as u16 * 16);
-    println!("{:x}", mem_loc);
     for byte_pair in 0..8
     {
         for bit in 0..8
