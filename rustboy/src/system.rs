@@ -27,6 +27,24 @@ pub struct Registers
 }
 
 impl Registers{
+    pub fn new() -> Registers
+    {
+        return Registers 
+        {
+            accumulator: 0,
+            flags: 0,  
+            b_register:0,  
+            c_register:0,  
+            d_register:0,
+            e_register:0,
+            h_register:0,
+            l_register:0,
+            stack_pointer: 0,
+            program_counter: 0, 
+            lcdc_register: LCDC_Register::new(),
+        };
+    }
+
     pub fn mapped_register_setter(&mut self, index: u8, value: u8)
     {
         if index == 0 {self.accumulator = value;}
@@ -216,23 +234,7 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
 
 }
 
-pub fn init_registers() -> Registers
-{
-    return Registers 
-    {
-        accumulator: 0,
-        flags: 0,  
-        b_register:0,  
-        c_register:0,  
-        d_register:0,
-        e_register:0,
-        h_register:0,
-        l_register:0,
-        stack_pointer: 0,
-        program_counter: 0, 
-        lcdc_register: LCDC_Register::new(),
-    };
-}
+
 
 #[cfg(test)]
 mod main_tests

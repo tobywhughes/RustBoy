@@ -14,7 +14,7 @@ mod opcode_test
     {   
 
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let opcodes: Vec<u8> = vec![0x3C, 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C];
 
         //Normal flag
@@ -47,7 +47,7 @@ mod opcode_test
     #[test]
     fn increment_16_bit_register_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let opcodes: Vec<u8> = vec![0x03, 0x13, 0x23, 0x33];
         //TODO: ADD FLAG TESTS
         for i in 1..5
@@ -65,7 +65,7 @@ mod opcode_test
     #[test]
     fn decrement_8_bit_register_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let opcodes: Vec<u8> = vec![0x3D, 0x05, 0x0D, 0x15, 0x1D, 0x25, 0x2D];
         
         //Normal flag
@@ -100,7 +100,7 @@ mod opcode_test
     fn loads_n_to_correct_register_8_bit() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let opcodes : Vec<u8> = vec![0x3E, 0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E];
         system_data.mem_map[1] = 1;
 
@@ -116,7 +116,7 @@ mod opcode_test
     fn accumulator_io_load_with_c_offset() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         registers.accumulator = 1;
         registers.c_register = 1;
         load_accumulator_to_io_port_with_c_offset(&mut system_data, &mut registers);
@@ -127,7 +127,7 @@ mod opcode_test
     fn loads_nn_to_correct_register_16_bit() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         system_data.mem_map[1] = 0x01;
         system_data.mem_map[2] = 0x02;
         //bc
@@ -159,7 +159,7 @@ mod opcode_test
     fn xor_register_test() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let opcode = 0xAF;
         //A
         registers.accumulator = 0xFF;
@@ -171,7 +171,7 @@ mod opcode_test
     fn pc_jumps_displacement_on_nonzero_flag() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         registers.program_counter = 100;
         //Positive Jump
         system_data.mem_map[101] = 10;
@@ -195,7 +195,7 @@ mod opcode_test
     fn load_decrement_hl_register_location_with_accumulator_test() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         //Normal increment
         registers.h_register = 0xFF;
         registers.l_register = 0xFF;
@@ -210,7 +210,7 @@ mod opcode_test
     fn load_increment_hl_register_location_with_accumulator_test()
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         registers.h_register = 0xFF;
         registers.l_register = 0xFE;
         registers.accumulator = 1;
@@ -224,7 +224,7 @@ mod opcode_test
     #[test]
     fn bit_check_register_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let test_file_raw = File::open("src/cpu/test_csvs/bit_check.csv").unwrap();
         let mut test_file = csv::ReaderBuilder::new().has_headers(false).from_reader(test_file_raw);
         let mut opcodes: Vec<String> = Vec::new();
@@ -254,7 +254,7 @@ mod opcode_test
     #[test]
     fn load_hl_address_with_register_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let opcodes: Vec<u8> = vec![0x77, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75];
         let register_values: Vec<u8> = vec![1,2,3,4,5,0xFF,0xFF];
 
@@ -274,7 +274,7 @@ mod opcode_test
     #[test]
     fn load_accumulator_to_io_port_with_a_offset_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         registers.accumulator = 1;
         system_data.mem_map[1] = 1;
         load_accumulator_to_io_port_with_n_offset(&mut system_data, &mut registers);
@@ -285,7 +285,7 @@ mod opcode_test
     fn load_8_bit_register_to_register_test()
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let test_file_raw = File::open("src/cpu/test_csvs/ld_r_r.csv").unwrap();
         let mut test_file = csv::ReaderBuilder::new().has_headers(false).from_reader(test_file_raw);
         let mut asserts: Vec<String> = Vec::new();
@@ -314,7 +314,7 @@ mod opcode_test
     #[test]
     fn load_accumulator_with_de_address_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         registers.d_register = 0xFF;
         registers.e_register = 0xEE;
         system_data.mem_map[0xFFEE] = 1;
@@ -325,7 +325,7 @@ mod opcode_test
     #[test]
     fn call_nn_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         registers.program_counter = 1;
         system_data.mem_map[2] = 0xCD;
         system_data.mem_map[3] = 0xAB;
@@ -339,7 +339,7 @@ mod opcode_test
     #[test]
     fn return_from_calltest() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         system_data.mem_map[0x2000] = 0xFF;
         system_data.mem_map[0x2001] = 0xEE;
         registers.stack_pointer = 0x2000;
@@ -351,7 +351,7 @@ mod opcode_test
     #[test]
     fn push_16_bit_register_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let opcodes: Vec<u8> = vec![0xF5, 0xC5, 0xD5, 0xE5];
         registers.stack_pointer = 0xFFFE;
         for i in 0..8
@@ -370,7 +370,7 @@ mod opcode_test
     fn pop_16_bit_register_test()
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let opcodes: Vec<u8> = vec![0xF1, 0xC1, 0xD1, 0xE1];
         registers.stack_pointer = 0xFFF0;
         for i in 0..8
@@ -389,7 +389,7 @@ mod opcode_test
     #[test]
     fn rotate_left_through_carry_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let opcodes : Vec<u8> = vec![0x17, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15];
         for i in 0..7
         {
@@ -410,7 +410,7 @@ mod opcode_test
     fn rotate_accumulator_left_through_carry_test() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         //Carry
         registers.accumulator = 0x80;
         rotate_accumulator_left_through_carry(&mut system_data, &mut registers);
@@ -423,7 +423,7 @@ mod opcode_test
     #[test]
     fn compare_with_n_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         registers.accumulator = 0xF1;
         //Normal
         system_data.mem_map[1] = 0x01;
@@ -447,7 +447,7 @@ mod opcode_test
     fn load_nn_with_accumulator_test() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         registers.accumulator = 1;
         system_data.mem_map[1] = 0xEE;
         system_data.mem_map[2] = 0xFF;
@@ -457,7 +457,7 @@ mod opcode_test
     #[test]
     fn load_accumulator_with_io_port_with_n_offset_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         system_data.mem_map[0xFF0F] = 1;
         system_data.mem_map[1] = 0x0F;
         load_accumulator_with_io_port_with_n_offset(&mut system_data, &mut registers);
@@ -467,7 +467,7 @@ mod opcode_test
     #[test]
     fn jump_displacement_on_zero_flag_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         registers.program_counter = 0x100;
         //Forward
         registers.flags = 0xFF;
@@ -492,7 +492,7 @@ mod opcode_test
     fn jump_displacement_test() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         system_data.mem_map[1] = 0xE;
         jump_displacement(&mut system_data, &mut registers);
         assert_eq!(registers.program_counter, 0x10);
@@ -505,7 +505,7 @@ mod opcode_test
     #[test]
     fn subract_8_bit_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let opcodes: Vec<u8> = vec![0x97, 0x90, 0x91,0x92,0x93,0x94,0x95];
         //normal
         for i in 1..7
@@ -537,7 +537,7 @@ mod opcode_test
     #[test]
     fn compare_with_hl_address_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         registers.accumulator = 0x19;
         registers.h_register = 0x12;
         registers.l_register = 0x34;
@@ -562,7 +562,7 @@ mod opcode_test
     #[test]
     fn add_8_bit_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = init_registers();
+        let mut registers : Registers = Registers::new();
         let opcodes: Vec<u8> = vec![0x87, 0x80, 0x81,0x82,0x83,0x84,0x85,0x86];
         for i in 1..7
         {

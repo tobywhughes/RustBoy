@@ -39,7 +39,7 @@ fn main()
     let file_name: &String = &args[1];
     let mut system_data : SystemData = get_system_data(&emulator_type);
     system_data.mem_map = read_gb_file(file_name);
-    let mut registers: Registers = init_registers();
+    let mut registers: Registers = Registers::new();
     let mut gpu_registers: GPU_Registers = GPU_Registers::new();
   
     //Initialize Screen
