@@ -153,79 +153,55 @@ mod gpu_tests
     }
 
     #[test]
-    fn get_tile_map() {
+    fn get_tile_map_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut TileMap = TileMap::new();
 
-        TileMap.populate_tile_map(&mut system_data, 1, 1);
-        for i in 0..TileMap.tiles.len()
+        let memory_values: Vec<u8> = vec![0x00, 0xFF];
+        let test_values: Vec<u8> = vec![0, 3];
+        let tiles_offset: Vec<usize> = vec![0x8800, 0x8000];
+
+        for offset_index in 0..tiles_offset.len()
         {
-            for j in 0..64
+            for index in 0..test_values.len()
             {
-                assert_eq!(TileMap.tiles[i].data[j], 0);
-            }
-        }
-        for i in 0..0x1000{
-            system_data.mem_map[0x8000 + i] = 0xFF;
-        }
-        TileMap.populate_tile_map(&mut system_data, 1, 1);
-        for i in 0..TileMap.tiles.len()
-        {
-            for j in 0..64
-            {
-                assert_eq!(TileMap.tiles[i].data[j], 3);
-            }
-        }
-        for i in 0..0x800{
-            system_data.mem_map[0x8800 + i] = 0x00;
-        }
-        TileMap.populate_tile_map(&mut system_data, 0, 1);
-        for i in 0..TileMap.tiles.len()
-        {
-            for j in 0..64
-            {
-                assert_eq!(TileMap.tiles[i].data[j], 0);
-            }
-        }
-        for i in 0..0x1000{
-            system_data.mem_map[0x8800 + i] = 0xFF;
-        }
-        TileMap.populate_tile_map(&mut system_data, 0, 1);
-        for i in 0..TileMap.tiles.len()
-        {
-            for j in 0..64
-            {
-                assert_eq!(TileMap.tiles[i].data[j], 3);
+                for i in 0..0x1000
+                {
+                    system_data.mem_map[tiles_offset[offset_index] + i] = memory_values[index];   
+                }
+                
+                TileMap.populate_tile_map(&mut system_data, offset_index as u8, 1);
+                
+                for i in 0..TileMap.tiles.len()
+                {
+                    for j in 0..64
+                    {
+                        assert_eq!(TileMap.tiles[i].data[j], test_values[index]);
+                    }
+                }
             }
         }
 
-        TileMap.populate_tile_map(&mut system_data, 0, 1);
-        for i in 0..TileMap.map.len()
-        {
-            assert_eq!(TileMap.map[i], 0);
-        }
-        for i in 0..TileMap.map.len(){
-            system_data.mem_map[0x9C00 + i] = 0xFF;
-        }
-        TileMap.populate_tile_map(&mut system_data, 0, 1);
-        for i in 0..TileMap.map.len()
-        {
-            assert_eq!(TileMap.map[i], 0xFF);
-        }
+        let display_offset: Vec<usize> = vec![0x9800, 0x9C00];
 
-        TileMap.populate_tile_map(&mut system_data, 0, 0);
-        for i in 0..TileMap.map.len()
+        for offset_index in 0..display_offset.len()
         {
-            assert_eq!(TileMap.map[i], 0);
-        }
-        for i in 0..TileMap.map.len(){
-            system_data.mem_map[0x9800 + i] = 0xFF;
-        }
-        TileMap.populate_tile_map(&mut system_data, 0, 0);
-        for i in 0..TileMap.map.len()
-        {
-            assert_eq!(TileMap.map[i], 0xFF);
-        }
+            for value_index in 0..memory_values.len()
+            {
+                for i in 0..TileMap.map.len()
+                {
+                    system_data.mem_map[display_offset[offset_index] + i] = memory_values[value_index];
+                }
+
+                TileMap.populate_tile_map(&mut system_data, 0, offset_index as u8);
+
+                for i in 0..TileMap.map.len()
+                {
+                    assert_eq!(TileMap.map[i], memory_values[value_index]);
+                }
+            }
+        }   
+
     }
 
 }
