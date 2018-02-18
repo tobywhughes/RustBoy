@@ -59,7 +59,7 @@ fn main()
         let address = registers.program_counter;
         cpu_continue(&mut system_data, &mut registers);
         update_gpu(&mut system_data, &mut registers, &mut gpu_registers);
-        let tile_data = get_tile_data(0, &mut system_data);
+        let tile_data = get_tile_data(0, &mut system_data, 1);
         let tile_img = create_tile_img(tile_data);
         while let Some(e) = events.next(&mut window)
         {
