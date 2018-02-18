@@ -100,40 +100,27 @@ mod gpu_tests
     #[test]
     fn get_tile_data_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        
-        system_data.mem_map[0x8000] = 0b00001111;
-        system_data.mem_map[0x8001] = 0b00110011;
-        system_data.mem_map[0x8002] = 0b11110000;
-        system_data.mem_map[0x8003] = 0b11001100;
 
-        system_data.mem_map[0x8800] = 0b00001111;
-        system_data.mem_map[0x8801] = 0b00110011;
-        system_data.mem_map[0x8802] = 0b11110000;
-        system_data.mem_map[0x8803] = 0b11001100;
+        let temp_memory_values : Vec<u8> = vec![0b00001111, 0b00110011, 0b11110000, 0b11001100];
 
-        let tile_data = get_tile_data(0, &mut system_data, 0);
-        for i in 0..4
+        for vram_offset in vec![0x8000, 0x8800].iter()
         {
-            assert_eq!(tile_data.data[i as usize * 2], i);
-            assert_eq!(tile_data.data[(i as usize * 2) + 1 ], i);
-        }
-        for i in 0..4
-        {
-            assert_eq!(tile_data.data[8 + (i as usize * 2)], 3 - i);
-            assert_eq!(tile_data.data[(8 + (i as usize * 2)) + 1], 3 - i);
+            for i in 0..temp_memory_values.len()
+            {
+                system_data.mem_map[*vram_offset + i] = temp_memory_values[i];
+            }
         }
 
-
-        let tile_data = get_tile_data(0, &mut system_data, 1);
-        for i in 0..4
+        let tiles = vec![get_tile_data(0, &mut system_data, 0), get_tile_data(0, &mut system_data, 1)];
+        for tile in tiles.iter()
         {
-            assert_eq!(tile_data.data[i as usize * 2], i);
-            assert_eq!(tile_data.data[(i as usize * 2) + 1 ], i);
-        }
-        for i in 0..4
-        {
-            assert_eq!(tile_data.data[8 + (i as usize * 2)], 3 - i);
-            assert_eq!(tile_data.data[(8 + (i as usize * 2)) + 1], 3 - i);
+            for i in 0..4
+            {
+                assert_eq!(tile.data[i as usize * 2], i);
+                assert_eq!(tile.data[(i as usize * 2) + 1 ], i);
+                assert_eq!(tile.data[8 + (i as usize * 2)], 3 - i);
+                assert_eq!(tile.data[(8 + (i as usize * 2)) + 1], 3 - i);
+            }
         }
     }
 
