@@ -3,6 +3,7 @@ use system::*;
 pub struct TileMap
 {
     pub tiles: Vec<TileData>,
+    pub map: Vec<u8>,
 }
 
 impl TileMap {
@@ -11,11 +12,39 @@ impl TileMap {
          return TileMap
          {
              tiles: vec![TileData::new();256],
+             map: vec![0, 1024],
          }
      }
 
-     pub fn populate_tile_map(&mut self, lcdc_data_select: u8){
-         ;
+     pub fn populate_tile_map(&mut self, system_data_original: &mut SystemData, lcdc_data_select: u8, lcdc_display_select: u8)
+     {
+        let mut system_data = system_data_original;
+        for tile_index in 0..self.tiles.len()
+        {
+            self.tiles[tile_index] = get_tile_data(tile_index as u8, &mut system_data, lcdc_data_select);
+        }
+        
+        self.map = self.vectorize_map(&mut system_data, lcdc_display_select);
+     }
+
+     fn vectorize_map(&mut self, system_data: &mut SystemData, lcdc_display_select: u8) -> Vec<u8>
+     {
+        let mut map: Vec<u8> = vec![0;1024];
+        let mut map_offset: u16 = 0;
+        if lcdc_display_select == 1
+        {
+            map_offset = 0x9C00;
+        }
+        else {
+            map_offset = 0x9800;
+        }
+
+        for i in 0..map.len()
+        {
+            map[i] = system_data.mem_map[map_offset as usize + i];
+        }
+
+        return map
      }
 }
 
@@ -110,7 +139,6 @@ mod gpu_tests
                 system_data.mem_map[*vram_offset + i] = temp_memory_values[i];
             }
         }
-
         let tiles = vec![get_tile_data(0, &mut system_data, 0), get_tile_data(0, &mut system_data, 1)];
         for tile in tiles.iter()
         {
@@ -121,6 +149,82 @@ mod gpu_tests
                 assert_eq!(tile.data[8 + (i as usize * 2)], 3 - i);
                 assert_eq!(tile.data[(8 + (i as usize * 2)) + 1], 3 - i);
             }
+        }
+    }
+
+    #[test]
+    fn get_tile_map() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut TileMap = TileMap::new();
+
+        TileMap.populate_tile_map(&mut system_data, 1, 1);
+        for i in 0..TileMap.tiles.len()
+        {
+            for j in 0..64
+            {
+                assert_eq!(TileMap.tiles[i].data[j], 0);
+            }
+        }
+        for i in 0..0x1000{
+            system_data.mem_map[0x8000 + i] = 0xFF;
+        }
+        TileMap.populate_tile_map(&mut system_data, 1, 1);
+        for i in 0..TileMap.tiles.len()
+        {
+            for j in 0..64
+            {
+                assert_eq!(TileMap.tiles[i].data[j], 3);
+            }
+        }
+        for i in 0..0x800{
+            system_data.mem_map[0x8800 + i] = 0x00;
+        }
+        TileMap.populate_tile_map(&mut system_data, 0, 1);
+        for i in 0..TileMap.tiles.len()
+        {
+            for j in 0..64
+            {
+                assert_eq!(TileMap.tiles[i].data[j], 0);
+            }
+        }
+        for i in 0..0x1000{
+            system_data.mem_map[0x8800 + i] = 0xFF;
+        }
+        TileMap.populate_tile_map(&mut system_data, 0, 1);
+        for i in 0..TileMap.tiles.len()
+        {
+            for j in 0..64
+            {
+                assert_eq!(TileMap.tiles[i].data[j], 3);
+            }
+        }
+
+        TileMap.populate_tile_map(&mut system_data, 0, 1);
+        for i in 0..TileMap.map.len()
+        {
+            assert_eq!(TileMap.map[i], 0);
+        }
+        for i in 0..TileMap.map.len(){
+            system_data.mem_map[0x9C00 + i] = 0xFF;
+        }
+        TileMap.populate_tile_map(&mut system_data, 0, 1);
+        for i in 0..TileMap.map.len()
+        {
+            assert_eq!(TileMap.map[i], 0xFF);
+        }
+
+        TileMap.populate_tile_map(&mut system_data, 0, 0);
+        for i in 0..TileMap.map.len()
+        {
+            assert_eq!(TileMap.map[i], 0);
+        }
+        for i in 0..TileMap.map.len(){
+            system_data.mem_map[0x9800 + i] = 0xFF;
+        }
+        TileMap.populate_tile_map(&mut system_data, 0, 0);
+        for i in 0..TileMap.map.len()
+        {
+            assert_eq!(TileMap.map[i], 0xFF);
         }
     }
 
