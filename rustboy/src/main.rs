@@ -25,6 +25,7 @@ use std::io::prelude::*;
 use std::env;
 use cpu::cpu::*;
 use gpu::gpu::*;
+use gpu::gpu_registers::*;
 use system::*;
 use self::hex::FromHex;
 
@@ -45,34 +46,48 @@ fn main()
     //Initialize Screen
     let opengl = OpenGL::V3_2;
     let mut window: PistonWindow = WindowSettings::new("RustBoy", [system_data.width as u32, system_data.height as u32]).opengl(opengl).exit_on_esc(true).build().unwrap();
+    //window.set_max_fps(60);
     let mut app = App
     {
         gl: GlGraphics::new(opengl),
     };
-    let mut events = Events::new(EventSettings::new());
+    let mut events = Events::new(EventSettings::new().max_fps(60));
+    //events.set_max_fps(60);
+    let mut background_tile_map: TileMap = TileMap::new();
+    let mut window_tile_map: TileMap = TileMap::new();
   
     //Operation loop
     let mut emulator_loop = true;
-    while emulator_loop
+
+    while let Some(e) = events.next(&mut window)
     {
-        let opcode = system_data.mem_map[registers.program_counter as usize];
-        let address = registers.program_counter;
-        cpu_continue(&mut system_data, &mut registers);
-        update_gpu(&mut system_data, &mut registers, &mut gpu_registers);
-        let tile_data = get_tile_data(0, &mut system_data, 1);
-        let tile_img = create_tile_img(tile_data);
-        while let Some(e) = events.next(&mut window)
+
+        if let Some(r) = e.render_args(){
+            gpu_registers.v_blank_draw_flag = false;
+            background_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.background_display_select);  
+            window_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.window_display_select);
+            let background_image: RgbaImage = create_background_img(&background_tile_map);
+            app.render(&background_image, &r);
+            // break;
+        }
+
+        if let Some(r) = e.update_args()
         {
-            if let Some(r) = e.render_args(){
-                app.render(&tile_img, &r);
+            let mut frame_cycles = 0;
+            while gpu_registers.v_blank_draw_flag
+            {
+                let opcode = system_data.mem_map[registers.program_counter as usize];
+                let address = registers.program_counter;
+                cpu_continue(&mut system_data, &mut registers);
+                update_gpu(&mut system_data, &mut registers, &mut gpu_registers);     
             }
         }
-        if system_data.cycles == 0  //|| registers.program_counter == 0x6d 
-        {
-            emulator_loop = false;
-            println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}", address, opcode, opcode);
-        }
     }
+        // if system_data.cycles == 0  //|| registers.program_counter == 0x6d 
+        // {
+        //     emulator_loop = false;
+        //     println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}", address, opcode, opcode);
+        // }
     //Cleanup?
 }
 
@@ -95,7 +110,7 @@ impl App
             self.gl.draw(args.viewport(), |c, gl| 
             {
                 clear(BLANK, gl);
-                let transform = c.transform.trans(100.0,100.0);
+                let transform = c.transform.trans(0.0,0.0);
                 image(&tile, transform, gl);
             });
     }
@@ -115,7 +130,7 @@ fn read_gb_file(file_name: &str) -> Vec<u8>
     return vec![0;0];
 }
 
-fn create_tile_img(tile_data: TileData) -> RgbaImage
+fn create_tile_img(tile_data: &TileData) -> RgbaImage
 {
     let mut buffer = ImageBuffer::new(8,8);
     for pixel_y in 0..8
@@ -124,26 +139,46 @@ fn create_tile_img(tile_data: TileData) -> RgbaImage
         {
             let pixel_data = tile_data.data[(pixel_y * 8) + pixel_x];
             let mut pixel : Rgba<u8>;
-            if pixel_data == 0
-            {
-                pixel = Rgba([156,189,15, 0xFF]);
-            }
-            else if pixel_data == 1
-            {
-                pixel = Rgba([140,173,15, 0xFF]);
-            }
-            else if pixel_data == 2
-            {
-                pixel = Rgba([48,98,48, 0xFF]);
-            }
-            else 
-            {
-                pixel = Rgba([15, 56, 15, 0xFF]);
-            }
+            pixel = pixel_color_map(pixel_data);
             buffer.put_pixel(pixel_x as u32, pixel_y as u32, pixel);
         }
     }
     return buffer;
+}
+
+
+fn create_background_img(background_tile_map: &TileMap) -> RgbaImage
+{
+    let mut buffer = ImageBuffer::new(256, 256);
+    for tile_y in 0..32
+    {
+        for tile_x in 0..32
+        {
+            for pixel_y in 0..8
+            {
+                for pixel_x in 0..8
+                {
+                    let tile = background_tile_map.map[(tile_y * 32) + tile_x];
+                    let pixel_data = background_tile_map.tiles[tile as usize].data[(pixel_y * 8) + pixel_x];
+                    let pixel = pixel_color_map(pixel_data);
+                    buffer.put_pixel(((tile_x *32 ) + pixel_x) as u32, ((tile_y) + pixel_y) as u32, pixel);
+                }
+            }
+        }
+    }
+    return buffer;
+}
+
+fn pixel_color_map(pixel_data: u8) -> Rgba<u8>
+{
+    match pixel_data 
+    {
+        0 => return Rgba([156,189,15, 0xFF]),
+        1 => return Rgba([140,173,15, 0xFF]),
+        2 => return Rgba([48,98,48, 0xFF]),
+        3 => return Rgba([15, 56, 15, 0xFF]),
+        _ => return Rgba([0, 0, 0, 0xFF]),
+    }
 }
 
 

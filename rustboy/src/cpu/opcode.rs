@@ -14,6 +14,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
     //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
 
+
     if opcode == 0x00
     {
         no_operation(&mut system_data);
@@ -167,6 +168,8 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         println!("No Opcode Found");
     }
+
+    system_data.cycles *= 4;
 }
 
 pub fn no_operation(system_data: &mut SystemData)
@@ -720,9 +723,13 @@ pub fn bit_check_register(system_data: &mut SystemData, registers: &mut Register
     }
     else
     {
+        // if (registers.mapped_16_bit_register_getter(3) % 0x50 == 0)
+        // {
+        //     println!("{:x}", registers.mapped_16_bit_register_getter(3));
+        // }
         registers.flags = registers.flags & 0x10;
         if (registers.mapped_register_getter(register_code) >> test_bit) & 0x01 == 0x00
-        {
+        {   
             registers.flags = registers.flags | 0xA0;
         }
         else
