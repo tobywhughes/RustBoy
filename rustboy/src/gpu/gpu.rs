@@ -1,4 +1,5 @@
 use system::*;
+use gpu::gpu_registers::GPU_Registers;
 
 pub struct TileMap
 {
@@ -98,6 +99,7 @@ pub fn update_gpu(system_data_original: &mut SystemData, registers_original: &mu
     let mut registers = registers_original;
     let mut gpu_registers = gpu_registers_original;
     LCD_Y_Coordinate_Update(&mut system_data, &mut gpu_registers);
+    gpu_registers.lcdc_register.update_lcdc_register(&system_data);
 }
 
 pub fn LCD_Y_Coordinate_Update(system_data: &mut SystemData, gpu_registers: &mut GPU_Registers)
@@ -111,8 +113,14 @@ pub fn LCD_Y_Coordinate_Update(system_data: &mut SystemData, gpu_registers: &mut
     if (gpu_registers.ly_sub_cycle_count >= 456)
     {
         gpu_registers.ly_register += 1;
+        if gpu_registers.ly_register == 144
+        {
+            gpu_registers.v_blank = true;
+            gpu_registers.v_blank_draw_flag = true;
+        }
         if gpu_registers.ly_register == 154
         {
+            gpu_registers.v_blank = false;
             gpu_registers.ly_register = 0;
         }
         system_data.mem_map[0xFF44] = gpu_registers.ly_register;
