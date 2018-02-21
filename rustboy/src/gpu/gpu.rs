@@ -17,7 +17,7 @@ impl TileMap {
          }
      }
 
-     pub fn populate_tile_map(&mut self, system_data_original: &mut SystemData, lcdc_data_select: u8, lcdc_display_select: u8)
+     pub fn populate_tile_map(&mut self, system_data_original: &mut SystemData, lcdc_data_select: bool, lcdc_display_select: bool)
      {
         let mut system_data = system_data_original;
         for tile_index in 0..self.tiles.len()
@@ -28,11 +28,11 @@ impl TileMap {
         self.map = self.vectorize_map(&mut system_data, lcdc_display_select);
      }
 
-     fn vectorize_map(&mut self, system_data: &mut SystemData, lcdc_display_select: u8) -> Vec<u8>
+     fn vectorize_map(&mut self, system_data: &mut SystemData, lcdc_display_select: bool) -> Vec<u8>
      {
         let mut map: Vec<u8> = vec![0;1024];
         let mut map_offset: u16 = 0;
-        if lcdc_display_select == 1
+        if lcdc_display_select
         {
             map_offset = 0x9C00;
         }
@@ -67,12 +67,12 @@ impl TileData
 }
 
 
-pub fn get_tile_data(tile_index: u8, system_data: &mut SystemData, lcdc_data_select: u8) -> TileData
+pub fn get_tile_data(tile_index: u8, system_data: &mut SystemData, lcdc_data_select: bool) -> TileData
 {
     let mut tile_data = TileData::new();
     let mut vram_offset: u16 = 0;
 
-    if lcdc_data_select == 1
+    if lcdc_data_select
     {
         vram_offset = 0x8000;
     }
@@ -147,7 +147,7 @@ mod gpu_tests
                 system_data.mem_map[*vram_offset + i] = temp_memory_values[i];
             }
         }
-        let tiles = vec![get_tile_data(0, &mut system_data, 0), get_tile_data(0, &mut system_data, 1)];
+        let tiles = vec![get_tile_data(0, &mut system_data, false), get_tile_data(0, &mut system_data, true)];
         for tile in tiles.iter()
         {
             for i in 0..4
@@ -168,6 +168,7 @@ mod gpu_tests
         let memory_values: Vec<u8> = vec![0x00, 0xFF];
         let test_values: Vec<u8> = vec![0, 3];
         let tiles_offset: Vec<usize> = vec![0x8800, 0x8000];
+        let bools: Vec<bool> = vec![false, true];
 
         for offset_index in 0..tiles_offset.len()
         {
@@ -178,7 +179,7 @@ mod gpu_tests
                     system_data.mem_map[tiles_offset[offset_index] + i] = memory_values[index];   
                 }
                 
-                TileMap.populate_tile_map(&mut system_data, offset_index as u8, 1);
+                TileMap.populate_tile_map(&mut system_data, bools[offset_index], true);
                 
                 for i in 0..TileMap.tiles.len()
                 {
@@ -201,7 +202,7 @@ mod gpu_tests
                     system_data.mem_map[display_offset[offset_index] + i] = memory_values[value_index];
                 }
 
-                TileMap.populate_tile_map(&mut system_data, 0, offset_index as u8);
+                TileMap.populate_tile_map(&mut system_data, false, bools[offset_index]);
 
                 for i in 0..TileMap.map.len()
                 {
