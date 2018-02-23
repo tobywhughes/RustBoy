@@ -26,6 +26,92 @@ impl GPU_Registers
     }
 }
 
+pub struct LCD_Position
+{
+    pub ly_register: LY_Register,
+    pub scroll_x: u8,
+    pub scroll_y: u8,
+    pub ly_compare: u8,
+    pub window_x: u8,
+    pub window_y: u8,
+}
+
+impl LCD_Position
+{
+    pub fn new() -> LCD_Position
+    {
+        return LCD_Position
+        {
+            ly_register: LY_Register::new(),
+            scroll_x: 0,
+            scroll_y: 0,
+            ly_compare: 0,
+            window_x: 0,
+            window_y: 0,
+        }
+    }
+}
+
+pub struct LY_Register
+{
+    pub value: u8,
+    pub cycle_count: u32,
+    pub sub_cycle_count: u16,   
+}
+
+impl LY_Register
+{
+    pub fn new()-> LY_Register
+    {
+        return LY_Register
+        {
+            value: 0,
+            cycle_count: 0,
+            sub_cycle_count: 0,
+        }
+    }
+
+    pub fn tick(&mut self, system_data: &mut SystemData) -> bool
+    {
+        self.value += 1;
+        if self.value == 154
+        {
+            self.value = 0;
+            system_data.mem_map[0xFF44] = self.value;
+            return true;
+        }
+        system_data.mem_map[0xFF44] = self.value;
+        return false;
+    }
+
+    pub fn reset(&mut self, system_data: &mut SystemData)
+    {
+        self.value == 0;
+        system_data.mem_map[0xFF44] = self.value;
+    }
+
+    pub fn add_cycles(&mut self, system_data: &mut SystemData, cycles: u32) -> bool
+    {
+        self.cycle_count += cycles;
+        if (self.cycle_count >= 70224)
+        {
+            self.cycle_count -= 70224;
+            return true;        
+        } 
+        return false;
+    }
+
+    pub fn add_sub_cycles(&mut self, system_data: &mut SystemData, sub_cycles: u16) -> bool
+    {
+        self.sub_cycle_count += sub_cycles;
+        if self.sub_cycle_count >= 456
+        {
+            self.sub_cycle_count-= 456;
+            return true;
+        }
+        return false;
+    }
+}
 
 pub struct LCDC_Register
 {
@@ -143,7 +229,7 @@ mod main_tests
 {
 
     use system::{get_system_data, SystemData};
-    use gpu::gpu_registers::{LCDC_Register, LCDC_Status};
+    use gpu::gpu_registers::{LCDC_Register, LCDC_Status, LY_Register};
 
     #[test]
     fn lcdc_register_test() {
@@ -193,5 +279,60 @@ mod main_tests
             lcdc_status.update_lcdc_status(&system_data);
             assert_eq!(lcdc_status.mode_flag, i);
         }
+    }
+    
+    #[test]
+    fn ly_register_test()
+    {
+        let mut system_data : SystemData = get_system_data("CLASSIC");
+        let mut ly_register: LY_Register = LY_Register::new();
+        let mut reset_flag = false;
+
+        for i in 0..154
+        {
+            reset_flag = ly_register.tick(&mut system_data);
+            if i < 153
+            {
+                assert_eq!(reset_flag, false);
+                assert_eq!(ly_register.value, i + 1);
+                assert_eq!(system_data.mem_map[0xFF44], i + 1);
+            }
+            else
+            {
+                assert_eq!(reset_flag, true);
+                assert_eq!(ly_register.value, 0);
+                assert_eq!(system_data.mem_map[0xFF44], 0);
+            }
+        }
+
+        for i in 0..703
+        {
+            reset_flag = ly_register.add_cycles(&mut system_data, 100);
+            if i < 702
+            {
+                assert_eq!(reset_flag, false);
+                assert_eq!(ly_register.cycle_count , (i + 1) * 100);
+            }
+            else
+            {
+                assert_eq!(reset_flag, true);
+                assert_eq!((ly_register.cycle_count < 100), true);
+            }
+        }
+
+        for i in 0..4
+        {
+            reset_flag = ly_register.add_sub_cycles(&mut system_data, 100);
+            if i < 456
+            {
+                assert_eq!(reset_flag, false);
+                assert_eq!(ly_register.sub_cycle_count , (i + 1) * 100);
+            }
+            else
+            {
+                assert_eq!(reset_flag, true);
+                assert_eq!((ly_register.sub_cycle_count < 100), true);
+            }
+        }       
     }
 }

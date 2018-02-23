@@ -73,8 +73,7 @@ fn main()
 
         if let Some(r) = e.update_args()
         {
-            let mut frame_cycles = 0;
-            while gpu_registers.v_blank_draw_flag
+            while !gpu_registers.v_blank_draw_flag
             {
                 let opcode = system_data.mem_map[registers.program_counter as usize];
                 let address = registers.program_counter;
