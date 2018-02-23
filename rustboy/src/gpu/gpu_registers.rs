@@ -2,7 +2,7 @@ use system::SystemData;
 
 pub struct GPU_Registers
 {
-    pub ly_register: LY_Register,
+    pub lcd_position: LCD_Position,
     pub v_blank: bool,
     pub v_blank_draw_flag: bool,
     pub lcdc_register: LCDC_Register,
@@ -14,7 +14,7 @@ impl GPU_Registers
     {
         return GPU_Registers
         {
-            ly_register: LY_Register::new(),
+            lcd_position: LCD_Position::new(),
             v_blank: false,
             v_blank_draw_flag: false,
             lcdc_register: LCDC_Register::new(),
@@ -44,6 +44,23 @@ impl LCD_Position
             ly_compare: 0,
             window_x: 0,
             window_y: 0,
+        }
+    }
+
+    pub fn update(&mut self, system_data: &mut SystemData)
+    {
+        self.scroll_x = system_data.mem_map[0xFF43];
+        self.scroll_y = system_data.mem_map[0xFF42];
+        self.ly_compare = system_data.mem_map[0xFF45];
+        self.window_x = system_data.mem_map[0xFF4B];
+        self.window_y =system_data.mem_map[0xFF4A];
+        if self.ly_compare == self.ly_register.value
+        {
+            system_data.mem_map[0xFF41] |= 0x04;
+        }
+        else 
+        {
+            system_data.mem_map[0xFF41] &= 0xFB;
         }
     }
 }
@@ -217,119 +234,5 @@ impl LCDC_Status
         }
 
         self.mode_flag = self.value &0b00000011;
-    }
-}
-
-#[cfg(test)]
-mod main_tests
-{
-
-    use system::{get_system_data, SystemData};
-    use gpu::gpu_registers::{LCDC_Register, LCDC_Status, LY_Register};
-
-    #[test]
-    fn lcdc_register_test() {
-        let mut system_data : SystemData = get_system_data("CLASSIC");
-        let mut lcdc_register : LCDC_Register = LCDC_Register::new();
-        let bools: Vec<bool> = vec![false, true];
-        let values = vec![0x00, 0xFF];
-        for i in 0..values.len()
-        {
-            system_data.mem_map[0xFF40] = values[i];
-            lcdc_register.update_lcdc_register(&system_data);
-            assert_eq!(lcdc_register.value , values[i]);
-            let mut states = vec![lcdc_register.display_enable, lcdc_register.window_display_select, 
-                                  lcdc_register.window_enable,  lcdc_register.tile_data,
-                                  lcdc_register.background_display_select, lcdc_register.sprite_size,
-                                  lcdc_register.sprite_enable, lcdc_register.background_enable];
-            for state_index in 0..states.len()
-            {
-                assert_eq!(states[state_index], bools[i]);
-            }
-        }
-    }
-
-    #[test]
-    fn lcdc_status_test() {
-        let mut system_data : SystemData = get_system_data("CLASSIC");
-        let mut lcdc_status : LCDC_Status = LCDC_Status::new();
-        let bools: Vec<bool> = vec![false, true];
-        let values = vec![0x00, 0xFF];
-        for i in 0..values.len()
-        {
-            system_data.mem_map[0xFF41] = values[i];
-            lcdc_status.update_lcdc_status(&system_data);
-            assert_eq!(lcdc_status.value , values[i]);
-            let mut states = vec![lcdc_status.lyc_ly_coincidence_interrupt, lcdc_status.mode_2_oam_interrupt, 
-                                  lcdc_status.mode_1_v_blank_interrupt,  lcdc_status.mode_0_h_blank_interrupt,
-                                  lcdc_status.coincidence_flag];
-            for state_index in 0..states.len()
-            {
-                assert_eq!(states[state_index], bools[i]);
-            }
-        }
-
-        for i in 0..4
-        {
-            system_data.mem_map[0xFF41] = i;
-            lcdc_status.update_lcdc_status(&system_data);
-            assert_eq!(lcdc_status.mode_flag, i);
-        }
-    }
-    
-    #[test]
-    fn ly_register_test()
-    {
-        let mut system_data : SystemData = get_system_data("CLASSIC");
-        let mut ly_register: LY_Register = LY_Register::new();
-        let mut reset_flag = false;
-
-        for i in 0..154
-        {
-            reset_flag = ly_register.tick(&mut system_data);
-            if i < 153
-            {
-                assert_eq!(reset_flag, false);
-                assert_eq!(ly_register.value, i + 1);
-                assert_eq!(system_data.mem_map[0xFF44], i + 1);
-            }
-            else
-            {
-                assert_eq!(reset_flag, true);
-                assert_eq!(ly_register.value, 0);
-                assert_eq!(system_data.mem_map[0xFF44], 0);
-            }
-        }
-
-        system_data.cycles = 100;
-        for i in 0..703
-        {
-            reset_flag = ly_register.add_cycles(&system_data);
-            if i < 702
-            {
-                assert_eq!(reset_flag, false);
-                assert_eq!(ly_register.cycle_count , (i + 1) * 100);
-            }
-            else
-            {
-                assert_eq!(reset_flag, true);
-                assert_eq!((ly_register.cycle_count < 100), true);
-            }
-        }
-
-        for i in 0..4
-        {
-            reset_flag = ly_register.add_sub_cycles(&system_data);
-            if i < 456
-            {
-                assert_eq!(reset_flag, false);
-                assert_eq!(ly_register.sub_cycle_count , (i + 1) * 100);
-            }
-            else
-            {
-                assert_eq!(reset_flag, true);
-                assert_eq!((ly_register.sub_cycle_count < 100), true);
-            }
-        }       
     }
 }

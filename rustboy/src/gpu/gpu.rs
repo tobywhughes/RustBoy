@@ -105,12 +105,12 @@ pub fn update_gpu(system_data_original: &mut SystemData, registers_original: &mu
 pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_registers: &mut GPU_Registers)
 {
     let mut system_data = system_data_original;
-    gpu_registers.ly_register.add_cycles(&system_data);
-    let tick_flag = gpu_registers.ly_register.add_sub_cycles(&system_data);
+    gpu_registers.lcd_position.ly_register.add_cycles(&system_data);
+    let tick_flag = gpu_registers.lcd_position.ly_register.add_sub_cycles(&system_data);
     if tick_flag
     {
-        let reset_flag = gpu_registers.ly_register.tick(&mut system_data);
-        if gpu_registers.ly_register.value == 144
+        let reset_flag = gpu_registers.lcd_position.ly_register.tick(&mut system_data);
+        if gpu_registers.lcd_position.ly_register.value == 144
         {
             gpu_registers.v_blank = true;
             gpu_registers.v_blank_draw_flag = true;
