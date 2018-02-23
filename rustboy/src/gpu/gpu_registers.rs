@@ -2,9 +2,7 @@ use system::SystemData;
 
 pub struct GPU_Registers
 {
-    pub ly_register: u8,
-    pub ly_cycle_count: u32,
-    pub ly_sub_cycle_count: u16,
+    pub ly_register: LY_Register,
     pub v_blank: bool,
     pub v_blank_draw_flag: bool,
     pub lcdc_register: LCDC_Register,
@@ -16,9 +14,7 @@ impl GPU_Registers
     {
         return GPU_Registers
         {
-            ly_register: 0,
-            ly_cycle_count: 0,
-            ly_sub_cycle_count: 0,
+            ly_register: LY_Register::new(),
             v_blank: false,
             v_blank_draw_flag: false,
             lcdc_register: LCDC_Register::new(),
@@ -90,9 +86,9 @@ impl LY_Register
         system_data.mem_map[0xFF44] = self.value;
     }
 
-    pub fn add_cycles(&mut self, system_data: &mut SystemData, cycles: u32) -> bool
+    pub fn add_cycles(&mut self, system_data: &SystemData) -> bool
     {
-        self.cycle_count += cycles;
+        self.cycle_count += system_data.cycles as u32;
         if (self.cycle_count >= 70224)
         {
             self.cycle_count -= 70224;
@@ -101,9 +97,9 @@ impl LY_Register
         return false;
     }
 
-    pub fn add_sub_cycles(&mut self, system_data: &mut SystemData, sub_cycles: u16) -> bool
+    pub fn add_sub_cycles(&mut self, system_data: &SystemData) -> bool
     {
-        self.sub_cycle_count += sub_cycles;
+        self.sub_cycle_count += system_data.cycles as u16;
         if self.sub_cycle_count >= 456
         {
             self.sub_cycle_count-= 456;
@@ -305,9 +301,10 @@ mod main_tests
             }
         }
 
+        system_data.cycles = 100;
         for i in 0..703
         {
-            reset_flag = ly_register.add_cycles(&mut system_data, 100);
+            reset_flag = ly_register.add_cycles(&system_data);
             if i < 702
             {
                 assert_eq!(reset_flag, false);
@@ -322,7 +319,7 @@ mod main_tests
 
         for i in 0..4
         {
-            reset_flag = ly_register.add_sub_cycles(&mut system_data, 100);
+            reset_flag = ly_register.add_sub_cycles(&system_data);
             if i < 456
             {
                 assert_eq!(reset_flag, false);

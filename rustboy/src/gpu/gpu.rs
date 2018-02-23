@@ -102,29 +102,23 @@ pub fn update_gpu(system_data_original: &mut SystemData, registers_original: &mu
     gpu_registers.lcdc_register.update_lcdc_register(&system_data);
 }
 
-pub fn LCD_Y_Coordinate_Update(system_data: &mut SystemData, gpu_registers: &mut GPU_Registers)
+pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_registers: &mut GPU_Registers)
 {
-    gpu_registers.ly_cycle_count += system_data.cycles as u32;
-    gpu_registers.ly_sub_cycle_count += system_data.cycles as u16;
-    if (gpu_registers.ly_cycle_count >= 70224)
+    let mut system_data = system_data_original;
+    gpu_registers.ly_register.add_cycles(&system_data);
+    let tick_flag = gpu_registers.ly_register.add_sub_cycles(&system_data);
+    if tick_flag
     {
-        gpu_registers.ly_cycle_count -= 70224;        
-    }
-    if (gpu_registers.ly_sub_cycle_count >= 456)
-    {
-        gpu_registers.ly_register += 1;
-        if gpu_registers.ly_register == 144
+        let reset_flag = gpu_registers.ly_register.tick(&mut system_data);
+        if gpu_registers.ly_register.value == 144
         {
             gpu_registers.v_blank = true;
             gpu_registers.v_blank_draw_flag = true;
         }
-        if gpu_registers.ly_register == 154
+        if reset_flag
         {
             gpu_registers.v_blank = false;
-            gpu_registers.ly_register = 0;
         }
-        system_data.mem_map[0xFF44] = gpu_registers.ly_register;
-        gpu_registers.ly_sub_cycle_count -= 456;
     }
 }    
 
