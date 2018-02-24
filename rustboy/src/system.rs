@@ -23,6 +23,8 @@ pub struct Registers
     pub l_register:u8,
     pub stack_pointer: u16,
     pub program_counter: u16,
+    pub interrupt_master_enable_flag: bool,
+    pub interrupt_master_enable_delay_flag: bool,
 }
 
 impl Registers{
@@ -40,6 +42,8 @@ impl Registers{
             l_register:0,
             stack_pointer: 0,
             program_counter: 0, 
+            interrupt_master_enable_flag: false,
+            interrupt_master_enable_delay_flag: false,
         };
     }
 
@@ -134,9 +138,9 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
         "CLASSIC" => return SystemData
         {
             mem_map: vec![0; 0x10000],
-            width: 160,
+            width: 256,
             tile_width: 20,
-            height: 144,
+            height: 256,
             tile_height: 18,
             clock_speed: 4194304,
             horizontal_sync: 9198000,

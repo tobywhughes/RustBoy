@@ -97,6 +97,22 @@ mod opcode_test
     }
 
     #[test]
+    fn decrement_16_bit_register_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0x0B, 0x1B, 0x2B, 0x3B];
+        for i in 1..5
+        {
+            registers.mapped_16_bit_register_setter(i as u8, 0x0100);
+            decrement_16_bit_register(&mut system_data, &mut registers, opcodes[i - 1]);
+            assert_eq!(registers.mapped_16_bit_register_getter(i as u8), 0x00FF);
+            registers.mapped_16_bit_register_setter(i as u8, 0x0000);
+            decrement_16_bit_register(&mut system_data, &mut registers, opcodes[i - 1]);
+            assert_eq!(registers.mapped_16_bit_register_getter(i as u8), 0xFFFF);
+        }
+    }
+
+    #[test]
     fn loads_n_to_correct_register_8_bit() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
@@ -156,15 +172,72 @@ mod opcode_test
     }
     
     #[test]
-    fn xor_register_test() 
+    fn xor_8_bit_register_test() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        let opcode = 0xAF;
-        //A
+        let opcodes: Vec<u8> = vec![0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAF];
+        for register in 0..7
+        {
+            registers.mapped_register_setter(register, 0xFF);
+        }
+
+        for opcode in 0..opcodes.len()
+        {
+            registers.accumulator = 0xFF;
+            xor_8_bit_register(&mut system_data, &mut registers, opcodes[opcode]);
+            assert_eq!(registers.accumulator, 0);
+            assert_eq!(registers.flags, 0x80);
+        }
+    }
+
+    #[test]
+    fn or_8_bit_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5];
+        for register in 0..7
+        {
+            registers.mapped_register_setter(register, 0x0F);
+        }
+
+        for opcode in 0..opcodes.len()
+        {
+            registers.accumulator = 0xF0;
+            or_8_bit_register(&mut system_data, &mut registers, opcodes[opcode]);
+            assert_eq!(registers.accumulator, 0xFF);
+        }
+
+        //Zero flag
+        registers.accumulator = 0x00;
+        or_8_bit_register(&mut system_data, &mut registers, 0xB7);
+        assert_eq!(registers.accumulator, 0x00);
+        assert_eq!(registers.flags, 0x80);
+    }
+
+    #[test]
+    fn and_8_bit_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5];
+        for register in 0..7
+        {
+            registers.mapped_register_setter(register, 0x00);
+        }
+
+        for opcode in 0..opcodes.len()
+        {
+            registers.accumulator = 0xFF;
+            and_8_bit_register(&mut system_data, &mut registers, opcodes[opcode]);
+            assert_eq!(registers.accumulator, 0);
+            assert_eq!(registers.flags, 0xA0);
+        }
+
+        //NZ Flag
         registers.accumulator = 0xFF;
-        xor_register(&mut system_data, &mut registers, opcode);
-        assert_eq!(registers.accumulator, 0);
+        and_8_bit_register(&mut system_data, &mut registers, 0xA7);
+        assert_eq!(registers.accumulator, 0xFF);
+        assert_eq!(registers.flags, 0x20);
     }
         
     #[test]
@@ -547,6 +620,7 @@ mod opcode_test
         assert_eq!(registers.flags, 0x70);
     }
 
+
     #[test]
     fn compare_with_hl_address_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
@@ -613,5 +687,74 @@ mod opcode_test
         registers.accumulator = 0xFF;
         add_8_bit(&mut system_data, &mut registers, opcodes[0]);
         assert_eq!(registers.flags, 0x30);
+    }
+
+    #[test]
+    fn load_accumulator_with_hl_then_increment_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+        system_data.mem_map[0x1234] = 0xFF;
+        load_accumulator_with_hl_then_increment(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0xFF);
+        assert_eq!(registers.mapped_16_bit_register_getter(3), 0x1235);
+    }
+
+    #[test]
+    fn ones_complement_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.accumulator = 0b01010101;
+        ones_complement(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0b10101010);
+    }
+
+    #[test]
+    fn and_nn_with_accumulator_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        system_data.mem_map[0x01] = 0x00;
+        registers.accumulator = 0xFF;
+        and_nn_with_accumulator(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x00);
+        assert_eq!(registers.flags, 0xA0);
+    }
+
+    #[test]
+    fn swap_nibbles_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0x37, 0x30, 0x31,0x32,0x33,0x34,0x35];
+        for i in 0..opcodes.len()
+        {
+            registers.mapped_register_setter(i as u8, 0x80);
+            swap_nibbles(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x01);
+            assert_eq!(registers.flags, 0x00);
+        }
+
+        registers.accumulator = 0;
+        swap_nibbles(&mut system_data, &mut registers, 0x37);
+        assert_eq!(registers.accumulator, 0);
+        assert_eq!(registers.flags, 0x80);
+    }
+
+    #[test]
+    fn rst_jump_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0xC7, 0xCF, 0xD7, 0xDF, 0xE7, 0xEF, 0xF7, 0xFF];
+        let locations: Vec<u16> = vec![0x0000, 0x0008, 0x0010, 0x0018, 0x0020, 0x0028, 0x0030, 0x0038];
+        for i in 0..opcodes.len()
+        {
+            registers.program_counter = 0x1234;
+            registers.stack_pointer = 0x0002;
+            rst_jump(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(system_data.mem_map[0x0000], 0x34);
+            assert_eq!(system_data.mem_map[0x0001], 0x12);
+            assert_eq!(registers.stack_pointer, 0x0000);
+            assert_eq!(registers.program_counter, locations[i]);
+
+        }
     }
 }
