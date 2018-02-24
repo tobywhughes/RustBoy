@@ -42,7 +42,7 @@ fn main()
     system_data.mem_map = read_gb_file(file_name);
     let mut registers: Registers = Registers::new();
     let mut gpu_registers: GPU_Registers = GPU_Registers::new();
-  
+    init_emulator_state(&mut system_data, &mut registers);
 
     //Initialize Screen
     let opengl = OpenGL::V3_2;
@@ -175,6 +175,33 @@ fn output_mem_selection(mem_map: &Vec<u8>, start: u16, end:u16)
         print!("{}-{:x}\t", index, mem_map[index as usize]);
     }
     print!("\n");
+}
+
+fn init_emulator_state(system_data: &mut SystemData, registers: &mut Registers)
+{
+    let registers.program_counter = 0x100;
+    
+    let states: Vec<u8> = vec![0x00, 0x00, 0x00, 0x80, 0xBF, 0xF3, 0xBF, 0x3F, 
+                               0x00, 0xBF, 0x7F, 0xFF, 0x9F, 0xBF, 0xFF, 0x00,
+                               0x00, 0xBF, 0x77, 0xF3, 0xF1, 0x91, 0x00, 0x00, 
+                               0x00, 0xFC, 0xFF, 0xFF, 0x00, 0x00, 0x00];
+
+    let mem_locations: Vec<usize> = vec![0xFF05, 0xFF06, 0xFF07, 0xFF10, 0xFF11, 0xFF12, 
+                                       0xFF14, 0xFF16, 0xFF17, 0xFF19, 0xFF1A, 0xFF1B, 
+                                       0xFF1C, 0xFF1E, 0xFF20, 0xFF21, 0xFF22, 0xFF23, 
+                                       0xFF24, 0xFF25, 0xFF26, 0xFF40, 0xFF42, 0xFF43, 
+                                       0xFF45, 0xFF47, 0xFF48, 0xFF49, 0xFF4A, 0xFF4B, 0xFFFF];
+
+    for i in 0..states.len()
+    {
+        system_data.mem_map[mem_locations[i]] = states[i];
+    }
+
+    let register_states: Vec<u16> = vec![0x01B0, 0x0013, 0x00D8, 0x014D, 0xFFFE];
+    for i in 0..register_states.len()
+    {
+        registers.mapped_16_bit_register_setter(i as u8, register_states[i]);
+    }
 }
 
 
