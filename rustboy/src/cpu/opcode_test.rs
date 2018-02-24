@@ -126,6 +126,7 @@ mod opcode_test
             assert_eq!(registers.mapped_register_getter(i), 1);
             registers.program_counter -= 2;   
         }
+
     }
 
     #[test]
@@ -756,5 +757,56 @@ mod opcode_test
             assert_eq!(registers.program_counter, locations[i]);
 
         }
+    }
+
+    #[test]
+    fn add_16_bit_register_to_hl_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0x09, 0x19, 0x29, 0x39];
+        for i in 0..opcodes.len()
+        {
+            registers.mapped_16_bit_register_setter(3, 0x0001);
+            registers.mapped_16_bit_register_setter(i as u8 + 1, 0x0001);
+            add_16_bit_register_to_hl(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.mapped_16_bit_register_getter(i as u8 + 1), 0x00002);
+            assert_eq!(registers.flags, 0x00);
+        }
+        registers.mapped_16_bit_register_setter(3, 0xFFFFF);
+        add_16_bit_register_to_hl(&mut system_data, &mut registers, 0x29);
+        assert_eq!(registers.flags, 0x30);
+    }
+
+    #[test]
+    fn jump_to_hl_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+        jump_to_hl(&mut system_data, &mut registers);
+        assert_eq!(registers.program_counter, 0x1234);
+    }
+
+    #[test]
+    fn load_register_with_hl_location_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        system_data.mem_map[0x1234] = 0xFF;
+        let opcodes: Vec<u8> = vec![0x7E, 0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E];
+        for i in 0..opcodes.len()
+        {
+            registers.mapped_16_bit_register_setter(3, 0x1234);
+            load_register_with_hl_location(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0xFF);
+        }
+    }
+
+    #[test]
+    fn load_n_to_hl_location_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        system_data.mem_map[0x0001] = 0xFF;
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+        load_n_to_hl_location(&mut system_data, &mut registers);
+        assert_eq!(system_data.mem_map[0x1234], 0xFF);
     }
 }
