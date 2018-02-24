@@ -503,6 +503,19 @@ mod opcode_test
     }
 
     #[test]
+    fn jump_address_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        system_data.mem_map[0x0000] = 0xC3;
+        system_data.mem_map[0x0001] = 0x34;
+        system_data.mem_map[0x0002] = 0x12;
+        jump_address(&mut system_data, &mut registers);
+        assert_eq!(registers.program_counter, 0x1234);
+        assert_eq!(system_data.cycles, 4);
+    }
+
+    #[test]
     fn subract_8_bit_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();

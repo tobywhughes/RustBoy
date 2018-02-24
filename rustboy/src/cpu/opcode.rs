@@ -12,12 +12,12 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
     system_data.cycles = 0;
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
-    //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+    println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
 
 
     if opcode == 0x00
     {
-        no_operation(&mut system_data);
+        no_operation(&mut system_data, &mut registers);
     }
     //inc
     else if (opcode & 0xC7) == 0x04
@@ -117,6 +117,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         jump_displacement(&mut system_data, &mut registers);
     }
+    //jump nn
+    else if opcode == 0xC3
+    {
+        jump_address(&mut system_data, &mut registers);
+    }
     //LDD (HL), A
     else if opcode == 0x32
     {
@@ -172,9 +177,10 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     system_data.cycles *= 4;
 }
 
-pub fn no_operation(system_data: &mut SystemData)
+pub fn no_operation(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 1;
+    registers.program_counter += 1;
 }
 
 pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
@@ -465,6 +471,14 @@ pub fn jump_displacement(system_data: &mut SystemData, registers: &mut Registers
     system_data.cycles = 3;
     let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize]) as i8;
     registers.program_counter = ((registers.program_counter as i32 + pc_dest as i32) as u16) + 2;
+}
+
+pub fn jump_address(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 4;
+    let upper: u16 = system_data.mem_map[registers.program_counter as usize + 2] as u16;
+    let lower: u16 = system_data.mem_map[registers.program_counter as usize + 1] as u16;
+    registers.program_counter = (upper << 8) | lower;
 }
 
 pub fn load_decrement_hl_register_location_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
