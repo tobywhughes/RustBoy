@@ -759,6 +759,7 @@ mod opcode_test
         }
     }
 
+
     #[test]
     fn add_16_bit_register_to_hl_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
@@ -769,7 +770,7 @@ mod opcode_test
             registers.mapped_16_bit_register_setter(3, 0x0001);
             registers.mapped_16_bit_register_setter(i as u8 + 1, 0x0001);
             add_16_bit_register_to_hl(&mut system_data, &mut registers, opcodes[i]);
-            assert_eq!(registers.mapped_16_bit_register_getter(i as u8 + 1), 0x00002);
+            assert_eq!(registers.mapped_16_bit_register_getter(3), 0x00002);
             assert_eq!(registers.flags, 0x00);
         }
         registers.mapped_16_bit_register_setter(3, 0xFFFFF);

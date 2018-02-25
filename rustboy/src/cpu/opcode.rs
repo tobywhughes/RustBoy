@@ -12,7 +12,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
     system_data.cycles = 0;
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
-    println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+    if registers.program_counter > 0x290 || registers.program_counter < 0x214
+    {
+        println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+    }
+    //println!("{:08b}", system_data.mem_map[0xFF40]);
 
     if registers.interrupt_master_enable_delay_flag
     {
@@ -725,9 +729,14 @@ pub fn push_16_bit_register(system_data: &mut SystemData, registers: &mut Regist
     {
         register_code = 0;
     }
-    registers.stack_pointer -= 2;
-    system_data.mem_map[registers.stack_pointer as usize + 1] = registers.mapped_register_getter_with_flags(register_code * 2);
-    system_data.mem_map[registers.stack_pointer as usize] = registers.mapped_register_getter_with_flags((register_code * 2) + 1);
+    let value = registers.mapped_16_bit_register_getter(register_code);
+    let upper = ((value & 0xFF00) >> 8) as u8;
+    let lower = (value & 0x00FF) as u8;
+    registers.stack_pointer -= 1;
+    system_data.mem_map[registers.stack_pointer as usize] = upper;
+    registers.stack_pointer -= 1;
+    system_data.mem_map[registers.stack_pointer as usize] = lower;
+
     registers.program_counter += 1;
 }
 
@@ -739,11 +748,14 @@ pub fn pop_16_bit_register(system_data: &mut SystemData, registers: &mut Registe
     {
         register_code = 0;
     }
-    let stack_pointer = registers.stack_pointer;
-    registers.mapped_register_setter_with_flags(register_code * 2, system_data.mem_map[stack_pointer as usize + 1]);
-    registers.mapped_register_setter_with_flags((register_code * 2) + 1, system_data.mem_map[stack_pointer as usize]);
+    
+    let lower = system_data.mem_map[registers.stack_pointer as usize] as u16;
+    registers.stack_pointer += 1;
+    let upper = system_data.mem_map[registers.stack_pointer as usize] as u16;
+    registers.stack_pointer += 1;
+    let full_value = (upper << 8) | lower;
+    registers.mapped_16_bit_register_setter(register_code, full_value);
     registers.program_counter += 1;
-    registers.stack_pointer += 2;
 }
 
 pub fn rotate_accumulator_left_through_carry(system_data: &mut SystemData, registers: &mut Registers)
@@ -905,11 +917,11 @@ pub fn add_16_bit_register_to_hl(system_data: &mut SystemData, registers: &mut R
     let temp_32_bit_add = add_register as u32 + hl_register_temp as u32;
     if  temp_32_bit_add >= 0x00010000
     {
-        registers.mapped_16_bit_register_setter(register_code, (temp_32_bit_add & 0x0000FFFF) as u16);
+        registers.mapped_16_bit_register_setter(3, (temp_32_bit_add & 0x0000FFFF) as u16);
         registers.flags |= 0x10;
     }
     else{
-        registers.mapped_16_bit_register_setter(register_code, temp_32_bit_add as u16);
+        registers.mapped_16_bit_register_setter(3, temp_32_bit_add as u16);
     }
     if (add_register & 0x0FFF) + (hl_register_temp & 0x0FFF) >= 0x1000
     {
