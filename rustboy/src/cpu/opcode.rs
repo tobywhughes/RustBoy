@@ -12,10 +12,10 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
     system_data.cycles = 0;
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
-    if registers.program_counter > 0x290 || registers.program_counter < 0x214
-    {
-        println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
-    }
+    //if registers.program_counter > 0x290 || registers.program_counter < 0x214
+   // {
+        //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+    //}
     //println!("{:08b}", system_data.mem_map[0xFF40]);
 
     if registers.interrupt_master_enable_delay_flag
@@ -76,7 +76,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     //8bit ld group
     else if (opcode & 0xC7) == 0x06
     {
-        if opcode == 0x036 
+        if opcode == 0x36 
         {
         load_n_to_hl_location(&mut system_data, &mut registers);
         }
@@ -240,6 +240,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         jump_to_hl(&mut system_data, &mut registers);
     }
+    else if opcode == 0xF6
+    {
+        or_n(&mut system_data, &mut registers);
+    }
+
     //cb codes
     else if opcode == 0xCB
     {
@@ -361,7 +366,7 @@ pub fn decrement_8_bit_register(system_data: &mut SystemData, registers: &mut Re
     if register_code == 7
     {
         system_data.cycles = 0;
-        println!("No Opcode Found");
+        println!("No Opcode Found--ad 0x{:04x}--op 0x{:x}", registers.program_counter, opcode);
     }
     else 
     {
@@ -435,7 +440,7 @@ pub fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Reg
 
     if register_code == 7{
         system_data.cycles = 0;
-        println!("xxNo Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+        println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
     }
     else
     {
@@ -471,7 +476,7 @@ pub fn load_8_bit_register_to_register(system_data: &mut SystemData, registers: 
     if register_set_code == 7 || register_get_code == 7
     {
         system_data.cycles = 0;
-        println!("No Opcode Found");
+        println!("No Opcode Found--ad 0x{:04x}--op 0x{:x}", registers.program_counter, opcode);
     }
     else {
         let register_value = registers.mapped_register_getter(register_get_code);
@@ -530,7 +535,7 @@ pub fn load_nn_to_16bit_register(system_data: &mut SystemData, registers: &mut R
     else 
     {
         system_data.cycles = 0;
-        println!("No Opcode Found");
+        println!("No Opcode Found--ad 0x{:04x}--op 0x{:x}", registers.program_counter, opcode);
     }
 
     registers.program_counter += 3;
@@ -867,9 +872,16 @@ pub fn subtract_8_bit(system_data: &mut SystemData, registers: &mut Registers, o
 pub fn load_accumulator_with_hl_then_increment(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 2;
-    let address = registers.mapped_16_bit_register_getter(3);
+    let mut address = registers.mapped_16_bit_register_getter(3);
     registers.accumulator = system_data.mem_map[address as usize];
-    registers.mapped_16_bit_register_setter(3, address + 1);
+    if address == 0xFFFF
+    {
+        registers.mapped_16_bit_register_setter(3, 0);
+    }
+    else {
+        registers.mapped_16_bit_register_setter(3, address + 1);
+    }
+    
     registers.program_counter += 1;
 }
 
@@ -956,10 +968,28 @@ pub fn load_register_with_hl_location(system_data: &mut SystemData, registers: &
     }
 }
 
-///////////////////
-//CB
-///////////////////
+pub fn or_n(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 2;
+    registers.accumulator |= system_data.mem_map[registers.program_counter as usize + 1];
+    registers.flags = 0x00;
+    if registers.accumulator == 0
+    {
+        registers.flags |= 0x80;
+    }
+    registers.program_counter += 2;
+}
 
+//##########################################################################
+//##########################################################################
+//##########################################################################
+//##########################################################################
+//##########################################################################
+//################################    CB   #################################
+//##########################################################################
+//##########################################################################
+//##########################################################################
+//##########################################################################
 
 
 
@@ -987,9 +1017,22 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
         system_data.cycles = 2;
         swap_nibbles(&mut system_data, &mut registers, opcode);
     }
+    else if (opcode & 0xC0) == 0xC0
+    {
+        if opcode & 0x07 == 0x06
+        {
+            system_data.cycles = 4;
+            set_bit_of_hl_location(&mut system_data, &mut registers, opcode);
+        }
+        else 
+        {
+            system_data.cycles = 2;
+            set_bit_in_register(&mut system_data, &mut registers, opcode);
+        }
+    }
     else 
     {
-        println!("No Opcode Found");
+        println!("Unimplemented CB code");
         println!("Next Opcode: 0x{:x}", system_data.mem_map[registers.program_counter as usize + 1]);
     }
 }
@@ -1082,5 +1125,32 @@ pub fn swap_nibbles(system_data: &mut SystemData, registers: &mut Registers, opc
         }
         registers.program_counter += 2;
     }
+}
+
+pub fn set_bit_in_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let mut register_code = (opcode & 0x07) + 1;
+    if register_code == 7
+    {
+        system_data.cycles = 0;
+        println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+    }
+    else {
+        if register_code == 8
+        {
+            register_code = 0;
+        }
+        let bit_shift = (opcode & 0x38) >> 3;
+        let start_value = registers.mapped_register_getter(register_code);
+        registers.mapped_register_setter(register_code, start_value | (0x01 << bit_shift));
+        registers.program_counter += 2;
+    }
+}
+
+pub fn set_bit_of_hl_location(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let bit_shift = (opcode & 0x38) >> 3;
+    system_data.mem_map[registers.mapped_16_bit_register_getter(3) as usize] |= (0x01 << bit_shift);
+    registers.program_counter += 2;
 }
 

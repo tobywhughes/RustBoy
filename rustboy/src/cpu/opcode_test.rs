@@ -810,4 +810,56 @@ mod opcode_test
         load_n_to_hl_location(&mut system_data, &mut registers);
         assert_eq!(system_data.mem_map[0x1234], 0xFF);
     }
+
+    #[test]
+    fn or_n_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        system_data.mem_map[0x0001] = 0x00;
+        system_data.mem_map[0x0003] = 0xFF;
+        or_n(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x80);
+        assert_eq!(registers.accumulator, 0x00);
+        or_n(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x00);
+        assert_eq!(registers.accumulator, 0xFF);
+    }
+
+    #[test]
+    fn set_bit_in_register_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let test_file_raw = File::open("src/cpu/test_csvs/set_bit.csv").unwrap();
+        let mut test_file = csv::ReaderBuilder::new().has_headers(false).from_reader(test_file_raw);
+        let mut opcodes: Vec<String> = Vec::new();
+        for record_raw in test_file.records()
+        {
+            let record = &(record_raw.unwrap());
+            opcodes.push(record[0].to_string());
+        }
+        for i in 0..8
+        {
+            for j in 0..7
+            {
+                let opcode = Vec::from_hex(&opcodes[(i * 7) + j]).unwrap();
+                registers.mapped_register_setter(j as u8, 0x00);
+                set_bit_in_register(&mut system_data, &mut registers, opcode[0]);
+                assert_eq!((registers.mapped_register_getter(j as u8) >> i) & 0x01, 0x01);
+            }
+        }
+    }
+
+    #[test]
+    fn set_bit_of_hl_location_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0xC6, 0xCE, 0xD6, 0xDE, 0xE6, 0xEE, 0xF6, 0xFE];
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+        for i in 0..opcodes.len()
+        {
+            system_data.mem_map[0x1234] = 0;
+            set_bit_of_hl_location(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!((system_data.mem_map[0x1234] >> i) & 0x01, 0x01);
+        }
+    }
 }
