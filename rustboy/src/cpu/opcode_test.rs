@@ -1014,4 +1014,34 @@ mod opcode_test
         assert_eq!(registers.flags, 0x20);
         assert_eq!(registers.accumulator, 0x10);
     }
+
+    #[test]
+    fn subtract_n_from_accumulator_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+
+        //Zero flag
+        registers.flags = 0x00;
+        registers.accumulator = 0x00;
+        system_data.mem_map[0x01] = 0x00;
+        subtraction_n_from_accumulator(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0xC0);
+        assert_eq!(registers.accumulator, 0x00);
+
+        //Carry flag
+        registers.flags = 0x00;
+        registers.accumulator = 0x00;
+        system_data.mem_map[0x03] = 0x10;
+        subtraction_n_from_accumulator(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x50);
+        assert_eq!(registers.accumulator, 0xF0);
+
+        //Half Carry flag
+        registers.flags = 0x00;
+        registers.accumulator = 0x10;
+        system_data.mem_map[0x05] = 0x01;
+        subtraction_n_from_accumulator(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x60);
+        assert_eq!(registers.accumulator, 0x0F);
+    }
 }
