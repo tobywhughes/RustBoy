@@ -947,4 +947,41 @@ mod opcode_test
         load_accumulator_with_nn_address(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0xFF);
     }
+
+    #[test]
+    fn call_function_nn_on_conditional_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let flags: Vec<u8> = vec![0x00, 0x80, 0x00, 0x10];
+        let fail_flags: Vec<u8> = vec![0x80, 0x00, 0x10, 0x00];
+        let program_counters: Vec<usize> = vec![0x0706, 0x0504, 0x0302, 0x0100];    
+        let opcodes: Vec<u8> = vec![0xC4, 0xCC, 0xD4, 0xDC];
+        
+        registers.stack_pointer = 0x08;
+
+        for i in 0..flags.len()
+        {
+            registers.flags = flags[i];
+            registers.program_counter = program_counters[i] as u16;   
+            system_data.mem_map[program_counters[i] + 1]  = 0x34;
+            system_data.mem_map[program_counters[i] + 2]  = 0x12;
+            call_function_nn_on_conditional(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.program_counter, 0x1234);
+        }
+
+        for i in 0..flags.len()
+        {
+            registers.flags = fail_flags[i];
+            registers.program_counter = 0x0000;   
+            call_function_nn_on_conditional(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.program_counter, 0x0003);
+        }
+
+        for i in 0..8
+        {
+            assert_eq!(system_data.mem_map[i], i as u8);
+        }
+
+    }
 }

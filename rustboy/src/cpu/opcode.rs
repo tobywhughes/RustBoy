@@ -256,6 +256,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
             subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode);
         }
     }
+    else if (opcode & 0xC7) == 0xC4
+    {
+        call_function_nn_on_conditional(&mut system_data, &mut registers, opcode);
+    }
+
     else if opcode == 0xFA
     {
         load_accumulator_with_nn_address(&mut system_data, &mut registers);
@@ -1088,6 +1093,68 @@ pub fn load_accumulator_with_nn_address(system_data: &mut SystemData, registers:
     let retrieved_value = system_data.mem_map[(lower | (upper << 8)) as usize];
     registers.accumulator = retrieved_value;
     registers.program_counter += 3;
+}
+
+pub fn call_function_nn_on_conditional(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let condition_code = (opcode & 0x38) >> 3;
+    if condition_code > 3
+    {
+        system_data.cycles = 0;
+        println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+        println!("Opcode Does Not Exist On Opcode Table");
+    }
+    else
+    {
+        let mut call_flag = false;
+        if condition_code == 0
+        {
+            if (registers.flags & 0x80) == 0
+            {
+                call_flag = true;
+            }
+        }
+        else if condition_code == 1
+        {
+            if (registers.flags & 0x80) != 0
+            {
+                call_flag = true;
+            }
+        }
+        else if condition_code == 2
+        {
+            if (registers.flags & 0x10) == 0
+            {
+                call_flag = true;
+            }
+        }
+        else
+        {
+            if (registers.flags & 0x10) != 0
+            {
+                call_flag = true;
+            }
+        }
+
+        if call_flag
+        {
+            system_data.cycles = 6;
+            registers.stack_pointer -= 1;
+            system_data.mem_map[registers.stack_pointer as usize] = ((registers.program_counter & 0xFF00) >> 8) as u8;
+            registers.stack_pointer -= 1;
+            system_data.mem_map[registers.stack_pointer as usize] = (registers.program_counter & 0x00FF) as u8;
+
+            let lower = system_data.mem_map[registers.program_counter as usize + 1] as u16;
+            let upper = system_data.mem_map[registers.program_counter as usize + 2] as u16;
+
+            registers.program_counter = lower | (upper << 8);
+        }
+        else
+        {
+            system_data.cycles = 3;
+            registers.program_counter += 3;
+        }
+    }
 }
 
 //##########################################################################
