@@ -266,6 +266,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         load_accumulator_with_nn_address(&mut system_data, &mut registers);
     }
 
+    else if opcode == 0xC6
+    {
+        add_8_bit_to_accumulator(&mut system_data, &mut registers);
+    }
+
     //cb codes
     else if opcode == 0xCB
     {
@@ -1155,6 +1160,35 @@ pub fn call_function_nn_on_conditional(system_data: &mut SystemData, registers: 
             registers.program_counter += 3;
         }
     }
+}
+
+pub fn add_8_bit_to_accumulator(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 2;
+    let n = system_data.mem_map[registers.program_counter as usize + 1] as u16;
+    let accumulator_value = registers.accumulator as u16;
+    registers.flags = 0x00;
+    //Half
+    if (n & 0x0F) + (accumulator_value & 0x0F) >= 0x10
+    {
+        registers.flags |= 0x20;
+    }
+
+    if n + accumulator_value >= 0x100
+    {
+        registers.flags |= 0x10;
+        registers.accumulator = ((n + accumulator_value) - 0x100) as u8;
+    }
+    else
+    {
+        registers.accumulator += n as u8;
+    }
+
+    if registers.accumulator == 0x00
+    {
+        registers.flags |= 0x80;
+    }
+    registers.program_counter += 2;
 }
 
 //##########################################################################

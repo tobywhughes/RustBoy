@@ -984,4 +984,34 @@ mod opcode_test
         }
 
     }
+
+    #[test]
+    fn add_8_bit_to_accumulator_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        //Zero flag
+        registers.flags = 0x00;
+        registers.accumulator = 0x00;
+        system_data.mem_map[0x01] = 0x00;
+        add_8_bit_to_accumulator(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x80);
+        assert_eq!(registers.accumulator, 0x00);
+
+        //Carry flag
+        registers.flags = 0x00;
+        registers.accumulator = 0xF0;
+        system_data.mem_map[0x03] = 0x11;
+        add_8_bit_to_accumulator(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x10);
+        assert_eq!(registers.accumulator, 0x01);
+
+        //Half Carry flag
+        registers.flags = 0x00;
+        registers.accumulator = 0x08;
+        system_data.mem_map[0x05] = 0x08;
+        add_8_bit_to_accumulator(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x20);
+        assert_eq!(registers.accumulator, 0x10);
+    }
 }
