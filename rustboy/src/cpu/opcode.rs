@@ -256,6 +256,10 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
             subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode);
         }
     }
+    else if opcode == 0xFA
+    {
+        load_accumulator_with_nn_address(&mut system_data, &mut registers);
+    }
 
     //cb codes
     else if opcode == 0xCB
@@ -1074,6 +1078,16 @@ pub fn subtract_hl_location_and_carry_from_accumulator(system_data: &mut SystemD
     }
 
     registers.program_counter += 1;
+}
+
+pub fn load_accumulator_with_nn_address(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 4;
+    let lower = system_data.mem_map[registers.program_counter as usize + 1] as u16;
+    let upper = system_data.mem_map[registers.program_counter as usize + 2] as u16;
+    let retrieved_value = system_data.mem_map[(lower | (upper << 8)) as usize];
+    registers.accumulator = retrieved_value;
+    registers.program_counter += 3;
 }
 
 //##########################################################################

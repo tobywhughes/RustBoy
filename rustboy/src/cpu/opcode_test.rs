@@ -934,4 +934,17 @@ mod opcode_test
         assert_eq!(registers.accumulator, 0x00);
         assert_eq!(registers.flags, 0xC0);
     }
+
+    #[test]
+    fn load_accumulator_with_nn_address_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        system_data.mem_map[0x1234] = 0xFF;
+        system_data.mem_map[0x0001] = 0x34;
+        system_data.mem_map[0x0002] = 0x12;
+        registers.accumulator = 0x00;
+        load_accumulator_with_nn_address(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0xFF);
+    }
 }
