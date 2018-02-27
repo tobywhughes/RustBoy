@@ -862,4 +862,76 @@ mod opcode_test
             assert_eq!((system_data.mem_map[0x1234] >> i) & 0x01, 0x01);
         }
     }
+
+    #[test]
+    fn subtract_register_and_carry_from_accumulator_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0x9F, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D];
+        //Without carry flag
+        //Sets zero flag
+        for i in 0..opcodes.len()
+        {
+            registers.accumulator = 0x02;
+            registers.mapped_register_setter(i as u8, 0x02);
+            subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.accumulator, 0x00);
+            assert_eq!(registers.flags, 0xC0);
+            
+        }
+
+        //With carry flag
+        //Sets carry flag        
+        for i in 1..opcodes.len()
+        {
+            registers.flags = 0x10; 
+            registers.accumulator = 0x11;
+            registers.mapped_register_setter(i as u8, 0x20);
+            subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.accumulator, 0xF0);
+            assert_eq!(registers.flags, 0x50);
+        }
+
+        //Half carry flag
+        registers.flags = 0x10;
+        registers.accumulator = 0x10;
+        registers.b_register = 0x00;
+        subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, 0x98);
+        assert_eq!(registers.accumulator, 0x0F);
+        assert_eq!(registers.flags, 0x60);
+    }
+
+    #[test]
+    fn subtract_hl_location_and_carry_from_accumulator_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+        //without carry
+        //Sets carry
+        registers.flags = 0x00;
+        registers.accumulator = 0x10;
+        system_data.mem_map[0x1234] = 0x20;
+        subtract_hl_location_and_carry_from_accumulator(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0xF0);
+        assert_eq!(registers.flags, 0x50);
+
+        //with carry
+        //half carry
+        registers.flags = 0x10;
+        registers.accumulator = 0x20;
+        system_data.mem_map[0x1234] = 0x00;
+        subtract_hl_location_and_carry_from_accumulator(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x1F);
+        assert_eq!(registers.flags, 0x60);
+
+        //zero flag
+        registers.flags = 0x10;
+        registers.accumulator = 0x02;
+        system_data.mem_map[0x1234] = 0x01;
+        subtract_hl_location_and_carry_from_accumulator(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x00);
+        assert_eq!(registers.flags, 0xC0);
+    }
 }

@@ -244,6 +244,18 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         or_n(&mut system_data, &mut registers);
     }
+    //sbc a, r
+    else if (opcode & 0xF8) == 0x98
+    {
+        if opcode == 0x9E
+        {
+            subtract_hl_location_and_carry_from_accumulator(&mut system_data, &mut registers);
+        }
+        else
+        {
+            subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode);
+        }
+    }
 
     //cb codes
     else if opcode == 0xCB
@@ -659,7 +671,13 @@ pub fn load_decrement_hl_register_location_with_accumulator(system_data: &mut Sy
 {
     let mut mem_loc: u16 = registers.l_register as u16 | (registers.h_register as u16) << 8;
     system_data.mem_map[mem_loc as usize] = registers.accumulator;
-    mem_loc -= 1;
+    if mem_loc == 0
+    {
+        mem_loc = 0xFFFF;
+    }
+    else {
+        mem_loc -= 1;
+    }
     registers.l_register = (mem_loc & 0x00FF) as u8;
     registers.h_register = ((mem_loc & 0xFF00) >> 8) as u8;
     system_data.cycles = 2;
@@ -978,6 +996,84 @@ pub fn or_n(system_data: &mut SystemData, registers: &mut Registers)
         registers.flags |= 0x80;
     }
     registers.program_counter += 2;
+}
+
+pub fn subtract_register_and_carry_from_accumulator(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    system_data.cycles = 1;
+    let mut register_code = (opcode & 0x07) + 1;
+    if register_code == 7
+    {
+        system_data.cycles = 0;
+        println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+    }
+    else
+    {
+        if register_code == 8
+        {
+            register_code = 0;
+        }
+        let mut accumulator_value = registers.accumulator as u16;
+        let register_value = registers.mapped_register_getter(register_code) as u16;
+        let carry_bit= ((registers.flags & 0x10) >> 4) as u16;
+        let subtraction_value = register_value + carry_bit;
+
+        registers.flags = 0x40; 
+
+        //Half
+        if (subtraction_value & 0x0F) > (accumulator_value & 0x0F)
+        {
+            registers.flags |= 0x20;
+        }
+
+        //Carry
+        if subtraction_value > accumulator_value
+        {
+            registers.flags |= 0x10; 
+            accumulator_value += 0x0100;
+        }
+
+        registers.accumulator = (accumulator_value - subtraction_value) as u8;
+        if registers.accumulator == 0
+        {
+            registers.flags |= 0x80;
+        }
+
+        registers.program_counter += 1;
+    }
+}
+
+pub fn subtract_hl_location_and_carry_from_accumulator(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 1;
+
+    let mut accumulator_value = registers.accumulator as u16;
+    let location_value = system_data.mem_map[registers.mapped_16_bit_register_getter(3) as usize] as u16;
+    let carry_bit= ((registers.flags & 0x10) >> 4) as u16;
+    let subtraction_value = location_value + carry_bit;
+
+    registers.flags = 0x40; 
+
+    //Half
+    if (subtraction_value & 0x0F) > (accumulator_value & 0x0F)
+    {
+        registers.flags |= 0x20;
+    }
+
+    //Carry
+    if subtraction_value > accumulator_value
+    {
+        registers.flags |= 0x10; 
+        accumulator_value += 0x0100;
+    }
+
+    registers.accumulator = (accumulator_value - subtraction_value) as u8;
+    if registers.accumulator == 0
+    {
+        registers.flags |= 0x80;
+    }
+
+    registers.program_counter += 1;
 }
 
 //##########################################################################
