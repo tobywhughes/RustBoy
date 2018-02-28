@@ -397,6 +397,19 @@ mod opcode_test
     }
 
     #[test]
+    fn load_accumulator_with_bc_address_test()
+    {
+        //Todo - combine 0x0A with 0x1A
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.b_register = 0xFF;
+        registers.c_register = 0xEE;
+        system_data.mem_map[0xFFEE] = 1;
+        load_accumulator_with_bc_address(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 1);
+    }
+
+    #[test]
     fn call_nn_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
