@@ -241,29 +241,6 @@ mod opcode_test
         assert_eq!(registers.flags, 0x20);
     }
         
-    #[test]
-    fn pc_jumps_displacement_on_nonzero_flag() 
-    {
-        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = Registers::new();
-        registers.program_counter = 100;
-        //Positive Jump
-        system_data.mem_map[101] = 10;
-        registers.flags = 0x00;
-        jump_displacement_on_nonzero_flag(&mut system_data, &mut registers);
-        assert_eq!(registers.program_counter, 112);
-        //Negative Jump
-        registers.program_counter = 100;
-        system_data.mem_map[101] = 253;
-        jump_displacement_on_nonzero_flag(&mut system_data, &mut registers);
-        assert_eq!(registers.program_counter, 99);
-        //Zero Flag
-        registers.program_counter = 100;
-        system_data.mem_map[101] = 0xFF;
-        registers.flags = 0xFF;
-        jump_displacement_on_nonzero_flag(&mut system_data, &mut registers);
-        assert_eq!(registers.program_counter, 102)
-    }
     
     #[test]
     fn load_decrement_hl_register_location_with_accumulator_test() 
@@ -549,30 +526,6 @@ mod opcode_test
         system_data.mem_map[1] = 0x0F;
         load_accumulator_with_io_port_with_n_offset(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 1);
-    }
-
-    #[test]
-    fn jump_displacement_on_zero_flag_test() {
-        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
-        let mut registers : Registers = Registers::new();
-        registers.program_counter = 0x100;
-        //Forward
-        registers.flags = 0xFF;
-        system_data.mem_map[0x101] = 0x02;
-        jump_displacement_on_zero_flag(&mut system_data, &mut registers);
-        assert_eq!(registers.program_counter, 0x104);
-        registers.program_counter = 0x100;
-        //Backward
-        registers.flags = 0xFF;
-        system_data.mem_map[0x101] = 0xF0;
-        jump_displacement_on_zero_flag(&mut system_data, &mut registers);
-        assert_eq!(registers.program_counter, 0xF2);
-        registers.program_counter = 0x100;
-        //Nonzero 
-        registers.flags = 0x00;
-        system_data.mem_map[0x101] = 0xFF;
-        jump_displacement_on_zero_flag(&mut system_data, &mut registers);
-        assert_eq!(registers.program_counter, 0x102);
     }
     
     #[test]
@@ -1090,5 +1043,32 @@ mod opcode_test
         subtraction_n_from_accumulator(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x60);
         assert_eq!(registers.accumulator, 0x0F);
+    }
+
+    #[test]
+    fn rotate_accumulator_right_through_carry_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        //With Carry
+        //Set
+        registers.flags = 0x10;
+        registers.accumulator = 0xFF;
+        rotate_accumulator_right_through_carry(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x10);
+        assert_eq!(registers.accumulator, 0xFF);
+        //No Set
+        registers.flags = 0x10;
+        registers.accumulator = 0x00;
+        rotate_accumulator_right_through_carry(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x00);
+        assert_eq!(registers.accumulator, 0x80);
+
+        //No Carry
+        registers.flags = 0x00;
+        registers.accumulator = 0x02;
+        rotate_accumulator_right_through_carry(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x00);
+        assert_eq!(registers.accumulator, 0x01);
     }
 }

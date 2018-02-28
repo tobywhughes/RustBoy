@@ -275,6 +275,10 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         jump_displacement_on_flag(&mut system_data, &mut registers, opcode);
     }
+    else if opcode == 0x1F
+    {
+        rotate_accumulator_right_through_carry(&mut system_data, &mut registers);
+    }
     //cb codes
     else if opcode == 0xCB
     {
@@ -637,36 +641,6 @@ pub fn and_8_bit_register(system_data: &mut SystemData, registers: &mut Register
 
         system_data.cycles = 1;
         registers.program_counter += 1;
-    }
-}
-
-pub fn jump_displacement_on_nonzero_flag(system_data: &mut SystemData, registers: &mut Registers)
-{
-        if (registers.flags & 0x80) != 0x80 {
-            if registers.program_counter != 0x68{
-                //println!("{:x}", registers.program_counter);
-            }
-            system_data.cycles = 3;
-            let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize]) as i8;
-            registers.program_counter = ((registers.program_counter as i32 + pc_dest as i32) as u16) + 2;
-        }
-        else {
-            system_data.cycles = 2;
-            registers.program_counter += 2;
-        }
-}
-
-pub fn jump_displacement_on_zero_flag(system_data: &mut SystemData, registers: &mut Registers)
-{
-    if (registers.flags & 0x80) == 0x80
-    {
-            system_data.cycles = 3;
-            let pc_dest: i8 = (system_data.mem_map[(registers.program_counter + 1) as usize]) as i8;
-            registers.program_counter = ((registers.program_counter as i32 + pc_dest as i32) as u16) + 2;   
-    }
-    else {
-        system_data.cycles = 2;
-        registers.program_counter += 2;
     }
 }
 
@@ -1258,8 +1232,18 @@ pub fn jump_displacement_on_flag(system_data: &mut SystemData, registers: &mut R
         registers.program_counter = ((registers.program_counter as i32) + (jump_value as i32)) as u16;
         registers.program_counter += 2;
    }
+}
 
-
+pub fn rotate_accumulator_right_through_carry(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 1;
+    let carry_bit = (registers.flags & 0x10) << 3;
+    let carry_set_bit = (registers.accumulator & 0x01) << 4;
+    registers.flags = 0x00;
+    registers.accumulator = registers.accumulator >> 1;
+    registers.accumulator |= carry_bit;
+    registers.flags |= carry_set_bit;
+    registers.program_counter += 1;
 }
 
 //##########################################################################
