@@ -148,16 +148,6 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         xor_8_bit_register(&mut system_data, &mut registers, opcode);
     }
-    //jump nz, dis
-    else if opcode == 0x20
-    {
-        jump_displacement_on_nonzero_flag(&mut system_data, &mut registers);
-    }
-    //jump z, dis
-    else if opcode == 0x28
-    {
-        jump_displacement_on_zero_flag(&mut system_data, &mut registers);
-    }
     //jump dis
     else if opcode == 0x18
     {
@@ -281,6 +271,10 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         load_accumulator_with_bc_address(&mut system_data, &mut registers);
     }
 
+    else if (opcode & 0xE7) == 0x20
+    {
+        jump_displacement_on_flag(&mut system_data, &mut registers, opcode);
+    }
     //cb codes
     else if opcode == 0xCB
     {
@@ -1236,6 +1230,36 @@ pub fn load_accumulator_with_bc_address(system_data: &mut SystemData, registers:
     let bc_address: usize = registers.mapped_16_bit_register_getter(1) as usize;
     registers.accumulator = system_data.mem_map[bc_address];
     registers.program_counter += 1;
+}
+
+pub fn jump_displacement_on_flag(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let condition_code = (opcode & 0x18) >> 3;
+    let mut call_flag: bool = false;
+    match condition_code
+    {
+        0x00 => if (registers.flags & 0x80) != 0x80 {call_flag = true},
+        0x01 => if (registers.flags & 0x80) == 0x80 {call_flag = true},
+        0x02 => if (registers.flags & 0x10) != 0x10 {call_flag = true},
+        0x03 => if (registers.flags & 0x10) == 0x10 {call_flag = true},
+        _ =>(),
+    }
+
+    if call_flag != true
+    {
+        system_data.cycles = 2;
+        registers.program_counter += 2;
+    }
+
+    else 
+    {
+        system_data.cycles = 3;
+        let jump_value: i8 = system_data.mem_map[registers.program_counter as usize + 1] as i8;
+        registers.program_counter = ((registers.program_counter as i32) + (jump_value as i32)) as u16;
+        registers.program_counter += 2;
+   }
+
+
 }
 
 //##########################################################################

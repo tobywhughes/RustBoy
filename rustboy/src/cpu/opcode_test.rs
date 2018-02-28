@@ -574,6 +574,40 @@ mod opcode_test
         jump_displacement_on_zero_flag(&mut system_data, &mut registers);
         assert_eq!(registers.program_counter, 0x102);
     }
+    
+    #[test]
+    fn jump_displacement_on_flag_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0x20, 0x28, 0x30, 0x38];
+        let pass_flags: Vec<u8> = vec![0x00, 0x80, 0x00, 0x10];
+        let fail_flags: Vec<u8> = vec![0x80, 0x00, 0x10, 0x00];
+        let locations: Vec<u16> = vec![0x104, 0xFE];
+        let location_jump_values = vec![0x02, 0xFC];
+        for location_index in 0..locations.len()
+        {
+            //Pass
+            for i in 0..pass_flags.len()
+            {
+                //println!("#####{}", i);
+                registers.program_counter = 0x100;
+                system_data.mem_map[0x101] = location_jump_values[location_index];
+                registers.flags = pass_flags[i];
+                jump_displacement_on_flag(&mut system_data, &mut registers, opcodes[i]);
+                assert_eq!(registers.program_counter, locations[location_index]);               
+            }
+            //Fail
+            for i in 0..fail_flags.len()
+            {
+                registers.program_counter = 0x100;
+                system_data.mem_map[0x101] = location_jump_values[location_index];
+                registers.flags = fail_flags[i];
+                jump_displacement_on_flag(&mut system_data, &mut registers, opcodes[i]);
+                assert_eq!(registers.program_counter, 0x102); 
+            }
+        }
+    }
 
     #[test]
     fn jump_displacement_test() 
