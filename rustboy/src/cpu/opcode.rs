@@ -312,6 +312,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         jump_address_with_conditional(&mut system_data, &mut registers, opcode);
     }
 
+    else if opcode == 0xEE
+    {
+        xor_accumulator_with_n(&mut system_data, &mut registers);
+    }
+
     //cb codes
     else if opcode == 0xCB
     {
@@ -1379,6 +1384,19 @@ pub fn xor_hl_location(system_data: &mut SystemData, registers: &mut Registers)
         registers.flags |= 0x80;
     }
     registers.program_counter += 1;
+}
+
+pub fn xor_accumulator_with_n(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles += 2;
+    registers.flags = 0x00;
+    let n_value = system_data.mem_map[registers.program_counter as usize + 1];
+    registers.accumulator ^= n_value;
+    if registers.accumulator == 0
+    {
+        registers.flags |= 0x80;
+    }
+    registers.program_counter += 2;
 }
 
 

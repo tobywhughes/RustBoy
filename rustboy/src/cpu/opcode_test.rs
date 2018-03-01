@@ -1270,4 +1270,19 @@ mod opcode_test
         assert_eq!(system_data.mem_map[0x1234], 0xFF);
         assert_eq!(registers.flags, 0x10);
     }
+
+    #[test]
+    fn xor_accumulator_with_n_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        system_data.mem_map[0x01] = 0xFF;
+        system_data.mem_map[0x03] = 0xFF;
+        registers.accumulator = 0xFF;
+        xor_accumulator_with_n(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x80);
+        assert_eq!(registers.accumulator, 0x00);
+        xor_accumulator_with_n(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x00);
+        assert_eq!(registers.accumulator, 0xFF);
+    }
 }
