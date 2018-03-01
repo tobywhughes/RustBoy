@@ -1381,6 +1381,16 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
             set_bit_in_register(&mut system_data, &mut registers, opcode);
         }
     }
+    else if (opcode & 0xF8) == 0x38
+    {
+        if opcode == 0x3E
+        {
+            shift_hl_location_right_logical(&mut system_data, &mut registers);
+        }
+        else{
+            shift_right_register_logical(&mut system_data, &mut registers, opcode);
+        }
+    }
     else 
     {
         println!("Unimplemented CB code");
@@ -1505,3 +1515,56 @@ pub fn set_bit_of_hl_location(system_data: &mut SystemData, registers: &mut Regi
     registers.program_counter += 2;
 }
 
+pub fn shift_right_register_logical(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let mut register_code = (opcode & 0x07) + 1;
+    if register_code == 7
+    {
+        system_data.cycles = 0;
+        println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+    }
+    else 
+    {
+        if register_code == 8
+        {
+            register_code = 0;
+        }
+        registers.flags = 0x00;
+        let current_register_value = registers.mapped_register_getter(register_code);
+        let set_register_value = current_register_value >> 1;
+        if current_register_value & 0x01 == 0x01
+        {
+            registers.flags |= 0x10;
+        }
+        if set_register_value == 0x00
+        {
+            registers.flags |= 0x80;
+        }
+
+        registers.mapped_register_setter(register_code, set_register_value);
+
+        registers.program_counter += 2;
+        system_data.cycles = 2;
+    }
+
+}
+
+pub fn shift_hl_location_right_logical(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.flags = 0x00;
+    let current_location_value = system_data.mem_map[registers.mapped_16_bit_register_getter(3) as usize];
+    let set_location_value = current_location_value >> 1;
+    if current_location_value & 0x01 == 0x01
+    {
+        registers.flags |= 0x10;
+    }
+    if set_location_value == 0x00
+    {
+        registers.flags |= 0x80;
+    }
+
+    system_data.mem_map[registers.mapped_16_bit_register_getter(3) as usize] = set_location_value;
+
+    registers.program_counter += 2;
+    system_data.cycles = 4;
+}

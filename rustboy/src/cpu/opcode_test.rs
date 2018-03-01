@@ -1127,4 +1127,45 @@ mod opcode_test
             }
         }
     }
+
+    #[test]
+    fn shift_right_register_logical_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0x3F, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D];
+
+        //Zero flag test
+        registers.accumulator = 0x00;
+        shift_right_register_logical(&mut system_data, &mut registers, 0x3F);
+        assert_eq!(registers.accumulator, 0x00);
+        assert_eq!(registers.flags, 0x80);
+
+        for i in 0..opcodes.len()
+        {
+            registers.mapped_register_setter(i as u8, 0xFF);
+            shift_right_register_logical(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.flags, 0x10);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x7F)
+        }
+    }
+
+    #[test]
+    fn shift_hl_location_right_logical_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+
+        //Zero flag test
+        system_data.mem_map[0x1234] = 0x00;
+        shift_hl_location_right_logical(&mut system_data, &mut registers);
+        assert_eq!(system_data.mem_map[0x1234], 0x00);
+        assert_eq!(registers.flags, 0x80);
+
+        system_data.mem_map[0x1234] = 0xFF;
+        shift_hl_location_right_logical(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x10);
+        assert_eq!(system_data.mem_map[0x1234], 0x7F);
+    }
 }
