@@ -1071,4 +1071,34 @@ mod opcode_test
         assert_eq!(registers.flags, 0x00);
         assert_eq!(registers.accumulator, 0x01);
     }
+
+    #[test]
+    fn add_8_bit_to_accumulator_with_carry_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        //No Carry Set & Zero
+        registers.flags = 0x00;
+        registers.accumulator = 0x00;
+        system_data.mem_map[0x01] = 0x00;
+        add_8_bit_to_accumulator_with_carry(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x00);
+        assert_eq!(registers.flags, 0x80);
+
+        //Carry
+        registers.flags = 0x10;
+        registers.accumulator = 0x0F;
+        system_data.mem_map[0x03] = 0x00;
+        add_8_bit_to_accumulator_with_carry(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x10);
+        assert_eq!(registers.flags, 0x20);
+
+        //Half Carry
+        registers.flags = 0x10;
+        registers.accumulator = 0xF0;
+        system_data.mem_map[0x05] = 0x20;
+        add_8_bit_to_accumulator_with_carry(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x11);
+        assert_eq!(registers.flags, 0x10);
+    }
 }
