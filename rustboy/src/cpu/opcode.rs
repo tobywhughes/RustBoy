@@ -300,6 +300,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         return_from_call_conditional(&mut system_data, &mut registers, opcode);
     }
 
+    else if (opcode & 0xE7) == 0xC2
+    {
+        jump_address_with_conditional(&mut system_data, &mut registers, opcode);
+    }
+
     //cb codes
     else if opcode == 0xCB
     {
@@ -1328,6 +1333,32 @@ pub fn return_from_call_conditional(system_data: &mut SystemData, registers: &mu
         let upper = system_data.mem_map[registers.stack_pointer as usize] as u16;
         registers.stack_pointer += 1;
         registers.program_counter = lower | (upper << 8);
+    }
+}
+
+pub fn jump_address_with_conditional(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let condition_code = (opcode & 0x18) >> 3;
+    let mut call_flag = false;
+    match condition_code
+    {
+        0 => if registers.flags & 0x80 != 0x80 {call_flag = true},
+        1 => if registers.flags & 0x80 == 0x80 {call_flag = true},
+        2 => if registers.flags & 0x10 != 0x10 {call_flag = true},
+        3 => if registers.flags & 0x10 == 0x10 {call_flag = true},
+        _ => (),
+    }
+    if call_flag == false
+    {
+        system_data.cycles = 3;
+        registers.program_counter += 3;
+    }
+    else
+    {
+        let lower = system_data.mem_map[registers.program_counter as usize + 1] as u16;
+        let upper = system_data.mem_map[registers.program_counter as usize + 2] as u16;
+        registers.program_counter = lower | (upper << 8);
+        system_data.cycles = 4;
     }
 }
 

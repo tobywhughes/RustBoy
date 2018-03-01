@@ -1168,4 +1168,28 @@ mod opcode_test
         assert_eq!(registers.flags, 0x10);
         assert_eq!(system_data.mem_map[0x1234], 0x7F);
     }
+
+    #[test]
+    fn jump_address_with_conditional_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0xC2, 0xCA, 0xD2, 0xDA];
+        let pass_flags: Vec<u8> = vec![0x00, 0x80, 0x00, 0x10];
+        let fail_flags: Vec<u8> = vec![0x80, 0x00, 0x10, 0x00];
+        let flags: Vec<Vec<u8>> = vec![pass_flags, fail_flags];
+        let locations: Vec<u16> = vec![0x1234, 0x0003];
+        system_data.mem_map[0x0001] = 0x34;
+        system_data.mem_map[0x0002] = 0x12;
+        for i in 0..opcodes.len()
+        {
+            for j in 0..locations.len()
+            {
+                registers.program_counter = 0x00;
+                registers.flags = flags[j][i];
+                jump_address_with_conditional(&mut system_data, &mut registers, opcodes[i]);
+                assert_eq!(registers.program_counter, locations[j]);
+            }
+        }
+    }
 }
