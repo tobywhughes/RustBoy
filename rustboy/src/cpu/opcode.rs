@@ -1,6 +1,7 @@
 use system::SystemData;
 use system::Registers;
 
+use std::io;
 
 
 // Returns clock system_data.cycle passed during opcode
@@ -12,11 +13,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
     system_data.cycles = 0;
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
-    if registers.program_counter > 0x290 || registers.program_counter < 0x214
-    {
+    //if registers.program_counter > 0x2BA || registers.program_counter < 0x200
+    //{
         //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
         //println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
-    }
+    //}
     
     if opcode == 0xE0 || opcode == 0xE2 || opcode == 0xF0 || opcode == 0xF2
     {
@@ -24,10 +25,15 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         //println!("C-register: {:02x} -- nextopcode: {:02x}", registers.c_register, system_data.mem_map[registers.program_counter as usize + 1]);
     }
 
-    // if registers.program_counter > 0x8000
-    // {
-    //      while true {}()
-    // }
+    //if registers.program_counter == 0x100
+    //{
+        //println!("LOCATION CATCH");
+    //if registers.program_counter >= 0x26A && registers.program_counter <= 0x2A2
+    //{
+        //io::stdin().read_line(&mut String::new());
+    //}
+        //while true {}()
+    //}
     //println!("{:08b}", system_data.mem_map[0xFF40]);
 
     if registers.interrupt_master_enable_delay_flag
@@ -160,12 +166,12 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     //or
     else if (opcode & 0xF8) == 0xB0
     {
-        xor_8_bit_register(&mut system_data, &mut registers, opcode);
+        or_8_bit_register(&mut system_data, &mut registers, opcode);
     }
     //and
     else if (opcode & 0xF8) == 0xA0
     {
-        xor_8_bit_register(&mut system_data, &mut registers, opcode);
+        and_8_bit_register(&mut system_data, &mut registers, opcode);
     }
     //jump dis
     else if opcode == 0x18
