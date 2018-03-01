@@ -193,6 +193,29 @@ mod opcode_test
     }
 
     #[test]
+    fn xor_hl_location_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        //Zero
+        registers.accumulator = 0xFF;
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+        system_data.mem_map[0x1234] = 0xFF;
+        xor_hl_location(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x80);
+        assert_eq!(registers.accumulator, 0x00);
+        
+        registers.accumulator = 0x00;
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+        system_data.mem_map[0x1234] = 0xFF;
+        xor_hl_location(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x00);
+        assert_eq!(registers.accumulator, 0xFF);
+
+
+    }
+
+    #[test]
     fn or_8_bit_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();

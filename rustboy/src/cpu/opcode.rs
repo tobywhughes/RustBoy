@@ -148,7 +148,14 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     //xor
     else if (opcode & 0xF8) == 0xA8
     {
-        xor_8_bit_register(&mut system_data, &mut registers, opcode);
+        if opcode == 0xAE
+        {
+            xor_hl_location(&mut system_data, &mut registers);
+        }
+        else
+        {
+            xor_8_bit_register(&mut system_data, &mut registers, opcode);
+        }
     }
     //or
     else if (opcode & 0xF8) == 0xB0
@@ -1360,6 +1367,18 @@ pub fn jump_address_with_conditional(system_data: &mut SystemData, registers: &m
         registers.program_counter = lower | (upper << 8);
         system_data.cycles = 4;
     }
+}
+
+pub fn xor_hl_location(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 2;
+    registers.flags = 0x00;
+    registers.accumulator ^= system_data.mem_map[registers.mapped_16_bit_register_getter(3) as usize];
+    if registers.accumulator == 0x00
+    {
+        registers.flags |= 0x80;
+    }
+    registers.program_counter += 1;
 }
 
 //##########################################################################
