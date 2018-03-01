@@ -295,6 +295,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         add_8_bit_to_accumulator_with_carry(&mut system_data, &mut registers);
     }
+    else if (opcode & 0xE7) == 0xC0
+    {
+        return_from_call_conditional(&mut system_data, &mut registers, opcode);
+    }
+
     //cb codes
     else if opcode == 0xCB
     {
@@ -1295,6 +1300,35 @@ pub fn add_8_bit_to_accumulator_with_carry(system_data: &mut SystemData, registe
     }
 
     registers.program_counter += 2;
+}
+
+pub fn return_from_call_conditional(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    //5 if pass, 2 if fail
+    let condition_code = (opcode & 0x18) >> 3;
+    let mut call_flag = false;
+    match condition_code
+    {
+        0 => if (registers.flags & 0x80) != 0x80 {call_flag = true},
+        1 => if (registers.flags & 0x80) == 0x80 {call_flag = true},
+        2 => if (registers.flags & 0x10) != 0x10 {call_flag = true},
+        3 => if (registers.flags & 0x10) == 0x10 {call_flag = true},
+        _ => (),
+    }
+
+    if call_flag  == false
+    {
+        system_data.cycles = 2;
+        registers.program_counter += 1;
+    }
+    else
+    {
+        let lower = system_data.mem_map[registers.stack_pointer as usize] as u16;
+        registers.stack_pointer += 1;
+        let upper = system_data.mem_map[registers.stack_pointer as usize] as u16;
+        registers.stack_pointer += 1;
+        registers.program_counter = lower | (upper << 8);
+    }
 }
 
 //##########################################################################

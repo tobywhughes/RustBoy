@@ -1101,4 +1101,30 @@ mod opcode_test
         assert_eq!(registers.accumulator, 0x11);
         assert_eq!(registers.flags, 0x10);
     }
+
+    #[test]
+    fn return_from_call_conditional_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0xC0, 0xC8, 0xD0, 0xD8];
+        let pass_flags: Vec<u8> = vec![0x00, 0x80, 0x00, 0x10];
+        let fail_flags: Vec<u8> = vec![0x80, 0x00, 0x10, 0x00];
+        let flags: Vec<Vec<u8>> = vec![pass_flags, fail_flags];
+        let locations: Vec<u16> = vec![0x1234, 0x0001];
+        system_data.mem_map[0x100] = 0x34;
+        system_data.mem_map[0x101] = 0x12;
+
+        for i in 0..opcodes.len()
+        {
+            for j in 0..flags.len()
+            {
+                registers.program_counter = 0x00;
+                registers.stack_pointer = 0x100;
+                registers.flags = flags[j][i];
+                return_from_call_conditional(&mut system_data, &mut registers, opcodes[i]);
+                assert_eq!(registers.program_counter, locations[j]);
+            }
+        }
+    }
 }
