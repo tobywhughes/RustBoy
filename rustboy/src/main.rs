@@ -69,7 +69,9 @@ fn main()
         if let Some(r) = e.update_args()
         {
             while !gpu_registers.v_blank_draw_flag
-            {
+            {   //Default until joypad implementation
+                system_data.mem_map[0xFF00] = 0xFF;//system_data.mem_map[0xFF00] | 0x0F;
+                //^^^^ Delete when joypad implemented ^^^^^^
                 let opcode = system_data.mem_map[registers.program_counter as usize];
                 let address = registers.program_counter;
                 cpu_continue(&mut system_data, &mut registers);
