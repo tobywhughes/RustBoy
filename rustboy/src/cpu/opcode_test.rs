@@ -1215,4 +1215,59 @@ mod opcode_test
             }
         }
     }
+
+    #[test]
+    fn rotate_right_through_carry_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0x1F, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D];
+        //No Set
+        registers.accumulator = 0x02;
+        rotate_right_through_carry(&mut system_data, &mut registers, 0x1F);
+        assert_eq!(registers.flags, 0x00);
+        assert_eq!(registers.accumulator, 0x01);
+
+        //Zero Flag
+        registers.accumulator = 0x00;
+        rotate_right_through_carry(&mut system_data, &mut registers, 0x1F);
+        assert_eq!(registers.flags, 0x80);
+        assert_eq!(registers.accumulator, 0x00);
+
+        for i in 0..opcodes.len()
+        {
+            registers.flags = 0x10;
+            registers.mapped_register_setter(i as u8, 0xFF);
+            rotate_right_through_carry(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.flags, 0x10);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0xFF);
+        }
+    }
+
+    #[test]
+    fn rotate_hl_location_right_through_carry_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+
+        //No Set
+        system_data.mem_map[0x1234] = 0x02;
+        registers.flags = 0x00;
+        rotate_hl_location_right_through_carry(&mut system_data, &mut registers);
+        assert_eq!(system_data.mem_map[0x1234], 0x01);
+        assert_eq!(registers.flags, 0x00);
+
+        //Zero Flag
+        system_data.mem_map[0x1234] = 0x00;
+        registers.flags = 0x00;
+        rotate_hl_location_right_through_carry(&mut system_data, &mut registers);
+        assert_eq!(system_data.mem_map[0x1234], 0x00);
+        assert_eq!(registers.flags, 0x80);
+
+        //Carry
+        system_data.mem_map[0x1234] = 0xFF;
+        registers.flags = 0x10;
+        rotate_hl_location_right_through_carry(&mut system_data, &mut registers);
+        assert_eq!(system_data.mem_map[0x1234], 0xFF);
+        assert_eq!(registers.flags, 0x10);
+    }
 }

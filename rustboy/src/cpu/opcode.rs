@@ -1381,6 +1381,8 @@ pub fn xor_hl_location(system_data: &mut SystemData, registers: &mut Registers)
     registers.program_counter += 1;
 }
 
+
+
 //##########################################################################
 //##########################################################################
 //##########################################################################
@@ -1441,6 +1443,18 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
             shift_right_register_logical(&mut system_data, &mut registers, opcode);
         }
     }
+    else if (opcode & 0xF8) == 0x18
+    {
+        if opcode == 0x1e
+        {
+            rotate_hl_location_right_through_carry(&mut system_data, &mut registers);
+        }
+        else 
+        {
+            rotate_right_through_carry(&mut system_data, &mut registers, opcode);
+        }
+    }
+
     else 
     {
         println!("Unimplemented CB code");
@@ -1617,4 +1631,52 @@ pub fn shift_hl_location_right_logical(system_data: &mut SystemData, registers: 
 
     registers.program_counter += 2;
     system_data.cycles = 4;
+}
+
+
+pub fn rotate_right_through_carry(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let mut register_code = (opcode & 0x07) + 1;
+    if register_code == 7
+    {
+        system_data.cycles = 0;
+        println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+    }
+    else 
+    {
+        if register_code == 8
+        {
+            register_code = 0;
+        }
+        system_data.cycles = 2;
+        registers.program_counter += 2;
+        let carry_bit = (registers.flags & 0x10) << 3;
+        let mut register_value = registers.mapped_register_getter(register_code);
+        let carry_set_bit = (register_value & 0x01) << 4;
+        registers.flags = 0x00;
+        registers.flags |= carry_set_bit;
+        register_value = (register_value >> 1) | carry_bit;
+        if register_value == 0
+        {
+            registers.flags |= 0x80;
+        }
+        registers.mapped_register_setter(register_code, register_value);
+    }
+}
+
+pub fn rotate_hl_location_right_through_carry(system_data: &mut SystemData, registers: &mut Registers)
+{
+        let carry_bit = (registers.flags & 0x10) << 3;
+        let mut location_value = system_data.mem_map[registers.mapped_16_bit_register_getter(3) as usize];
+        let carry_set_bit = (location_value & 0x01) << 4;
+        registers.flags = 0x00;
+        registers.flags |= carry_set_bit;
+        location_value = (location_value >> 1) | carry_bit;
+        if location_value == 0
+        {
+            registers.flags |= 0x80;
+        }
+        system_data.mem_map[registers.mapped_16_bit_register_getter(3) as usize] = location_value;
+        system_data.cycles = 4;
+        registers.program_counter += 2;
 }
