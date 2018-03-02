@@ -34,7 +34,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     //}
         //while true {}()
     //}
-    //println!("{:08b}", system_data.mem_map[0xFF40]);
+    println!("{:08b}", system_data.mem_map[0xFF40]);
 
     if registers.interrupt_master_enable_delay_flag
     {
@@ -42,6 +42,283 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         registers.interrupt_master_enable_flag = true;
     }
 
+    match opcode
+    {
+0x00 => no_operation(&mut system_data, &mut registers),
+0x01 => load_nn_to_16bit_register(&mut system_data, &mut registers, opcode),
+0x02 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented?
+0x03 => increment_16_bit_register(&mut system_data, &mut registers, opcode),
+0x04 => increment_8_bit_register(&mut system_data, &mut registers, opcode),
+0x05 => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
+0x06 => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
+0x07 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x08 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x09 => add_16_bit_register_to_hl(&mut system_data, &mut registers, opcode),
+0x0A => load_accumulator_with_bc_address(&mut system_data, &mut registers),
+0x0B => decrement_16_bit_register(&mut system_data, &mut registers, opcode),
+0x0C => increment_8_bit_register(&mut system_data, &mut registers, opcode),
+0x0D => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
+0x0E => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
+0x0F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0x10 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x11 => load_nn_to_16bit_register(&mut system_data, &mut registers, opcode),
+0x12 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), //Unimplemented
+0x13 => increment_16_bit_register(&mut system_data, &mut registers, opcode),
+0x14 => increment_8_bit_register(&mut system_data, &mut registers, opcode),
+0x15 => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
+0x16 => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
+0x17 => rotate_accumulator_left_through_carry(&mut system_data, &mut registers),
+0x18 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x19 => add_16_bit_register_to_hl(&mut system_data, &mut registers, opcode),
+0x1A => load_accumulator_with_de_address(&mut system_data, &mut registers),
+0x1B => decrement_16_bit_register(&mut system_data, &mut registers, opcode),
+0x1C => increment_8_bit_register(&mut system_data, &mut registers, opcode),
+0x1D => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
+0x1E => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
+0x1F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0x20 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x21 => load_nn_to_16bit_register(&mut system_data, &mut registers, opcode),
+0x22 => load_increment_hl_register_location_with_accumulator(&mut system_data, &mut registers), 
+0x23 => increment_16_bit_register(&mut system_data, &mut registers, opcode),
+0x24 => increment_8_bit_register(&mut system_data, &mut registers, opcode),
+0x25 => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
+0x26 => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
+0x27 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x28 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x29 => add_16_bit_register_to_hl(&mut system_data, &mut registers, opcode),
+0x2A => load_accumulator_with_hl_then_increment(&mut system_data, &mut registers),
+0x2B => decrement_16_bit_register(&mut system_data, &mut registers, opcode),
+0x2C => increment_8_bit_register(&mut system_data, &mut registers, opcode),
+0x2D => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
+0x2E => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
+0x2F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0x30 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x31 => load_nn_to_16bit_register(&mut system_data, &mut registers, opcode),
+0x32 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x33 => increment_16_bit_register(&mut system_data, &mut registers, opcode),
+0x34 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x35 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x36 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x37 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x38 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x39 => add_16_bit_register_to_hl(&mut system_data, &mut registers, opcode),
+0x3A => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x3B => decrement_16_bit_register(&mut system_data, &mut registers, opcode),
+0x3C => increment_8_bit_register(&mut system_data, &mut registers, opcode),
+0x3D => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
+0x3E => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
+0x3F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0x40 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x41 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x42 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x43 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x44 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x45 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x46 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x47 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x48 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x49 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x4A => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x4B => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x4C => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x4D => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x4E => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x4F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0x50 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x51 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x52 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x53 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x54 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x55 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x56 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x57 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x58 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x59 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x5A => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x5B => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x5C => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x5D => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x5E => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x5F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0x60 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x61 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x62 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x63 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x64 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x65 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x66 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x67 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x68 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x69 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x6A => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x6B => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x6C => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x6D => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x6E => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x6F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0x70 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x71 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x72 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x73 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x74 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x75 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x76 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x77 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x78 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x79 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x7A => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x7B => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x7C => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x7D => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x7E => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x7F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0x80 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x81 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x82 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x83 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x84 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x85 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x86 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x87 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x88 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x89 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x8A => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x8B => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x8C => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x8D => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x8E => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x8F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0x90 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x91 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x92 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x93 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x94 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x95 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x96 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x97 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x98 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x99 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x9A => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x9B => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x9C => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x9D => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x9E => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x9F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0xA0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xA1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xA2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xA3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xA4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xA5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xA6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xA7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xA8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xA9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xAA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xAB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xAC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xAD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xAE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xAF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0xB0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xB1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xB2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xB3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xB4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xB5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xB6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xB7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xB8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xB9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xBA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xBB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xBC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xBD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xBE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xBF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0xC0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xC1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xC2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xC3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xC4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xC5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xC6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xC7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xC8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xC9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xCA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xCB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xCC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xCD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xCE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xCF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0xD0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xD1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xD2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xD3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xD4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xD5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xD6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xD7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xD8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xD9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xDA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xDB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xDC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xDD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xDE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xDF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0xE0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xE1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xE2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xE3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xE4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xE5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xE6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xE7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xE8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xE9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xEA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xEB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xEC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xED => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xEE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xEF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+
+0xF0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xF1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xF2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xF3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xF4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xF5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xF6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xF7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xF8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xF9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xFA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xFB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xFC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xFD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xFE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xFF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+   _ => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+    }
+
+/*
     if opcode == 0x00
     {
         no_operation(&mut system_data, &mut registers);
@@ -333,7 +610,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
         println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
     }
-
+*/
     if opcode == 0xF0 || opcode == 0xF2
     {
         //println!("{:02x}", registers.accumulator);
@@ -593,31 +870,22 @@ pub fn load_accumulator_with_io_port_with_n_offset(system_data: &mut SystemData,
 } 
 
 pub fn load_nn_to_16bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8){
-    system_data.cycles = 2;
+    system_data.cycles = 3;
 
-    if (opcode & 0x30) == 0x30 
+    let lower = system_data.mem_map[(registers.program_counter + 1) as usize] as u16;
+    let upper = system_data.mem_map[(registers.program_counter + 2) as usize] as u16;
+    let set_value = lower | (upper << 8);
+    match opcode
     {
-        registers.stack_pointer = system_data.mem_map[(registers.program_counter + 1) as usize] as u16 | (system_data.mem_map[(registers.program_counter + 2) as usize] as u16) << 8;
-    }
-    else if (opcode & 0x30) == 0x20
-    {
-        registers.h_register = system_data.mem_map[(registers.program_counter + 2) as usize];
-        registers.l_register = system_data.mem_map[(registers.program_counter + 1) as usize];
-    }
-    else if (opcode & 0x30) == 0x10
-    {
-        registers.d_register = system_data.mem_map[(registers.program_counter + 2) as usize];
-        registers.e_register = system_data.mem_map[(registers.program_counter + 1) as usize];
-    }
-    else if (opcode & 0x30) == 0x00
-    {
-        registers.b_register = system_data.mem_map[(registers.program_counter + 2) as usize];
-        registers.c_register = system_data.mem_map[(registers.program_counter + 1) as usize];
-    }
-    else 
-    {
-        system_data.cycles = 0;
-        println!("No Opcode Found--ad 0x{:04x}--op 0x{:x}", registers.program_counter, opcode);
+        0x01 => registers.mapped_16_bit_register_setter(1, set_value),
+        0x11 => registers.mapped_16_bit_register_setter(2, set_value),
+        0x21 => registers.mapped_16_bit_register_setter(3, set_value),
+        0x31 => registers.mapped_16_bit_register_setter(4, set_value),
+        _ => {
+            system_data.cycles = 0;
+            println!("ERROR- INVALID REGISTER CODE --ad 0x{:04x}--op 0x{:x}", registers.program_counter, opcode);
+            return;
+        }
     }
 
     registers.program_counter += 3;
