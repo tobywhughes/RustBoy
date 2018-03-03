@@ -1285,4 +1285,39 @@ mod opcode_test
         assert_eq!(registers.flags, 0x00);
         assert_eq!(registers.accumulator, 0xFF);
     }
+
+    #[test]
+
+    fn add_registers_to_accumulator_with_carry_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D];
+        //No Set & Zero
+        registers.flags = 0x00;
+        registers.accumulator = 0x00;
+        add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, 0x8F);
+        assert_eq!(registers.accumulator, 0x00);
+        assert_eq!(registers.flags, 0x80);
+
+        //Set
+        //Half Carry
+        registers.flags = 0x10;
+        registers.accumulator = 0x0F;
+        add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, 0x8F);
+        assert_eq!(registers.accumulator, 0x1F);
+        assert_eq!(registers.flags, 0x20);
+
+        //Carry and register tests
+        for i in 0..opcodes.len()
+        {
+            registers.flags = 0x10;
+            registers.accumulator = 0xF0;
+            registers.mapped_register_setter(i as u8 + 1, 0x10);
+            add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.accumulator, 0x01);
+            assert_eq!(registers.flags, 0x10);
+        } 
+
+    }
 }

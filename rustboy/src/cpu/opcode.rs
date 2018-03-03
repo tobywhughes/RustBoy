@@ -188,14 +188,14 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x85 => add_8_bit(&mut system_data, &mut registers, opcode),
 0x86 => add_8_bit(&mut system_data, &mut registers, opcode),
 0x87 => add_8_bit(&mut system_data, &mut registers, opcode),
-0x88 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented 
-0x89 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
-0x8A => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
-0x8B => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
-0x8C => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
-0x8D => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x88 => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode), 
+0x89 => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode),
+0x8A => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode),
+0x8B => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode),
+0x8C => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode),
+0x8D => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode),
 0x8E => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
-0x8F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x8F => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode),
 
 0x90 => subtract_8_bit(&mut system_data, &mut registers, opcode),
 0x91 => subtract_8_bit(&mut system_data, &mut registers, opcode),
@@ -1371,7 +1371,7 @@ pub fn xor_hl_location(system_data: &mut SystemData, registers: &mut Registers)
 
 pub fn xor_accumulator_with_n(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles += 2;
+    system_data.cycles = 2;
     registers.flags = 0x00;
     let n_value = system_data.mem_map[registers.program_counter as usize + 1];
     registers.accumulator ^= n_value;
@@ -1382,12 +1382,53 @@ pub fn xor_accumulator_with_n(system_data: &mut SystemData, registers: &mut Regi
     registers.program_counter += 2;
 }
 
+pub fn add_registers_to_accumulator_with_carry(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let mut register_code = 0;
+    match opcode
+    {
+        0x8F => register_code = 0,
+        0x88 => register_code = 1,
+        0x89 => register_code = 2,
+        0x8A => register_code = 3,
+        0x8B => register_code = 4,
+        0x8C => register_code = 5,
+        0x8D => register_code = 6,
+        _ => {system_data.cycles = 0; return;},
+    }
+    let carry_bit = ((registers.flags & 0x10) >> 4) as u16;
+    let accumulator_value = registers.accumulator as u16;
+    let register_value = registers.mapped_register_getter(register_code) as u16;
+    let add_value =  register_value + carry_bit;
+    registers.flags = 0x00;
+    if (accumulator_value & 0x0F) + ((register_value & 0x0F) + carry_bit) >= 0x10
+    {
+        registers.flags |= 0x20;
+    }
+
+    let mut new_value = accumulator_value + add_value;
+    if new_value >= 0x100
+    {
+        registers.flags |= 0x10;
+        new_value -= 0x100;
+    }
+
+    if new_value == 0x00
+    {
+        registers.flags |= 0x80;
+    }
+    registers.accumulator = new_value as u8;
+
+    system_data.cycles = 1;
+    registers.program_counter += 1;
+}
 
 
+
 //##########################################################################
 //##########################################################################
 //##########################################################################
-//##########################################################################
+//#########################################################################
 //##########################################################################
 //################################    CB   #################################
 //##########################################################################
