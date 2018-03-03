@@ -197,420 +197,128 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x8E => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
 0x8F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
 
-0x90 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x91 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x92 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x93 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x94 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x95 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x96 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x97 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x98 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x99 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x9A => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x9B => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x9C => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x9D => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x9E => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0x9F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x90 => subtract_8_bit(&mut system_data, &mut registers, opcode),
+0x91 => subtract_8_bit(&mut system_data, &mut registers, opcode),
+0x92 => subtract_8_bit(&mut system_data, &mut registers, opcode),
+0x93 => subtract_8_bit(&mut system_data, &mut registers, opcode),
+0x94 => subtract_8_bit(&mut system_data, &mut registers, opcode),
+0x95 => subtract_8_bit(&mut system_data, &mut registers, opcode),
+0x96 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x97 => subtract_8_bit(&mut system_data, &mut registers, opcode),
+0x98 => subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode),
+0x99 => subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode),
+0x9A => subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode),
+0x9B => subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode),
+0x9C => subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode),
+0x9D => subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode),
+0x9E => subtract_hl_location_and_carry_from_accumulator(&mut system_data, &mut registers),
+0x9F => subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode),
 
-0xA0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xA1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xA2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xA3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xA4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xA5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xA6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xA7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xA8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xA9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xAA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xAB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xAC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xAD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xAE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xAF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xA0 => and_8_bit_register(&mut system_data, &mut registers, opcode),
+0xA1 => and_8_bit_register(&mut system_data, &mut registers, opcode),
+0xA2 => and_8_bit_register(&mut system_data, &mut registers, opcode),
+0xA3 => and_8_bit_register(&mut system_data, &mut registers, opcode),
+0xA4 => and_8_bit_register(&mut system_data, &mut registers, opcode),
+0xA5 => and_8_bit_register(&mut system_data, &mut registers, opcode),
+0xA6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), //Unimplemented
+0xA7 => and_8_bit_register(&mut system_data, &mut registers, opcode),
+0xA8 => xor_8_bit_register(&mut system_data, &mut registers, opcode),
+0xA9 => xor_8_bit_register(&mut system_data, &mut registers, opcode),
+0xAA => xor_8_bit_register(&mut system_data, &mut registers, opcode),
+0xAB => xor_8_bit_register(&mut system_data, &mut registers, opcode),
+0xAC => xor_8_bit_register(&mut system_data, &mut registers, opcode),
+0xAD => xor_8_bit_register(&mut system_data, &mut registers, opcode),
+0xAE => xor_hl_location(&mut system_data, &mut registers),
+0xAF => xor_8_bit_register(&mut system_data, &mut registers, opcode),
 
-0xB0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xB1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xB2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xB3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xB4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xB5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xB6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xB7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xB8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xB9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xBA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xBB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xBC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xBD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xBE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xBF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xB0 => or_8_bit_register(&mut system_data, &mut registers, opcode),
+0xB1 => or_8_bit_register(&mut system_data, &mut registers, opcode),
+0xB2 => or_8_bit_register(&mut system_data, &mut registers, opcode),
+0xB3 => or_8_bit_register(&mut system_data, &mut registers, opcode),
+0xB4 => or_8_bit_register(&mut system_data, &mut registers, opcode),
+0xB5 => or_8_bit_register(&mut system_data, &mut registers, opcode),
+0xB6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xB7 => or_8_bit_register(&mut system_data, &mut registers, opcode),
+0xB8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xB9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xBA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xBB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xBC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xBD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xBE => compare_with_hl_address(&mut system_data, &mut registers),
+0xBF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
 
-0xC0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xC1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xC2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xC3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xC4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xC5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xC6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xC7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xC8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xC9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xCA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xCB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xCC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xCD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xCE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xCF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xC0 => return_from_call_conditional(&mut system_data, &mut registers, opcode),
+0xC1 => pop_16_bit_register(&mut system_data, &mut registers, opcode),
+0xC2 => jump_address_with_conditional(&mut system_data, &mut registers, opcode),
+0xC3 => jump_address(&mut system_data, &mut registers),
+0xC4 => call_function_nn_on_conditional(&mut system_data, &mut registers, opcode),
+0xC5 => push_16_bit_register(&mut system_data, &mut registers, opcode),
+0xC6 => add_8_bit_to_accumulator(&mut system_data, &mut registers),
+0xC7 => rst_jump(&mut system_data, &mut registers, opcode),
+0xC8 => return_from_call_conditional(&mut system_data, &mut registers, opcode),
+0xC9 => return_from_call(&mut system_data, &mut registers),
+0xCA => jump_address_with_conditional(&mut system_data, &mut registers, opcode),
+0xCB => cb_codes(&mut system_data, &mut registers),
+0xCC => call_function_nn_on_conditional(&mut system_data, &mut registers, opcode),
+0xCD => call_nn(&mut system_data, &mut registers),
+0xCE => add_8_bit_to_accumulator_with_carry(&mut system_data, &mut registers),
+0xCF => rst_jump(&mut system_data, &mut registers, opcode),
 
-0xD0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xD1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xD2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xD3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xD4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xD5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xD6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xD7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xD8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xD9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xDA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xDB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xDC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xDD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xDE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xDF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xD0 => return_from_call_conditional(&mut system_data, &mut registers, opcode),
+0xD1 => pop_16_bit_register(&mut system_data, &mut registers, opcode),
+0xD2 => jump_address_with_conditional(&mut system_data, &mut registers, opcode),
+0xD3 => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
+0xD4 => call_function_nn_on_conditional(&mut system_data, &mut registers, opcode),
+0xD5 => push_16_bit_register(&mut system_data, &mut registers, opcode),
+0xD6 => subtraction_n_from_accumulator(&mut system_data, &mut registers),
+0xD7 => rst_jump(&mut system_data, &mut registers, opcode),
+0xD8 => return_from_call_conditional(&mut system_data, &mut registers, opcode),
+0xD9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), //Unimplemented
+0xDA => jump_address_with_conditional(&mut system_data, &mut registers, opcode),
+0xDB => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
+0xDC => call_function_nn_on_conditional(&mut system_data, &mut registers, opcode),
+0xDD => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
+0xDE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xDF => rst_jump(&mut system_data, &mut registers, opcode),
 
-0xE0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xE1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xE2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xE3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xE4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xE5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xE6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xE7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xE8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xE9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xEA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xEB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xEC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xED => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xEE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xEF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xE0 => load_accumulator_to_io_port_with_n_offset(&mut system_data, &mut registers),
+0xE1 => pop_16_bit_register(&mut system_data, &mut registers, opcode),
+0xE2 => load_accumulator_to_io_port_with_c_offset(&mut system_data, &mut registers),
+0xE3 => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
+0xE4 => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
+0xE5 => push_16_bit_register(&mut system_data, &mut registers, opcode),
+0xE6 => and_nn_with_accumulator(&mut system_data, &mut registers),
+0xE7 => rst_jump(&mut system_data, &mut registers, opcode),
+0xE8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xE9 => jump_to_hl(&mut system_data, &mut registers),
+0xEA => load_nn_with_accumulator(&mut system_data, &mut registers),
+0xEB => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
+0xEC => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
+0xED => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
+0xEE => xor_accumulator_with_n(&mut system_data, &mut registers),
+0xEF => rst_jump(&mut system_data, &mut registers, opcode),
 
-0xF0 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xF1 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xF2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xF3 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xF4 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xF5 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xF6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xF7 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xF8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xF9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xFA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xFB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xFC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xFD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xFE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
-0xFF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0xF0 => load_accumulator_with_io_port_with_n_offset(&mut system_data, &mut registers),
+0xF1 => pop_16_bit_register(&mut system_data, &mut registers, opcode),
+0xF2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xF3 => disable_interupts(&mut system_data, &mut registers),
+0xF4 => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
+0xF5 => push_16_bit_register(&mut system_data, &mut registers, opcode),
+0xF6 => or_n(&mut system_data, &mut registers),
+0xF7 => rst_jump(&mut system_data, &mut registers, opcode),
+0xF8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xF9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xFA => load_accumulator_with_nn_address(&mut system_data, &mut registers),
+0xFB => enable_interupts(&mut system_data, &mut registers),
+0xFC => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
+0xFD => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
+0xFE => compare_with_n(&mut system_data, &mut registers),
+0xFF => rst_jump(&mut system_data, &mut registers, opcode),
+
    _ => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
     }
-
-/*
-    if opcode == 0x00
-    {
-        no_operation(&mut system_data, &mut registers);
-    }
-    //Disable Interupts
-    else if opcode == 0xF3
-    {
-        disable_interupts(&mut system_data, &mut registers);
-    }
-    //Enable Interrupts
-    else if opcode == 0xFB
-    {
-        let enable_delay = enable_interupts(&mut system_data, &mut registers);
-    }
-    //inc
-    else if (opcode & 0xC7) == 0x04
-    {
-        increment_8_bit_register(&mut system_data, &mut registers, opcode);
-    }
-    else if (opcode & 0xCF) == 0x03
-    {
-        increment_16_bit_register(&mut system_data, &mut registers, opcode);
-    }
-    //dec
-    else if (opcode & 0xC7) == 0x05
-    {
-        decrement_8_bit_register(&mut system_data, &mut registers, opcode);
-    }
-
-    else if (opcode & 0xCF) == 0x0B
-    {
-        decrement_16_bit_register(&mut system_data, &mut registers, opcode);
-    }
-    //add r or (hl)
-    else if (opcode & 0xF8) == 0x80
-    {
-        add_8_bit(&mut system_data, &mut registers, opcode);
-    }
-    //compare
-    else if opcode == 0xFE
-    {
-        compare_with_n(&mut system_data, &mut registers);
-    }
-
-    else if opcode == 0xBE
-    {
-        compare_with_hl_address(&mut system_data, &mut registers);
-    }
-
-    //8bit ld group
-    else if (opcode & 0xC7) == 0x06
-    {
-        if opcode == 0x36 
-        {
-        load_n_to_hl_location(&mut system_data, &mut registers);
-        }
-        else
-        {
-        load_n_to_8bit_register(&mut system_data, &mut registers, opcode);
-        }
-    }
-    //0b01xxxxxx group    
-    else if (opcode & 0xC0) == 0x40
-    {
-        //LD (HL), r
-        if (opcode & 0xF8) == 0x70
-        {
-            load_hl_address_with_register(&mut system_data, &mut registers, opcode);
-        }
-        //LD r, (HL)
-        else if (opcode & 0xC7) == 0x46
-        {
-            load_register_with_hl_location(&mut system_data, &mut registers, opcode);
-        }
-        //ld r, r'
-        else 
-        {
-            load_8_bit_register_to_register(&mut system_data, &mut registers, opcode);
-        }
-    }
-    //ld (FF00+C), A
-    else if opcode == 0xE2
-    {
-        load_accumulator_to_io_port_with_c_offset(&mut system_data, &mut registers);
-    }
-    //ld (FF00+n), A
-    else if opcode == 0xE0
-    {
-        load_accumulator_to_io_port_with_n_offset(&mut system_data, &mut registers);
-    }
-    //ld A, (ff00 + n)
-    else if opcode == 0xF0
-    {
-        load_accumulator_with_io_port_with_n_offset(&mut system_data, &mut registers);
-    }
-    //16 bit ld group
-    else if (opcode & 0xCF) == 0x01
-    {
-        load_nn_to_16bit_register(&mut system_data, &mut registers, opcode);
-    }
-    else if opcode == 0x1A
-    {
-        load_accumulator_with_de_address(&mut system_data, &mut registers);
-    }
-    //sub r
-    else if (opcode & 0xF8) == 0x90
-    {
-        subtract_8_bit(&mut system_data, &mut registers, opcode)
-    }
-    //xor
-    else if (opcode & 0xF8) == 0xA8
-    {
-        if opcode == 0xAE
-        {
-            xor_hl_location(&mut system_data, &mut registers);
-        }
-        else
-        {
-            xor_8_bit_register(&mut system_data, &mut registers, opcode);
-        }
-    }
-    //or
-    else if (opcode & 0xF8) == 0xB0
-    {
-        or_8_bit_register(&mut system_data, &mut registers, opcode);
-    }
-    //and
-    else if (opcode & 0xF8) == 0xA0
-    {
-        and_8_bit_register(&mut system_data, &mut registers, opcode);
-    }
-    //jump dis
-    else if opcode == 0x18
-    {
-        jump_displacement(&mut system_data, &mut registers);
-    }
-    //jump nn
-    else if opcode == 0xC3
-    {
-        jump_address(&mut system_data, &mut registers);
-    }
-    //LDD (HL), A
-    else if opcode == 0x32
-    {
-        load_decrement_hl_register_location_with_accumulator(&mut system_data, &mut registers);        
-    }
-    //LDI (HL), A
-    else if opcode == 0x22
-    {
-        load_increment_hl_register_location_with_accumulator(&mut system_data, &mut registers);        
-    }
-    //LDI A, (HL)
-    else if opcode == 0x2A
-    {
-        load_accumulator_with_hl_then_increment(&mut system_data, &mut registers);
-    }
-    //ld (nn), a
-    else if opcode == 0xEA
-    {
-        load_nn_with_accumulator(&mut system_data, &mut registers);
-    }
-    //rla
-    else if opcode == 0x17
-    {
-        rotate_accumulator_left_through_carry(&mut system_data, &mut registers);
-    }
-    //call nn
-    else if opcode == 0xCD
-    {
-        call_nn(&mut system_data, &mut registers);
-    }
-    //ret
-    else if opcode == 0xC9
-    {
-        return_from_call(&mut system_data, &mut registers);
-    } 
-    //push qq
-    else if (opcode & 0xCF) == 0xC5
-    {
-        push_16_bit_register(&mut system_data, &mut registers, opcode);
-    }
-
-    //pop qq
-    else if (opcode & 0xCF) == 0xC1
-    {
-        pop_16_bit_register(&mut system_data, &mut registers, opcode);
-    }
-
-    //cpl - ones complement accumulator
-    else if opcode == 0x2F
-    {
-        ones_complement(&mut system_data, &mut registers);
-    }
-
-    else if opcode == 0xE6
-    {
-        and_nn_with_accumulator(&mut system_data, &mut registers);
-    }
-
-    else if (opcode & 0xC7) == 0xC7
-    {
-        rst_jump(&mut system_data, &mut registers, opcode);
-    }
-    //add hl, ss
-    else if (opcode & 0xCF) == 0x09
-    {
-        add_16_bit_register_to_hl(&mut system_data, &mut registers, opcode);
-    }
-    //jp (HL)
-    else if opcode == 0xE9
-    {
-        jump_to_hl(&mut system_data, &mut registers);
-    }
-    else if opcode == 0xF6
-    {
-        or_n(&mut system_data, &mut registers);
-    }
-    //sbc a, r
-    else if (opcode & 0xF8) == 0x98
-    {
-        if opcode == 0x9E
-        {
-            subtract_hl_location_and_carry_from_accumulator(&mut system_data, &mut registers);
-        }
-        else
-        {
-            subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode);
-        }
-    }
-    else if (opcode & 0xC7) == 0xC4
-    {
-        call_function_nn_on_conditional(&mut system_data, &mut registers, opcode);
-    }
-
-    else if opcode == 0xFA
-    {
-        load_accumulator_with_nn_address(&mut system_data, &mut registers);
-    }
-
-    else if opcode == 0xC6
-    {
-        add_8_bit_to_accumulator(&mut system_data, &mut registers);
-    }
-
-    else if opcode == 0xD6
-    {
-        subtraction_n_from_accumulator(&mut system_data, &mut registers);
-    }
-
-    else if opcode == 0x0A
-    {
-        load_accumulator_with_bc_address(&mut system_data, &mut registers);
-    }
-
-    else if (opcode & 0xE7) == 0x20
-    {
-        jump_displacement_on_flag(&mut system_data, &mut registers, opcode);
-    }
-    else if opcode == 0x1F
-    {
-        rotate_accumulator_right_through_carry(&mut system_data, &mut registers);
-    }
-    else if opcode == 0xCE
-    {
-        add_8_bit_to_accumulator_with_carry(&mut system_data, &mut registers);
-    }
-    else if (opcode & 0xE7) == 0xC0
-    {
-        return_from_call_conditional(&mut system_data, &mut registers, opcode);
-    }
-
-    else if (opcode & 0xE7) == 0xC2
-    {
-        jump_address_with_conditional(&mut system_data, &mut registers, opcode);
-    }
-
-    else if opcode == 0xEE
-    {
-        xor_accumulator_with_n(&mut system_data, &mut registers);
-    }
-
-    //cb codes
-    else if opcode == 0xCB
-    {
-        cb_codes(&mut system_data, &mut registers);
-    }
-
-    else
-    {
-        println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
-    }
-*/
+          ;
     if opcode == 0xF0 || opcode == 0xF2
     {
         //println!("{:02x}", registers.accumulator);
@@ -942,6 +650,7 @@ pub fn and_8_bit_register(system_data: &mut SystemData, registers: &mut Register
     let mut register_code = (opcode & 0x07) + 1;
     if register_code == 7{
         println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+        system_data.cycles = 0;
     }
     else {
         if register_code == 8
