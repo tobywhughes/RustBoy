@@ -13,8 +13,8 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
     system_data.cycles = 0;
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
-    //if registers.program_counter > 0x2BA || registers.program_counter < 0x200
-    //{
+ //if registers.program_counter > 0x2BA || registers.program_counter < 0x200
+   //{
         //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
         //println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
     //}
@@ -28,13 +28,13 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     //if registers.program_counter == 0x100
     //{
         //println!("LOCATION CATCH");
-    //if registers.program_counter >= 0x26A && registers.program_counter <= 0x2A2
-    //{
-        //io::stdin().read_line(&mut String::new());
-    //}
-        //while true {}()
-    //}
-    println!("{:08b}", system_data.mem_map[0xFF40]);
+    // if registers.program_counter >= 0x8000
+    // {
+    //     //io::stdin().read_line(&mut String::new());
+    // //}
+    //     //while true {}()
+    // }
+    //println!("{:08b}", system_data.mem_map[0xFF40]);
 
     if registers.interrupt_master_enable_delay_flag
     {
@@ -324,6 +324,11 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         //println!("{:02x}", registers.accumulator);
     }
     system_data.cycles *= 4;
+
+    if system_data.cycles == 0
+    {
+        while true {;}
+    }
 
 
 }
@@ -943,6 +948,7 @@ pub fn and_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Reg
 pub fn rst_jump(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
     system_data.cycles = 4;
+    registers.program_counter += 1;
     registers.stack_pointer -= 1;
     system_data.mem_map[registers.stack_pointer as usize] = ((registers.program_counter & 0xFF00) >> 8) as u8;
     registers.stack_pointer -= 1;
@@ -1114,6 +1120,7 @@ pub fn call_function_nn_on_conditional(system_data: &mut SystemData, registers: 
     }
     else
     {
+        registers.program_counter += 3;
         let mut call_flag = false;
         if condition_code == 0
         {
@@ -1323,6 +1330,7 @@ pub fn return_from_call_conditional(system_data: &mut SystemData, registers: &mu
     }
     else
     {
+        system_data.cycles = 5;
         let lower = system_data.mem_map[registers.stack_pointer as usize] as u16;
         registers.stack_pointer += 1;
         let upper = system_data.mem_map[registers.stack_pointer as usize] as u16;
