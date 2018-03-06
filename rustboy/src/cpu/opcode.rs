@@ -15,8 +15,8 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
  //if registers.program_counter > 0x2BA || registers.program_counter < 0x200
    //{
-        println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
-        println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
+        //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+        //println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
     //}
     
     if opcode == 0xE0 || opcode == 0xE2 || opcode == 0xF0 || opcode == 0xF2
@@ -30,7 +30,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         //println!("LOCATION CATCH");
      if registers.program_counter == 0xC1B9
     {
-        io::stdin().read_line(&mut String::new());
+        //io::stdin().read_line(&mut String::new());
     }
     //     //while true {}()
     // }
@@ -85,7 +85,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x24 => increment_8_bit_register(&mut system_data, &mut registers, opcode),
 0x25 => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
 0x26 => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
-0x27 => bcd_adjust(&mut system_data, &mut registers);
+0x27 => bcd_adjust(&mut system_data, &mut registers),
 0x28 => jump_displacement_on_flag(&mut system_data, &mut registers, opcode),
 0x29 => add_16_bit_register_to_hl(&mut system_data, &mut registers, opcode),
 0x2A => load_accumulator_with_hl_then_increment(&mut system_data, &mut registers),
@@ -1579,114 +1579,46 @@ pub fn bcd_adjust(system_data: &mut SystemData, registers: &mut Registers)
     let c_flag = (registers.flags & 0x10) >> 4;
     let upper = (registers.accumulator & 0xF0) >> 4;
     let lower = (registers.accumulator & 0x0F);
-    println!("l{} -- h{} -- n{} --h{} --c{}", lower, upper, n_flag, h_flag, c_flag);
+
     if n_flag == 0
     {
-        if c_flag == 0
+        if (c_flag == 1) || (registers.accumulator > 0x99)
         {
-            if h_flag == 0
-            {
-                if upper < 0x09 && lower > 0x09
-                {
-                    add_value = 0x06;
-                } 
-                else if upper > 0x09 && lower < 0x0A
-                {
-                    add_value = 0x60;
-                    carry_set = 0x10;
-                }
-                else if upper > 0x08 && lower  > 0x09
-                {
-                    add_value = 0x66;
-                    carry_set = 0x10;
-                }
-            }
-            else 
-            {
-               if upper < 0x0A && lower < 0x04
-               {
-                   add_value = 0x06;
-               } 
-               else if upper > 0x09 && lower < 0x04
-               {
-                   add_value = 0x66;
-                   carry_set = 0x10;
-               }
-            }
+            add_value += 0x60;
+            carry_set = 0x10;
         }
-        else 
+        if (h_flag == 1) || ((registers.accumulator & 0x0F) > 0x09)
         {
-            if h_flag == 0
-            {
-                if upper < 0x03 && lower < 0x0A
-                {
-                    add_value = 0x60;
-                    carry_set = 0x10;
-                }
-                else if upper < 0x03 && lower > 0x09
-                {
-                    add_value = 0x66;
-                    carry_set = 0x10;
-                }
-            }
-            else 
-            {
-                if upper < 0x04 && lower < 0x04
-                {
-                    add_value = 0x66;
-                    carry_set = 0x10;
-                }
-            }
+            add_value += 0x06;
         }
     }
-    else
+    else 
     {
-        if c_flag == 0
+        if c_flag == 1 && h_flag == 1
         {
-            if h_flag == 0
-            {
-                ;
-            }
-            else 
-            {
-                if upper < 0x09 && lower > 0x05
-                {
-                    add_value = 0xFA;
-                }
-            }
+           add_value = 0x9A;
+           carry_set = 0x10;
         }
-        else 
+        
+        else if c_flag == 1
         {
-            if h_flag == 0
-            {
-                if upper > 0x06 && lower < 0x0A
-                {
-                    add_value = 0xA0;
-                    carry_set = 0x10;
-                }
-            }
-            else 
-            {
-                if (upper == 6 || upper == 7) && lower > 5
-                {
-                    add_value = 0x9A;
-                    carry_set = 0x10;
-                }
-            }
+            add_value = 0xA0;
+            carry_set = 0x10;
+        }
+
+        else if h_flag == 1
+        {
+            add_value = 0xFA;
         }
     }
     registers.flags &= 0x40;
     let mut new_value = registers.accumulator as u16 + add_value as u16;
-    if new_value >= 0x100
-    {
-        new_value -= 0x100;
-    }
-    if new_value == 0x00
+    if (new_value & 0x00FF) == 0x00
     {
         registers.flags |= 0x80;
     }
     registers.flags |= carry_set;
-    registers.accumulator = new_value as u8;
+    registers.accumulator = (new_value & 0x00FF) as u8;
 }
 
 //##########################################################################
