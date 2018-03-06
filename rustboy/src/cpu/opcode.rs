@@ -85,7 +85,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x24 => increment_8_bit_register(&mut system_data, &mut registers, opcode),
 0x25 => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
 0x26 => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
-0x27 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), //Unimplemented
+0x27 => bcd_adjust(&mut system_data, &mut registers);
 0x28 => jump_displacement_on_flag(&mut system_data, &mut registers, opcode),
 0x29 => add_16_bit_register_to_hl(&mut system_data, &mut registers, opcode),
 0x2A => load_accumulator_with_hl_then_increment(&mut system_data, &mut registers),
@@ -1566,6 +1566,127 @@ pub fn load_hl_to_stack_pointer(system_data: &mut SystemData, registers: &mut Re
     registers.program_counter += 1;
     system_data.cycles = 2;
     registers.stack_pointer = registers.mapped_16_bit_register_getter(3);
+}
+
+pub fn bcd_adjust(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    system_data.cycles = 1;
+    let mut add_value = 0;
+    let mut carry_set = 0x00;
+    let n_flag = (registers.flags & 0x40) >> 6;
+    let h_flag = (registers.flags & 0x20) >> 5;
+    let c_flag = (registers.flags & 0x10) >> 4;
+    let upper = (registers.accumulator & 0xF0) >> 4;
+    let lower = (registers.accumulator & 0x0F);
+    println!("l{} -- h{} -- n{} --h{} --c{}", lower, upper, n_flag, h_flag, c_flag);
+    if n_flag == 0
+    {
+        if c_flag == 0
+        {
+            if h_flag == 0
+            {
+                if upper < 0x09 && lower > 0x09
+                {
+                    add_value = 0x06;
+                } 
+                else if upper > 0x09 && lower < 0x0A
+                {
+                    add_value = 0x60;
+                    carry_set = 0x10;
+                }
+                else if upper > 0x08 && lower  > 0x09
+                {
+                    add_value = 0x66;
+                    carry_set = 0x10;
+                }
+            }
+            else 
+            {
+               if upper < 0x0A && lower < 0x04
+               {
+                   add_value = 0x06;
+               } 
+               else if upper > 0x09 && lower < 0x04
+               {
+                   add_value = 0x66;
+                   carry_set = 0x10;
+               }
+            }
+        }
+        else 
+        {
+            if h_flag == 0
+            {
+                if upper < 0x03 && lower < 0x0A
+                {
+                    add_value = 0x60;
+                    carry_set = 0x10;
+                }
+                else if upper < 0x03 && lower > 0x09
+                {
+                    add_value = 0x66;
+                    carry_set = 0x10;
+                }
+            }
+            else 
+            {
+                if upper < 0x04 && lower < 0x04
+                {
+                    add_value = 0x66;
+                    carry_set = 0x10;
+                }
+            }
+        }
+    }
+    else
+    {
+        if c_flag == 0
+        {
+            if h_flag == 0
+            {
+                ;
+            }
+            else 
+            {
+                if upper < 0x09 && lower > 0x05
+                {
+                    add_value = 0xFA;
+                }
+            }
+        }
+        else 
+        {
+            if h_flag == 0
+            {
+                if upper > 0x06 && lower < 0x0A
+                {
+                    add_value = 0xA0;
+                    carry_set = 0x10;
+                }
+            }
+            else 
+            {
+                if (upper == 6 || upper == 7) && lower > 5
+                {
+                    add_value = 0x9A;
+                    carry_set = 0x10;
+                }
+            }
+        }
+    }
+    registers.flags &= 0x40;
+    let mut new_value = registers.accumulator as u16 + add_value as u16;
+    if new_value >= 0x100
+    {
+        new_value -= 0x100;
+    }
+    if new_value == 0x00
+    {
+        registers.flags |= 0x80;
+    }
+    registers.flags |= carry_set;
+    registers.accumulator = new_value as u8;
 }
 
 //##########################################################################

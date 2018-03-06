@@ -1458,4 +1458,102 @@ mod opcode_test
         load_hl_to_stack_pointer(&mut system_data, &mut registers);
         assert_eq!(registers.stack_pointer, 0x1234);
     }
+
+    #[test]
+    fn bcd_adjust_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        //N = 0
+        //NO CH 0-9 | 0-9
+        registers.accumulator = 0x99;
+        registers.flags = 0x00;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x99);
+        assert_eq!(registers.flags, 0x00);
+
+        //NO CH 0-8 | A-F | +0x06
+        registers.accumulator = 0x8A;
+        registers.flags = 0x00;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x90);
+        assert_eq!(registers.flags, 0x00);
+
+        //NO C | H | 0-9 | 0-3 | +0x06
+        registers.accumulator = 0x80;
+        registers.flags = 0x20;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x86);
+        assert_eq!(registers.flags, 0x00);
+
+        //NO CH | A-F | 0-9 | +0x60 | Set C
+        registers.accumulator = 0xA0;
+        registers.flags = 0x00;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x00);
+        assert_eq!(registers.flags, 0x90);
+
+        //NO CH | 9-F | A-F | +0x66 | Set C
+        registers.accumulator = 0xAA;
+        registers.flags = 0x00;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x10);
+        assert_eq!(registers.flags, 0x10);
+
+        //NO C | H | A-F | 0-3 | +0x66 | Set C
+        registers.accumulator = 0xA0;
+        registers.flags = 0x20;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x06);
+        assert_eq!(registers.flags, 0x10);
+
+        // C | NO H | 0-2 | 0-9 | +0x60 | Set C
+        registers.accumulator = 0x00;
+        registers.flags = 0x10;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x60);
+        assert_eq!(registers.flags, 0x10);
+
+        // C | NO H | 0-2 | A-F | +0x66 | Set C
+        registers.accumulator = 0x0A;
+        registers.flags = 0x10;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x70);
+        assert_eq!(registers.flags, 0x10);
+
+        // C |  H | 0-3 | 0-3 | +0x66 | Set C
+        registers.accumulator = 0x00;
+        registers.flags = 0x30;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x66);
+        assert_eq!(registers.flags, 0x10);
+
+        //N = 1
+        // NO CH | 0-9 | 0-9 | +0x00
+        registers.accumulator = 0x00;
+        registers.flags = 0x40;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x00);
+        assert_eq!(registers.flags, 0xC0);
+                
+        // No C |  H | 0-8 | 6-F | +0xFA
+        registers.accumulator = 0x86;
+        registers.flags = 0x60;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x80);
+        assert_eq!(registers.flags, 0x40);
+
+        // C |  NO H | 7-F | 0-9 | +0xA0 | Set C
+        registers.accumulator = 0x70;
+        registers.flags = 0x50;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x10);
+        assert_eq!(registers.flags, 0x50);
+
+        // C |  NO H | 7-F | 0-9 | +0xA0 | Set C
+        registers.accumulator = 0x67;
+        registers.flags = 0x70;
+        bcd_adjust(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x01);
+        assert_eq!(registers.flags, 0x50);
+    }
 }
