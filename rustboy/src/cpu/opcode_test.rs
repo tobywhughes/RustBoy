@@ -1422,4 +1422,31 @@ mod opcode_test
         assert_eq!(registers.flags, 0x00);
         assert_eq!(registers.mapped_16_bit_register_getter(3), 0x00);
     }
+
+    #[test]
+    fn compare_register_to_accumulator_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD];
+        let accumulator_values: Vec<u8> = vec![0x10, 0x02, 0x10, 0x10];
+        let register_values: Vec<u8> = vec![0x20, 0x01, 0x01, 0x10];
+        let flag_values: Vec<u8> = vec![0x50, 0x40, 0x60, 0xC0];
+        //Accumulator
+        registers.accumulator = accumulator_values[0];
+        compare_register_to_accumulator(&mut system_data, &mut registers, 0xBF);
+        assert_eq!(registers.flags, flag_values[3]);
+
+        //Registers
+        for i in 0..opcodes.len()
+        {
+            //Carry -> No Carry -> Half Carry -> Zero
+            for j in 0..flag_values.len()
+            {
+                registers.accumulator = accumulator_values[j];
+                registers.mapped_register_setter(i as u8 + 1, register_values[j]);
+                compare_register_to_accumulator(&mut system_data, &mut registers, opcodes[i]);
+                assert_eq!(registers.flags, flag_values[j]);
+            }
+        }
+    }
 }

@@ -15,8 +15,8 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
  //if registers.program_counter > 0x2BA || registers.program_counter < 0x200
    //{
-        println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
-        println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
+        //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+        //println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
     //}
     
     if opcode == 0xE0 || opcode == 0xE2 || opcode == 0xF0 || opcode == 0xF2
@@ -34,7 +34,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     // //}
     //     //while true {}()
     // }
-    println!("{:08b}", system_data.mem_map[0xFF40]);
+    //println!("{:08b}", system_data.mem_map[0xFF40]);
 
     if registers.interrupt_master_enable_delay_flag
     {
@@ -239,14 +239,14 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0xB5 => or_8_bit_register(&mut system_data, &mut registers, opcode),
 0xB6 => or_hl_location(&mut system_data, &mut registers),
 0xB7 => or_8_bit_register(&mut system_data, &mut registers, opcode),
-0xB8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
-0xB9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
-0xBA => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
-0xBB => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
-0xBC => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
-0xBD => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xB8 => compare_register_to_accumulator(&mut system_data, &mut registers, opcode),
+0xB9 => compare_register_to_accumulator(&mut system_data, &mut registers, opcode),
+0xBA => compare_register_to_accumulator(&mut system_data, &mut registers, opcode),
+0xBB => compare_register_to_accumulator(&mut system_data, &mut registers, opcode),
+0xBC => compare_register_to_accumulator(&mut system_data, &mut registers, opcode),
+0xBD => compare_register_to_accumulator(&mut system_data, &mut registers, opcode),
 0xBE => compare_with_hl_address(&mut system_data, &mut registers),
-0xBF => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xBF => compare_register_to_accumulator(&mut system_data, &mut registers, opcode),
 
 0xC0 => return_from_call_conditional(&mut system_data, &mut registers, opcode),
 0xC1 => pop_16_bit_register(&mut system_data, &mut registers, opcode),
@@ -1404,7 +1404,11 @@ pub fn add_registers_to_accumulator_with_carry(system_data: &mut SystemData, reg
         0x8B => register_code = 4,
         0x8C => register_code = 5,
         0x8D => register_code = 6,
-        _ => {system_data.cycles = 0; return;},
+        _ => {
+            system_data.cycles = 0; 
+            println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+            return;
+            },
     }
     let carry_bit = ((registers.flags & 0x10) >> 4) as u16;
     let accumulator_value = registers.accumulator as u16;
@@ -1510,6 +1514,43 @@ pub fn load_hl_with_stack_pointer_plus_n(system_data: &mut SystemData, registers
     registers.mapped_16_bit_register_setter(3, new_value as u16);
 
     registers.program_counter += 2;
+}
+
+pub fn compare_register_to_accumulator(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    registers.flags = 0x40;
+    let mut register_code = 0;
+    match opcode
+    {
+        0xBF => register_code = 0,
+        0xB8 => register_code = 1,
+        0xB9 => register_code = 2,
+        0xBA => register_code = 3,
+        0xBB => register_code = 4,
+        0xBC => register_code = 5,
+        0xBD => register_code = 6,
+        _ => 
+        {
+            system_data.cycles = 0;
+            println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+            return;
+        },
+    }
+    registers.program_counter +=1; 
+    system_data.cycles = 1;
+    let register_value = registers.mapped_register_getter(register_code);
+    if registers.accumulator == register_value
+    {
+        registers.flags |= 0x80;
+    }
+    if register_value > registers.accumulator
+    {
+        registers.flags |= 0x10;
+    }
+    if (register_value & 0x0F) > (registers.accumulator & 0x0F)
+    {
+        registers.flags |= 0x20;
+    }
 }
 
 //##########################################################################
