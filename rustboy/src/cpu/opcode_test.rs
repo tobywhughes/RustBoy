@@ -1365,4 +1365,26 @@ mod opcode_test
         assert_eq!(registers.accumulator, 0xFF);
 
     }
+
+    #[test]
+    fn decrement_hl_location_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+        //H flag
+        system_data.mem_map[0x1234] = 0x10;
+        decrement_hl_location(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x60);
+        assert_eq!(system_data.mem_map[0x1234], 0x0F);
+        //No flag
+        decrement_hl_location(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x40);
+        assert_eq!(system_data.mem_map[0x1234], 0x0E);
+        //Z flag
+        system_data.mem_map[0x1234] = 0x01;
+        decrement_hl_location(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0xC0);
+        assert_eq!(system_data.mem_map[0x1234], 0x00);
+    }
 }

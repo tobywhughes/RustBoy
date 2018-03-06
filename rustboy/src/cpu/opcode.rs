@@ -100,7 +100,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x32 => load_decrement_hl_register_location_with_accumulator(&mut system_data, &mut registers),
 0x33 => increment_16_bit_register(&mut system_data, &mut registers, opcode),
 0x34 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
-0x35 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x35 => decrement_hl_location(&mut system_data, &mut registers),
 0x36 => load_n_to_hl_location(&mut system_data, &mut registers),
 0x37 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
 0x38 => jump_displacement_on_flag(&mut system_data, &mut registers, opcode),
@@ -1444,6 +1444,33 @@ pub fn or_hl_location(system_data: &mut SystemData, registers: &mut Registers)
     }
     registers.accumulator = new_value;
     system_data.cycles = 2;
+}
+
+pub fn decrement_hl_location(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    let hl_location_value = system_data.mem_map[registers.mapped_16_bit_register_getter(3) as usize];
+    let mut new_value = 0;
+    if hl_location_value == 0
+    {
+        new_value = 0xFF
+    }
+    else{
+        new_value = hl_location_value - 1;
+    }
+
+    registers.flags &= 0x10;
+    registers.flags |= 0x40;
+    system_data.mem_map[registers.mapped_16_bit_register_getter(3) as usize] = new_value;
+    if new_value & 0x0F == 0x0F
+    {
+        registers.flags |= 0x20;
+    }
+    if new_value == 0x00
+    {
+        registers.flags |= 0x80;
+    }
+    system_data.cycles = 3;
 }
 
 //##########################################################################
