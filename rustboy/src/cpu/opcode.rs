@@ -237,7 +237,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0xB3 => or_8_bit_register(&mut system_data, &mut registers, opcode),
 0xB4 => or_8_bit_register(&mut system_data, &mut registers, opcode),
 0xB5 => or_8_bit_register(&mut system_data, &mut registers, opcode),
-0xB6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xB6 => or_hl_location(&mut system_data, &mut registers),
 0xB7 => or_8_bit_register(&mut system_data, &mut registers, opcode),
 0xB8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
 0xB9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
@@ -1433,7 +1433,18 @@ pub fn add_registers_to_accumulator_with_carry(system_data: &mut SystemData, reg
     registers.program_counter += 1;
 }
 
-
+pub fn or_hl_location(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    let hl_location_value = system_data.mem_map[registers.mapped_16_bit_register_getter(3) as usize];
+    let new_value = registers.accumulator | hl_location_value;
+    registers.flags = 0x00;
+    if new_value == 0x00{
+        registers.flags |= 0x80;
+    }
+    registers.accumulator = new_value;
+    system_data.cycles = 2;
+}
 
 //##########################################################################
 //##########################################################################

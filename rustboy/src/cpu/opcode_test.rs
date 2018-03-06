@@ -1325,7 +1325,7 @@ mod opcode_test
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-            let test_file_raw = File::open("src/cpu/test_csvs/reset_bit.csv").unwrap();
+        let test_file_raw = File::open("src/cpu/test_csvs/reset_bit.csv").unwrap();
         let mut test_file = csv::ReaderBuilder::new().has_headers(false).from_reader(test_file_raw);
         let mut opcodes: Vec<String> = Vec::new();
         for record_raw in test_file.records()
@@ -1343,5 +1343,26 @@ mod opcode_test
                 assert_eq!((registers.mapped_register_getter(j as u8) >> i) & 0x01, 0x00);
             }
         }
+    }
+
+    #[test]
+    fn or_hl_location_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+        system_data.mem_map[0x1234] = 0x00;
+        //Zero-flag
+        registers.accumulator = 0x00;
+        or_hl_location(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x80);
+        assert_eq!(registers.accumulator, 0x00);
+        //Non-zero;
+        registers.accumulator = 0x00;
+        system_data.mem_map[0x1234] = 0xFF;
+        or_hl_location(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x00);
+        assert_eq!(registers.accumulator, 0xFF);
+
     }
 }
