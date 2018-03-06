@@ -774,7 +774,7 @@ mod opcode_test
             registers.program_counter = 0x1234;
             registers.stack_pointer = 0x0002;
             rst_jump(&mut system_data, &mut registers, opcodes[i]);
-            assert_eq!(system_data.mem_map[0x0000], 0x34);
+            assert_eq!(system_data.mem_map[0x0000], 0x35);
             assert_eq!(system_data.mem_map[0x0001], 0x12);
             assert_eq!(registers.stack_pointer, 0x0000);
             assert_eq!(registers.program_counter, locations[i]);
@@ -978,7 +978,7 @@ mod opcode_test
         let mut registers : Registers = Registers::new();
         let flags: Vec<u8> = vec![0x00, 0x80, 0x00, 0x10];
         let fail_flags: Vec<u8> = vec![0x80, 0x00, 0x10, 0x00];
-        let program_counters: Vec<usize> = vec![0x0706, 0x0504, 0x0302, 0x0100];    
+        let program_counters: Vec<usize> = vec![0x0703, 0x0501, 0x02FF, 0x00FD];    
         let opcodes: Vec<u8> = vec![0xC4, 0xCC, 0xD4, 0xDC];
         
         registers.stack_pointer = 0x08;
@@ -1318,6 +1318,30 @@ mod opcode_test
             assert_eq!(registers.accumulator, 0x01);
             assert_eq!(registers.flags, 0x10);
         } 
+    }
 
+    #[test]
+    fn reset_bit_in_register_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+            let test_file_raw = File::open("src/cpu/test_csvs/reset_bit.csv").unwrap();
+        let mut test_file = csv::ReaderBuilder::new().has_headers(false).from_reader(test_file_raw);
+        let mut opcodes: Vec<String> = Vec::new();
+        for record_raw in test_file.records()
+        {
+            let record = &(record_raw.unwrap());
+            opcodes.push(record[0].to_string());
+        }
+        for i in 0..8
+        {
+            for j in 0..7
+            {
+                let opcode = Vec::from_hex(&opcodes[(i * 7) + j]).unwrap();
+                registers.mapped_register_setter(j as u8, 0xFF);
+                reset_bit_in_register(&mut system_data, &mut registers, opcode[0]);
+                assert_eq!((registers.mapped_register_getter(j as u8) >> i) & 0x01, 0x00);
+            }
+        }
     }
 }

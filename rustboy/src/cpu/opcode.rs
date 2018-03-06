@@ -15,8 +15,8 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
  //if registers.program_counter > 0x2BA || registers.program_counter < 0x200
    //{
-        //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
-        //println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
+        println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+        println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
     //}
     
     if opcode == 0xE0 || opcode == 0xE2 || opcode == 0xF0 || opcode == 0xF2
@@ -1120,7 +1120,6 @@ pub fn call_function_nn_on_conditional(system_data: &mut SystemData, registers: 
     }
     else
     {
-        registers.program_counter += 3;
         let mut call_flag = false;
         if condition_code == 0
         {
@@ -1154,20 +1153,23 @@ pub fn call_function_nn_on_conditional(system_data: &mut SystemData, registers: 
         if call_flag
         {
             system_data.cycles = 6;
+            let lower = system_data.mem_map[registers.program_counter as usize + 1] as u16;
+            let upper = system_data.mem_map[registers.program_counter as usize + 2] as u16;
+
+            registers.program_counter += 3;
+
             registers.stack_pointer -= 1;
             system_data.mem_map[registers.stack_pointer as usize] = ((registers.program_counter & 0xFF00) >> 8) as u8;
             registers.stack_pointer -= 1;
             system_data.mem_map[registers.stack_pointer as usize] = (registers.program_counter & 0x00FF) as u8;
 
-            let lower = system_data.mem_map[registers.program_counter as usize + 1] as u16;
-            let upper = system_data.mem_map[registers.program_counter as usize + 2] as u16;
 
             registers.program_counter = lower | (upper << 8);
         }
         else
         {
-            system_data.cycles = 3;
             registers.program_counter += 3;
+            system_data.cycles = 3;
         }
     }
 }
@@ -1504,6 +1506,10 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
             rotate_right_through_carry(&mut system_data, &mut registers, opcode);
         }
     }
+    else if (opcode & 0xC0) == 0x80
+    {
+        reset_bit_in_register(&mut system_data, &mut registers, opcode);
+    }
 
     else 
     {
@@ -1729,4 +1735,30 @@ pub fn rotate_hl_location_right_through_carry(system_data: &mut SystemData, regi
         system_data.mem_map[registers.mapped_16_bit_register_getter(3) as usize] = location_value;
         system_data.cycles = 4;
         registers.program_counter += 2;
+}
+
+pub fn reset_bit_in_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    system_data.cycles = 2;
+    let mut register_code = 0;
+    match opcode
+    {
+        0x87 | 0x8F | 0x97 | 0x9F | 0xA7 | 0xAF | 0xB7 | 0xBF => register_code = 0,
+        0x80 | 0x88 | 0x90 | 0x98 | 0xA0 | 0xA8 | 0xB0 | 0xB8 => register_code = 1,
+        0x81 | 0x89 | 0x91 | 0x99 | 0xA1 | 0xA9 | 0xB1 | 0xB9 => register_code = 2, 
+        0x82 | 0x8A | 0x92 | 0x9A | 0xA2 | 0xAA | 0xB2 | 0xBA => register_code = 3, 
+        0x83 | 0x8B | 0x93 | 0x9B | 0xA3 | 0xAB | 0xB3 | 0xBB => register_code = 4, 
+        0x84 | 0x8C | 0x94 | 0x9C | 0xA4 | 0xAC | 0xB4 | 0xBC => register_code = 5, 
+        0x85 | 0x8D | 0x95 | 0x9D | 0xA5 | 0xAD | 0xB5 | 0xBD => register_code = 6, 
+        _ => {
+            system_data.cycles = 0;
+            println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+        }, 
+    }
+
+    let bit_shift = (opcode & 0x38) >> 3;
+    let start_value = registers.mapped_register_getter(register_code);
+    let bit_removal = 0xFF ^ (0x01 << bit_shift);
+    registers.mapped_register_setter(register_code, start_value & bit_removal);
+    registers.program_counter += 2;
 }
