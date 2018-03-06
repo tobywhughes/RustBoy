@@ -15,8 +15,8 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     let opcode: u8 = system_data.mem_map[registers.program_counter as usize];
  //if registers.program_counter > 0x2BA || registers.program_counter < 0x200
    //{
-        //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
-        //println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
+        println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+        println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
     //}
     
     if opcode == 0xE0 || opcode == 0xE2 || opcode == 0xF0 || opcode == 0xF2
@@ -28,10 +28,10 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     //if registers.program_counter == 0x100
     //{
         //println!("LOCATION CATCH");
-    // if registers.program_counter >= 0x8000
-    // {
-    //     //io::stdin().read_line(&mut String::new());
-    // //}
+     if registers.program_counter == 0xC1B9
+    {
+        io::stdin().read_line(&mut String::new());
+    }
     //     //while true {}()
     // }
     //println!("{:08b}", system_data.mem_map[0xFF40]);
@@ -788,17 +788,25 @@ pub fn push_16_bit_register(system_data: &mut SystemData, registers: &mut Regist
 pub fn pop_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
     system_data.cycles = 3;
-    let mut register_code = ((opcode & 0x30) >> 4) + 1;
-    if register_code == 4 
+    let mut register_code = 0;
+    match opcode
     {
-        register_code = 0;
+        0xF1 => register_code = 0,
+        0xC1 => register_code = 1,
+        0xD1 => register_code = 2,
+        0xE1 => register_code = 3,
+        _ => (),
     }
     
     let lower = system_data.mem_map[registers.stack_pointer as usize] as u16;
     registers.stack_pointer += 1;
     let upper = system_data.mem_map[registers.stack_pointer as usize] as u16;
     registers.stack_pointer += 1;
-    let full_value = (upper << 8) | lower;
+    let mut full_value = (upper << 8) | lower;
+    if register_code == 0
+    {
+        full_value &= 0xFFF0;
+    }
     registers.mapped_16_bit_register_setter(register_code, full_value);
     registers.program_counter += 1;
 }
@@ -935,7 +943,6 @@ pub fn ones_complement(system_data: &mut SystemData, registers: &mut Registers)
 pub fn and_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 2;
-    registers.program_counter += 2;
     let nn = system_data.mem_map[registers.program_counter as usize + 1];
     registers.accumulator &= nn;
     registers.flags = 0x20;
@@ -943,6 +950,7 @@ pub fn and_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Reg
     {
         registers.flags |= 0x80;
     }
+    registers.program_counter += 2;
 }
 
 pub fn rst_jump(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
