@@ -308,7 +308,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0xF6 => or_n(&mut system_data, &mut registers),
 0xF7 => rst_jump(&mut system_data, &mut registers, opcode),
 0xF8 => load_hl_with_stack_pointer_plus_n(&mut system_data, &mut registers),
-0xF9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xF9 => load_hl_to_stack_pointer(&mut system_data, &mut registers),
 0xFA => load_accumulator_with_nn_address(&mut system_data, &mut registers),
 0xFB => enable_interupts(&mut system_data, &mut registers),
 0xFC => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
@@ -1551,6 +1551,13 @@ pub fn compare_register_to_accumulator(system_data: &mut SystemData, registers: 
     {
         registers.flags |= 0x20;
     }
+}
+
+pub fn load_hl_to_stack_pointer(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    system_data.cycles = 2;
+    registers.stack_pointer = registers.mapped_16_bit_register_getter(3);
 }
 
 //##########################################################################

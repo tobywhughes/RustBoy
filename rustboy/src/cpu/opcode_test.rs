@@ -1449,4 +1449,13 @@ mod opcode_test
             }
         }
     }
+
+    #[test]
+    fn load_hl_to_stack_pointer_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+        load_hl_to_stack_pointer(&mut system_data, &mut registers);
+        assert_eq!(registers.stack_pointer, 0x1234);
+    }
 }
