@@ -34,7 +34,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     // //}
     //     //while true {}()
     // }
-    //println!("{:08b}", system_data.mem_map[0xFF40]);
+    println!("{:08b}", system_data.mem_map[0xFF40]);
 
     if registers.interrupt_master_enable_delay_flag
     {
@@ -307,7 +307,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0xF5 => push_16_bit_register(&mut system_data, &mut registers, opcode),
 0xF6 => or_n(&mut system_data, &mut registers),
 0xF7 => rst_jump(&mut system_data, &mut registers, opcode),
-0xF8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xF8 => load_hl_with_stack_pointer_plus_n(&mut system_data, &mut registers),
 0xF9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
 0xFA => load_accumulator_with_nn_address(&mut system_data, &mut registers),
 0xFB => enable_interupts(&mut system_data, &mut registers),
@@ -1479,6 +1479,37 @@ pub fn load_de_location_with_accumulator(system_data: &mut SystemData, registers
     let hl_location = registers.mapped_16_bit_register_getter(2);
     system_data.mem_map[hl_location as usize] = registers.accumulator;
     system_data.cycles = 2;
+}
+
+pub fn load_hl_with_stack_pointer_plus_n(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 3;
+    let n_value: i32 = system_data.mem_map[registers.program_counter as usize + 1] as i8 as i32;
+    let stack_pointer: i32 = registers.stack_pointer as i32;
+    let mut new_value = stack_pointer + n_value;
+    registers.flags = 0x00;
+    if n_value >= 0
+    {
+        if (n_value & 0x0F) + (stack_pointer & 0x0F) >= 0x10
+        {
+            registers.flags |= 0x20;
+        }
+        if (n_value & 0xFF) + (stack_pointer & 0xFF) >= 0x100
+        {
+            registers.flags |= 0x10;
+        }
+    }
+    if new_value >= 0x10000
+    {
+        new_value -= 0x10000;
+    }
+    else if new_value < 0
+    {
+        new_value += 0x10000;
+    }
+    registers.mapped_16_bit_register_setter(3, new_value as u16);
+
+    registers.program_counter += 2;
 }
 
 //##########################################################################

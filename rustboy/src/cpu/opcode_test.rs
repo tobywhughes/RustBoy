@@ -1398,4 +1398,28 @@ mod opcode_test
         load_de_location_with_accumulator(&mut system_data, &mut registers);
         assert_eq!(system_data.mem_map[0x1234], 0xFF);
     }
+
+    #[test]
+    fn load_hl_with_stack_pointer_plus_n_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        //Half Carry
+        registers.stack_pointer = 0x000F;
+        system_data.mem_map[0x01] = 0x01;
+        load_hl_with_stack_pointer_plus_n(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x20);
+        assert_eq!(registers.mapped_16_bit_register_getter(3), 0x10);
+        //Carry
+        registers.stack_pointer = 0x00F0;
+        system_data.mem_map[0x03] = 0x10;
+        load_hl_with_stack_pointer_plus_n(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x10);
+        assert_eq!(registers.mapped_16_bit_register_getter(3), 0x100);
+        //Negative
+        registers.stack_pointer = 0x0001;
+        system_data.mem_map[0x05] = 0xFF;
+        load_hl_with_stack_pointer_plus_n(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x00);
+        assert_eq!(registers.mapped_16_bit_register_getter(3), 0x00);
+    }
 }
