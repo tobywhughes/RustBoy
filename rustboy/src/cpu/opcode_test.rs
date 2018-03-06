@@ -1387,4 +1387,15 @@ mod opcode_test
         assert_eq!(registers.flags, 0xC0);
         assert_eq!(system_data.mem_map[0x1234], 0x00);
     }
+
+    #[test]
+    fn load_de_location_with_accumulator_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.mapped_16_bit_register_setter(2, 0x1234);
+        registers.accumulator = 0xFF;
+        load_de_location_with_accumulator(&mut system_data, &mut registers);
+        assert_eq!(system_data.mem_map[0x1234], 0xFF);
+    }
 }

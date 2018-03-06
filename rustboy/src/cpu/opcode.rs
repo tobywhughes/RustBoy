@@ -63,7 +63,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
 0x10 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
 0x11 => load_nn_to_16bit_register(&mut system_data, &mut registers, opcode),
-0x12 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), //Unimplemented
+0x12 => load_de_location_with_accumulator(&mut system_data, &mut registers),
 0x13 => increment_16_bit_register(&mut system_data, &mut registers, opcode),
 0x14 => increment_8_bit_register(&mut system_data, &mut registers, opcode),
 0x15 => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
@@ -1471,6 +1471,14 @@ pub fn decrement_hl_location(system_data: &mut SystemData, registers: &mut Regis
         registers.flags |= 0x80;
     }
     system_data.cycles = 3;
+}
+
+pub fn load_de_location_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    let hl_location = registers.mapped_16_bit_register_getter(2);
+    system_data.mem_map[hl_location as usize] = registers.accumulator;
+    system_data.cycles = 2;
 }
 
 //##########################################################################
