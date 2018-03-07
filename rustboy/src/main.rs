@@ -208,6 +208,6 @@ mod main_tests
     fn passing_bad_filename_to_read_gb_file_return_empty_vec()
     {
         let return_vector : Vec<u8> = read_gb_file("");
-        assert_eq!(return_vector, vec![0;0]);
+        assert_eq!(return_vector, vec![0;0x10000]);
     }
 }
