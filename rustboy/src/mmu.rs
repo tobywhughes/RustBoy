@@ -1,9 +1,13 @@
+use std::fs::File;
+use std::io::prelude::*;
+
 pub struct MMU
 {
     pub mem_map: Vec<u8>,
+    pub memory_banks: Vec<Vec<u8>>,
     pub cartridge_type: u8,
-    pub rom_size: u32,
-    pub ram_size: u16,
+    pub rom_size: u8,
+    pub ram_size: u8,
     pub rom_bank: u8,
 }
 
@@ -14,9 +18,10 @@ impl MMU
         return MMU
         {
             mem_map: vec![0; 0x10000],
+            memory_banks: vec![vec![0; 0x4000]; 0x100],
             cartridge_type: 0,
-            rom_size: 0x00008000,
-            ram_size: 0x0000,
+            rom_size: 0x00,
+            ram_size: 0x00,
             rom_bank: 1,
         }
     }
@@ -57,15 +62,109 @@ impl MMU
                 }
                 self.rom_bank &= 0xE0;
                 self.rom_bank |= bank;
+                self.update_rom_bank();
                 return true;
             },
             0x4000...0x5FFF =>
             {
                 self.rom_bank &= 0x1F;
                 self.rom_bank |= (value & 0x03) << 5;
+                self.update_rom_bank();
                 return true;
             },
             _ => return false,
+        }
+    }
+
+    fn update_rom_bank(&mut self)
+    {
+        let bank = self.rom_bank as usize;
+        println!("Rom-bank switch: {}", bank);
+        for i in 0..0x4000
+        {
+            self.mem_map[(i as usize) + 0x4000] = self.memory_banks[bank][i];
+        }
+    }
+
+    pub fn read_gb_file(&self, file_name: &str) -> Vec<u8>
+    {
+    let mut buffer : Vec<u8> = vec![0; 0x10000];
+    let file = File::open(file_name);
+    if file.is_ok()
+    {
+        if file.unwrap().read(&mut buffer).is_ok()
+        {
+            return buffer;
+        }        
+    }
+    return buffer;
+    }
+
+    pub fn initialize_cartridge(&mut self, file_name: &str)
+    {
+        let mut buffer: Vec<u8> = Vec::new();
+        let file = File::open(file_name);
+        if file.is_ok()
+        {
+            if file.unwrap().read_to_end(&mut buffer).is_ok()
+            {
+                self.memory_banks[0] = buffer[0..0x4000].to_vec();
+                self.cartridge_type = self.memory_banks[0][0x0147];
+                let rom_tag = self.memory_banks[0][0x0148];
+                self.rom_size = self.parse_rom_size(rom_tag);
+                let ram_tag = self.memory_banks[0][0x0149];
+                self.ram_size = self.parse_ram_size(ram_tag);
+                if self.rom_size == 0
+                {
+                    self.memory_banks[1] = buffer[0x4000..0x8000].to_vec();
+                }
+                else
+                {
+                    for i in 1..self.rom_size
+                    {
+                        let start: usize = 0x4000 * (i as usize);
+                        let end: usize = 0x4000 * ((i as usize) + 1);
+                        self.memory_banks[i as usize] = buffer[start..end].to_vec();
+                    }
+                }
+                for i in 0..0x4000
+                {
+                    self.mem_map[i] = self.memory_banks[0][i];
+                    self.mem_map[(i as usize) + 0x4000] = self.memory_banks[1][i];
+                }
+                
+            }
+        }
+    }
+
+    fn parse_rom_size(&mut self, rom_tag: u8) -> u8
+    {
+        match rom_tag
+        {
+            0x00 => return 0,
+            0x01 => return 4,
+            0x02 => return 8,
+            0x03 => return 16,
+            0x04 => return 32,
+            0x05 => return 64,
+            0x06 => return 128,
+            0x07 => return 256,
+            0x52 => return 72,
+            0x53 => return 80,
+            0x54 => return 96,
+            _ => return 0,
+        }
+    }
+
+    fn parse_ram_size(&mut self, ram_tag: u8) -> u8
+    {
+        match ram_tag
+        {
+            0x00 => return 0,
+            0x01 => return 2,
+            0x02 => return 8,
+            0x03 => return 32,
+            _ => return 0,
         }
     }
 }
@@ -101,5 +200,27 @@ mod mmu_tests
             assert_eq!(mmu.rom_bank, rom_bank_values[i]);
             assert_eq!(mmu.mem_map[memory_locations[i]], mem_loc_values[i]);
         }
+    }
+    
+    #[test]
+    fn passing_bad_filename_to_read_gb_file_return_empty_vec()
+    {
+        let mut mmu = MMU::new();
+        let return_vector : Vec<u8> = mmu.read_gb_file("");
+        assert_eq!(return_vector, vec![0;0x10000]);
+    }
+
+    #[test]
+    fn initialize_catridge_test()
+    {
+        let mut mmu = MMU::new();
+        mmu.initialize_cartridge("roms/cpu_instrs.gb");
+        assert_eq!(mmu.rom_size, 4);
+        assert_eq!(mmu.ram_size, 0);
+        assert_eq!(mmu.cartridge_type, 1);
+        assert_eq!(mmu.memory_banks[0][0x0000], 0x3C);
+        assert_eq!(mmu.memory_banks[1][0x0000], 0xC3);
+        assert_eq!(mmu.memory_banks[2][0x0000], 0xC3);
+        assert_eq!(mmu.memory_banks[3][0x0000], 0xC3);
     }
 }

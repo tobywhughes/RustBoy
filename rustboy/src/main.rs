@@ -21,8 +21,6 @@ use opengl_graphics::Texture;
 use piston::event_loop::*;
 use piston::input::*;
 use opengl_graphics::{ GlGraphics, OpenGL };
-use std::fs::File;
-use std::io::prelude::*;
 use std::env;
 use cpu::cpu::*;
 use gpu::gpu::*;
@@ -41,7 +39,8 @@ fn main()
     let emulator_type: String = String::from("CLASSIC");
     let file_name: &String = &args[1];
     let mut system_data : SystemData = get_system_data(&emulator_type);
-    system_data.mmu.mem_map = read_gb_file(file_name);
+    //system_data.mmu.mem_map = system_data.mmu.read_gb_file(file_name);
+    system_data.mmu.initialize_cartridge(file_name);
     let mut registers: Registers = Registers::new();
     let mut gpu_registers: GPU_Registers = GPU_Registers::new();
     init_emulator_state(&mut system_data, &mut registers);
@@ -122,20 +121,6 @@ impl App
     }
 }
 
-fn read_gb_file(file_name: &str) -> Vec<u8>
-{
-    let mut buffer : Vec<u8> = vec![0; 0x10000];
-    let file = File::open(file_name);
-    if file.is_ok()
-    {
-        if file.unwrap().read(&mut buffer).is_ok()
-        {
-            return buffer;
-        }        
-    }
-    return buffer;
-}
-
 fn create_background_img(background_tile_map: &TileMap) -> RgbaImage
 {
 
@@ -199,15 +184,3 @@ fn init_emulator_state(system_data: &mut SystemData, registers: &mut Registers)
 }
 
 
-#[cfg(test)]
-mod main_tests
-{
-    use read_gb_file;
-
-    #[test]
-    fn passing_bad_filename_to_read_gb_file_return_empty_vec()
-    {
-        let return_vector : Vec<u8> = read_gb_file("");
-        assert_eq!(return_vector, vec![0;0x10000]);
-    }
-}
