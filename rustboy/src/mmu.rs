@@ -59,6 +59,12 @@ impl MMU
                 self.rom_bank |= bank;
                 return true;
             },
+            0x4000...0x5FFF =>
+            {
+                self.rom_bank &= 0x1F;
+                self.rom_bank |= (value & 0x03) << 5;
+                return true;
+            },
             _ => return false,
         }
     }
@@ -83,9 +89,9 @@ mod mmu_tests
         mmu.cartridge_type = 0x01;
 
         let memory_locations: Vec<usize> = vec![0x00, 0x2000, 0x3000, 0x3FFF, 0x4000];
-        let values: Vec<u8> = vec![0xFF, 0xFF, 0x00, 0xFF, 0xFF];
-        let rom_bank_values: Vec<u8> = vec![0x01, 0x1F, 0x01, 0x1F, 0x01];
-        let mem_loc_values: Vec<u8> = vec![0xFF, 0x00, 0x00, 0x00, 0xFF];
+        let values: Vec<u8> = vec![0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0x03];
+        let rom_bank_values: Vec<u8> = vec![0x01, 0x1F, 0x01, 0x1F, 0x61];
+        let mem_loc_values: Vec<u8> = vec![0xFF, 0x00, 0x00, 0x00, 0x00];
 
         for i in 0..memory_locations.len()
         {
