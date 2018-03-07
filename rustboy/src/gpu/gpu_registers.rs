@@ -49,18 +49,18 @@ impl LCD_Position
 
     pub fn update(&mut self, system_data: &mut SystemData)
     {
-        self.scroll_x = system_data.mem_map[0xFF43];
-        self.scroll_y = system_data.mem_map[0xFF42];
-        self.ly_compare = system_data.mem_map[0xFF45];
-        self.window_x = system_data.mem_map[0xFF4B];
-        self.window_y =system_data.mem_map[0xFF4A];
+        self.scroll_x = system_data.mmu.mem_map[0xFF43];
+        self.scroll_y = system_data.mmu.mem_map[0xFF42];
+        self.ly_compare = system_data.mmu.mem_map[0xFF45];
+        self.window_x = system_data.mmu.mem_map[0xFF4B];
+        self.window_y =system_data.mmu.mem_map[0xFF4A];
         if self.ly_compare == self.ly_register.value
         {
-            system_data.mem_map[0xFF41] |= 0x04;
+            system_data.mmu.mem_map[0xFF41] |= 0x04;
         }
         else 
         {
-            system_data.mem_map[0xFF41] &= 0xFB;
+            system_data.mmu.mem_map[0xFF41] &= 0xFB;
         }
     }
 }
@@ -90,17 +90,17 @@ impl LY_Register
         if self.value == 154
         {
             self.value = 0;
-            system_data.mem_map[0xFF44] = self.value;
+            system_data.mmu.mem_map[0xFF44] = self.value;
             return true;
         }
-        system_data.mem_map[0xFF44] = self.value;
+        system_data.mmu.mem_map[0xFF44] = self.value;
         return false;
     }
 
     pub fn reset(&mut self, system_data: &mut SystemData)
     {
         self.value == 0;
-        system_data.mem_map[0xFF44] = self.value;
+        system_data.mmu.mem_map[0xFF44] = self.value;
     }
 
     pub fn add_cycles(&mut self, system_data: &SystemData) -> bool
@@ -159,7 +159,7 @@ impl LCDC_Register
 
     pub fn update_lcdc_register(&mut self, system_data: &SystemData)
     {
-        self.value = system_data.mem_map[0xFF40];
+        self.value = system_data.mmu.mem_map[0xFF40];
         self.map_bit_states();
     }
 
@@ -212,7 +212,7 @@ impl LCDC_Status
         
     pub fn update_lcdc_status(&mut self, system_data: &SystemData)
     {
-        self.value = system_data.mem_map[0xFF41];
+        self.value = system_data.mmu.mem_map[0xFF41];
         self.map_bit_states();
     }
 

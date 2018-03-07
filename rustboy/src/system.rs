@@ -1,6 +1,8 @@
+use mmu::MMU;
+
 pub struct SystemData
 {
-    pub mem_map: Vec<u8>,
+    pub mmu: MMU,
     pub width: u16,
     pub tile_width: u16,
     pub height: u16,
@@ -137,7 +139,7 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
     {
         "CLASSIC" => return SystemData
         {
-            mem_map: vec![0; 0x10000],
+            mmu: MMU::new(),
             width: 256,
             tile_width: 20,
             height: 256,
@@ -150,7 +152,7 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
         _ => {println!("NOT VALID EMULATOR TYPE");
         return SystemData
         {
-            mem_map: vec![0; 0],
+            mmu: MMU::new(),
             width: 0,
             tile_width: 0,
             height: 0,
@@ -178,7 +180,7 @@ mod main_tests
     fn passing_bad_data_to_get_system_data_returns_empty_struct_data()
     {
         let system_data : SystemData = get_system_data("");
-        assert_eq!(system_data.mem_map, vec![0; 0]);
+        assert_eq!(system_data.mmu.mem_map, vec![0; 0x10000]);
         assert_eq!(system_data.width, 0);
         assert_eq!(system_data.tile_width, 0);
         assert_eq!(system_data.height, 0);

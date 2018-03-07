@@ -42,7 +42,7 @@ impl TileMap {
 
         for i in 0..map.len()
         {
-            map[i] = system_data.mem_map[map_offset as usize + i];
+            map[i] = system_data.mmu.mem_map[map_offset as usize + i];
         }
 
         return map
@@ -85,8 +85,8 @@ pub fn get_tile_data(tile_index: u8, system_data: &mut SystemData, lcdc_data_sel
     {
         for bit in 0..8
         {
-            let upper_bit: u8 = (system_data.mem_map[(mem_loc + (2 * byte_pair as u16)) as usize] >> (7 - bit)) & 0x01;
-            let lower_bit: u8 = (system_data.mem_map[(mem_loc + (2 * byte_pair as u16)) as usize + 1] >> (7 - bit)) & 0x01;
+            let upper_bit: u8 = (system_data.mmu.mem_map[(mem_loc + (2 * byte_pair as u16)) as usize] >> (7 - bit)) & 0x01;
+            let lower_bit: u8 = (system_data.mmu.mem_map[(mem_loc + (2 * byte_pair as u16)) as usize + 1] >> (7 - bit)) & 0x01;
             tile_data.data[(byte_pair as usize * 8) + bit as usize] = (upper_bit << 1) | lower_bit;
         }
     }
@@ -138,7 +138,7 @@ mod gpu_tests
         {
             for i in 0..temp_memory_values.len()
             {
-                system_data.mem_map[*vram_offset + i] = temp_memory_values[i];
+                system_data.mmu.mem_map[*vram_offset + i] = temp_memory_values[i];
             }
         }
         let tiles = vec![get_tile_data(0, &mut system_data, false), get_tile_data(0, &mut system_data, true)];
@@ -170,7 +170,7 @@ mod gpu_tests
             {
                 for i in 0..0x1000
                 {
-                    system_data.mem_map[tiles_offset[offset_index] + i] = memory_values[index];   
+                    system_data.mmu.mem_map[tiles_offset[offset_index] + i] = memory_values[index];   
                 }
                 
                 TileMap.populate_tile_map(&mut system_data, bools[offset_index], true);
@@ -193,7 +193,7 @@ mod gpu_tests
             {
                 for i in 0..TileMap.map.len()
                 {
-                    system_data.mem_map[display_offset[offset_index] + i] = memory_values[value_index];
+                    system_data.mmu.mem_map[display_offset[offset_index] + i] = memory_values[value_index];
                 }
 
                 TileMap.populate_tile_map(&mut system_data, false, bools[offset_index]);

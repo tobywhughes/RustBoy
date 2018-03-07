@@ -118,7 +118,7 @@ mod opcode_test
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
         let opcodes : Vec<u8> = vec![0x3E, 0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E];
-        system_data.mem_map[1] = 1;
+        system_data.mmu.mem_map[1] = 1;
 
         for i in 0..7
         {
@@ -137,7 +137,7 @@ mod opcode_test
         registers.accumulator = 1;
         registers.c_register = 1;
         load_accumulator_to_io_port_with_c_offset(&mut system_data, &mut registers);
-        assert_eq!(system_data.mem_map[0xFF01], 1);
+        assert_eq!(system_data.mmu.mem_map[0xFF01], 1);
     }
 
     #[test]
@@ -145,8 +145,8 @@ mod opcode_test
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        system_data.mem_map[1] = 0x01;
-        system_data.mem_map[2] = 0x02;
+        system_data.mmu.mem_map[1] = 0x01;
+        system_data.mmu.mem_map[2] = 0x02;
         //bc
         let opcode = 0x01;
         load_nn_to_16bit_register(&mut system_data, &mut registers, opcode);
@@ -200,14 +200,14 @@ mod opcode_test
         //Zero
         registers.accumulator = 0xFF;
         registers.mapped_16_bit_register_setter(3, 0x1234);
-        system_data.mem_map[0x1234] = 0xFF;
+        system_data.mmu.mem_map[0x1234] = 0xFF;
         xor_hl_location(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x80);
         assert_eq!(registers.accumulator, 0x00);
         
         registers.accumulator = 0x00;
         registers.mapped_16_bit_register_setter(3, 0x1234);
-        system_data.mem_map[0x1234] = 0xFF;
+        system_data.mmu.mem_map[0x1234] = 0xFF;
         xor_hl_location(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x00);
         assert_eq!(registers.accumulator, 0xFF);
@@ -275,7 +275,7 @@ mod opcode_test
         registers.l_register = 0xFF;
         registers.accumulator = 1;
         load_decrement_hl_register_location_with_accumulator(&mut system_data, &mut registers);
-        assert_eq!(system_data.mem_map[0xFFFF], 1);
+        assert_eq!(system_data.mmu.mem_map[0xFFFF], 1);
         assert_eq!(registers.h_register, 0xFF);
         assert_eq!(registers.l_register, 0xFE);
     }
@@ -289,7 +289,7 @@ mod opcode_test
         registers.l_register = 0xFE;
         registers.accumulator = 1;
         load_increment_hl_register_location_with_accumulator(&mut system_data, &mut registers);
-        assert_eq!(system_data.mem_map[0xFFFE], 1);
+        assert_eq!(system_data.mmu.mem_map[0xFFFE], 1);
         assert_eq!(registers.h_register, 0xFF);
         assert_eq!(registers.l_register, 0xFF);
     }
@@ -340,7 +340,7 @@ mod opcode_test
         for i in 0..7
         {
             load_hl_address_with_register(&mut system_data, &mut registers, opcodes[i as usize]);
-            assert_eq!(system_data.mem_map[0xFFFF], register_values[i as usize]);
+            assert_eq!(system_data.mmu.mem_map[0xFFFF], register_values[i as usize]);
         }
 
     }
@@ -350,9 +350,9 @@ mod opcode_test
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
         registers.accumulator = 1;
-        system_data.mem_map[1] = 1;
+        system_data.mmu.mem_map[1] = 1;
         load_accumulator_to_io_port_with_n_offset(&mut system_data, &mut registers);
-        assert_eq!(system_data.mem_map[0xFF01], 1);
+        assert_eq!(system_data.mmu.mem_map[0xFF01], 1);
     }
 
     #[test]
@@ -391,7 +391,7 @@ mod opcode_test
         let mut registers : Registers = Registers::new();
         registers.d_register = 0xFF;
         registers.e_register = 0xEE;
-        system_data.mem_map[0xFFEE] = 1;
+        system_data.mmu.mem_map[0xFFEE] = 1;
         load_accumulator_with_de_address(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 1);
     }
@@ -404,7 +404,7 @@ mod opcode_test
         let mut registers : Registers = Registers::new();
         registers.b_register = 0xFF;
         registers.c_register = 0xEE;
-        system_data.mem_map[0xFFEE] = 1;
+        system_data.mmu.mem_map[0xFFEE] = 1;
         load_accumulator_with_bc_address(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 1);
     }
@@ -414,21 +414,21 @@ mod opcode_test
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
         registers.program_counter = 1;
-        system_data.mem_map[2] = 0xCD;
-        system_data.mem_map[3] = 0xAB;
+        system_data.mmu.mem_map[2] = 0xCD;
+        system_data.mmu.mem_map[3] = 0xAB;
         registers.stack_pointer = 0xFFFE;
         call_nn(&mut system_data, &mut registers);
         assert_eq!(registers.program_counter, 0xABCD);
         assert_eq!(registers.stack_pointer, 0xFFFC);
-        assert_eq!(system_data.mem_map[registers.stack_pointer as usize], 4);
+        assert_eq!(system_data.mmu.mem_map[registers.stack_pointer as usize], 4);
     }
 
     #[test]
     fn return_from_calltest() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        system_data.mem_map[0x2000] = 0xFF;
-        system_data.mem_map[0x2001] = 0xEE;
+        system_data.mmu.mem_map[0x2000] = 0xFF;
+        system_data.mmu.mem_map[0x2001] = 0xEE;
         registers.stack_pointer = 0x2000;
         return_from_call(&mut system_data, &mut registers);
         assert_eq!(registers.program_counter, 0xEEFF);
@@ -448,8 +448,8 @@ mod opcode_test
         for i in 0..4
         {
             push_16_bit_register(&mut system_data, &mut registers, opcodes[i]);
-            assert_eq!(system_data.mem_map[registers.stack_pointer as usize + 1], i as u8 * 2);
-            assert_eq!(system_data.mem_map[registers.stack_pointer as usize], (i as u8 * 2) + 1);
+            assert_eq!(system_data.mmu.mem_map[registers.stack_pointer as usize + 1], i as u8 * 2);
+            assert_eq!(system_data.mmu.mem_map[registers.stack_pointer as usize], (i as u8 * 2) + 1);
         }
     }
 
@@ -462,7 +462,7 @@ mod opcode_test
         registers.stack_pointer = 0xFFF0;
         for i in 0..8
         {
-            system_data.mem_map[registers.stack_pointer as usize + i] = i as u8; 
+            system_data.mmu.mem_map[registers.stack_pointer as usize + i] = i as u8; 
         }
         for i in 0..4
         {
@@ -513,19 +513,19 @@ mod opcode_test
         let mut registers : Registers = Registers::new();
         registers.accumulator = 0xF1;
         //Normal
-        system_data.mem_map[1] = 0x01;
+        system_data.mmu.mem_map[1] = 0x01;
         compare_with_n(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x40);
         //Carry
-        system_data.mem_map[3] = 0x0F2;
+        system_data.mmu.mem_map[3] = 0x0F2;
         compare_with_n(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x70);
         //Half Carry
-        system_data.mem_map[5] = 0x02;
+        system_data.mmu.mem_map[5] = 0x02;
         compare_with_n(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x60);
         //Zero
-        system_data.mem_map[7] = 0xF1;
+        system_data.mmu.mem_map[7] = 0xF1;
         compare_with_n(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0xC0);
     }
@@ -536,17 +536,17 @@ mod opcode_test
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
         registers.accumulator = 1;
-        system_data.mem_map[1] = 0xEE;
-        system_data.mem_map[2] = 0xFF;
+        system_data.mmu.mem_map[1] = 0xEE;
+        system_data.mmu.mem_map[2] = 0xFF;
         load_nn_with_accumulator(&mut system_data, &mut registers);
-        assert_eq!(system_data.mem_map[0xFFEE], 1);
+        assert_eq!(system_data.mmu.mem_map[0xFFEE], 1);
     }
     #[test]
     fn load_accumulator_with_io_port_with_n_offset_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        system_data.mem_map[0xFF0F] = 1;
-        system_data.mem_map[1] = 0x0F;
+        system_data.mmu.mem_map[0xFF0F] = 1;
+        system_data.mmu.mem_map[1] = 0x0F;
         load_accumulator_with_io_port_with_n_offset(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 1);
     }
@@ -568,7 +568,7 @@ mod opcode_test
             {
                 //println!("#####{}", i);
                 registers.program_counter = 0x100;
-                system_data.mem_map[0x101] = location_jump_values[location_index];
+                system_data.mmu.mem_map[0x101] = location_jump_values[location_index];
                 registers.flags = pass_flags[i];
                 jump_displacement_on_flag(&mut system_data, &mut registers, opcodes[i]);
                 assert_eq!(registers.program_counter, locations[location_index]);               
@@ -577,7 +577,7 @@ mod opcode_test
             for i in 0..fail_flags.len()
             {
                 registers.program_counter = 0x100;
-                system_data.mem_map[0x101] = location_jump_values[location_index];
+                system_data.mmu.mem_map[0x101] = location_jump_values[location_index];
                 registers.flags = fail_flags[i];
                 jump_displacement_on_flag(&mut system_data, &mut registers, opcodes[i]);
                 assert_eq!(registers.program_counter, 0x102); 
@@ -590,10 +590,10 @@ mod opcode_test
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        system_data.mem_map[1] = 0xE;
+        system_data.mmu.mem_map[1] = 0xE;
         jump_displacement(&mut system_data, &mut registers);
         assert_eq!(registers.program_counter, 0x10);
-        system_data.mem_map[0x11] = 0xFA;
+        system_data.mmu.mem_map[0x11] = 0xFA;
         jump_displacement(&mut system_data, &mut registers);
         assert_eq!(registers.program_counter, 0xC);
         
@@ -604,9 +604,9 @@ mod opcode_test
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        system_data.mem_map[0x0000] = 0xC3;
-        system_data.mem_map[0x0001] = 0x34;
-        system_data.mem_map[0x0002] = 0x12;
+        system_data.mmu.mem_map[0x0000] = 0xC3;
+        system_data.mmu.mem_map[0x0001] = 0x34;
+        system_data.mmu.mem_map[0x0002] = 0x12;
         jump_address(&mut system_data, &mut registers);
         assert_eq!(registers.program_counter, 0x1234);
         assert_eq!(system_data.cycles, 4);
@@ -652,20 +652,20 @@ mod opcode_test
         registers.accumulator = 0x19;
         registers.h_register = 0x12;
         registers.l_register = 0x34;
-        system_data.mem_map[0x1234] = 0x04;
+        system_data.mmu.mem_map[0x1234] = 0x04;
         //Normal
         compare_with_hl_address(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x40);
         //Carry
-        system_data.mem_map[0x1234] = 0xFF;
+        system_data.mmu.mem_map[0x1234] = 0xFF;
         compare_with_hl_address(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x70);
         //Half Carry
-        system_data.mem_map[0x1234] = 0x0F;
+        system_data.mmu.mem_map[0x1234] = 0x0F;
         compare_with_hl_address(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x60);
         //Zero
-        system_data.mem_map[0x1234] = 0x19;
+        system_data.mmu.mem_map[0x1234] = 0x19;
         compare_with_hl_address(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0xC0);
     }
@@ -691,7 +691,7 @@ mod opcode_test
 
         registers.h_register = 0xFF;
         registers.l_register = 0xEE;
-        system_data.mem_map[0xFFEE] = 1;
+        system_data.mmu.mem_map[0xFFEE] = 1;
         registers.accumulator = 1;
         add_8_bit(&mut system_data, &mut registers, opcodes[7]);
         assert_eq!(registers.accumulator, 2);
@@ -718,7 +718,7 @@ mod opcode_test
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
         registers.mapped_16_bit_register_setter(3, 0x1234);
-        system_data.mem_map[0x1234] = 0xFF;
+        system_data.mmu.mem_map[0x1234] = 0xFF;
         load_accumulator_with_hl_then_increment(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0xFF);
         assert_eq!(registers.mapped_16_bit_register_getter(3), 0x1235);
@@ -737,7 +737,7 @@ mod opcode_test
     fn and_nn_with_accumulator_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        system_data.mem_map[0x01] = 0x00;
+        system_data.mmu.mem_map[0x01] = 0x00;
         registers.accumulator = 0xFF;
         and_nn_with_accumulator(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0x00);
@@ -774,8 +774,8 @@ mod opcode_test
             registers.program_counter = 0x1234;
             registers.stack_pointer = 0x0002;
             rst_jump(&mut system_data, &mut registers, opcodes[i]);
-            assert_eq!(system_data.mem_map[0x0000], 0x35);
-            assert_eq!(system_data.mem_map[0x0001], 0x12);
+            assert_eq!(system_data.mmu.mem_map[0x0000], 0x35);
+            assert_eq!(system_data.mmu.mem_map[0x0001], 0x12);
             assert_eq!(registers.stack_pointer, 0x0000);
             assert_eq!(registers.program_counter, locations[i]);
 
@@ -814,7 +814,7 @@ mod opcode_test
     fn load_register_with_hl_location_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        system_data.mem_map[0x1234] = 0xFF;
+        system_data.mmu.mem_map[0x1234] = 0xFF;
         let opcodes: Vec<u8> = vec![0x7E, 0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E];
         for i in 0..opcodes.len()
         {
@@ -828,18 +828,18 @@ mod opcode_test
     fn load_n_to_hl_location_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        system_data.mem_map[0x0001] = 0xFF;
+        system_data.mmu.mem_map[0x0001] = 0xFF;
         registers.mapped_16_bit_register_setter(3, 0x1234);
         load_n_to_hl_location(&mut system_data, &mut registers);
-        assert_eq!(system_data.mem_map[0x1234], 0xFF);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0xFF);
     }
 
     #[test]
     fn or_n_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        system_data.mem_map[0x0001] = 0x00;
-        system_data.mem_map[0x0003] = 0xFF;
+        system_data.mmu.mem_map[0x0001] = 0x00;
+        system_data.mmu.mem_map[0x0003] = 0xFF;
         or_n(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x80);
         assert_eq!(registers.accumulator, 0x00);
@@ -880,9 +880,9 @@ mod opcode_test
         registers.mapped_16_bit_register_setter(3, 0x1234);
         for i in 0..opcodes.len()
         {
-            system_data.mem_map[0x1234] = 0;
+            system_data.mmu.mem_map[0x1234] = 0;
             set_bit_of_hl_location(&mut system_data, &mut registers, opcodes[i]);
-            assert_eq!((system_data.mem_map[0x1234] >> i) & 0x01, 0x01);
+            assert_eq!((system_data.mmu.mem_map[0x1234] >> i) & 0x01, 0x01);
         }
     }
 
@@ -935,7 +935,7 @@ mod opcode_test
         //Sets carry
         registers.flags = 0x00;
         registers.accumulator = 0x10;
-        system_data.mem_map[0x1234] = 0x20;
+        system_data.mmu.mem_map[0x1234] = 0x20;
         subtract_hl_location_and_carry_from_accumulator(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0xF0);
         assert_eq!(registers.flags, 0x50);
@@ -944,7 +944,7 @@ mod opcode_test
         //half carry
         registers.flags = 0x10;
         registers.accumulator = 0x20;
-        system_data.mem_map[0x1234] = 0x00;
+        system_data.mmu.mem_map[0x1234] = 0x00;
         subtract_hl_location_and_carry_from_accumulator(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0x1F);
         assert_eq!(registers.flags, 0x60);
@@ -952,7 +952,7 @@ mod opcode_test
         //zero flag
         registers.flags = 0x10;
         registers.accumulator = 0x02;
-        system_data.mem_map[0x1234] = 0x01;
+        system_data.mmu.mem_map[0x1234] = 0x01;
         subtract_hl_location_and_carry_from_accumulator(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0x00);
         assert_eq!(registers.flags, 0xC0);
@@ -963,9 +963,9 @@ mod opcode_test
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        system_data.mem_map[0x1234] = 0xFF;
-        system_data.mem_map[0x0001] = 0x34;
-        system_data.mem_map[0x0002] = 0x12;
+        system_data.mmu.mem_map[0x1234] = 0xFF;
+        system_data.mmu.mem_map[0x0001] = 0x34;
+        system_data.mmu.mem_map[0x0002] = 0x12;
         registers.accumulator = 0x00;
         load_accumulator_with_nn_address(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0xFF);
@@ -987,8 +987,8 @@ mod opcode_test
         {
             registers.flags = flags[i];
             registers.program_counter = program_counters[i] as u16;   
-            system_data.mem_map[program_counters[i] + 1]  = 0x34;
-            system_data.mem_map[program_counters[i] + 2]  = 0x12;
+            system_data.mmu.mem_map[program_counters[i] + 1]  = 0x34;
+            system_data.mmu.mem_map[program_counters[i] + 2]  = 0x12;
             call_function_nn_on_conditional(&mut system_data, &mut registers, opcodes[i]);
             assert_eq!(registers.program_counter, 0x1234);
         }
@@ -1003,7 +1003,7 @@ mod opcode_test
 
         for i in 0..8
         {
-            assert_eq!(system_data.mem_map[i], i as u8);
+            assert_eq!(system_data.mmu.mem_map[i], i as u8);
         }
 
     }
@@ -1016,7 +1016,7 @@ mod opcode_test
         //Zero flag
         registers.flags = 0x00;
         registers.accumulator = 0x00;
-        system_data.mem_map[0x01] = 0x00;
+        system_data.mmu.mem_map[0x01] = 0x00;
         add_8_bit_to_accumulator(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x80);
         assert_eq!(registers.accumulator, 0x00);
@@ -1024,7 +1024,7 @@ mod opcode_test
         //Carry flag
         registers.flags = 0x00;
         registers.accumulator = 0xF0;
-        system_data.mem_map[0x03] = 0x11;
+        system_data.mmu.mem_map[0x03] = 0x11;
         add_8_bit_to_accumulator(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x10);
         assert_eq!(registers.accumulator, 0x01);
@@ -1032,7 +1032,7 @@ mod opcode_test
         //Half Carry flag
         registers.flags = 0x00;
         registers.accumulator = 0x08;
-        system_data.mem_map[0x05] = 0x08;
+        system_data.mmu.mem_map[0x05] = 0x08;
         add_8_bit_to_accumulator(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x20);
         assert_eq!(registers.accumulator, 0x10);
@@ -1046,7 +1046,7 @@ mod opcode_test
         //Zero flag
         registers.flags = 0x00;
         registers.accumulator = 0x00;
-        system_data.mem_map[0x01] = 0x00;
+        system_data.mmu.mem_map[0x01] = 0x00;
         subtraction_n_from_accumulator(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0xC0);
         assert_eq!(registers.accumulator, 0x00);
@@ -1054,7 +1054,7 @@ mod opcode_test
         //Carry flag
         registers.flags = 0x00;
         registers.accumulator = 0x00;
-        system_data.mem_map[0x03] = 0x10;
+        system_data.mmu.mem_map[0x03] = 0x10;
         subtraction_n_from_accumulator(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x50);
         assert_eq!(registers.accumulator, 0xF0);
@@ -1062,7 +1062,7 @@ mod opcode_test
         //Half Carry flag
         registers.flags = 0x00;
         registers.accumulator = 0x10;
-        system_data.mem_map[0x05] = 0x01;
+        system_data.mmu.mem_map[0x05] = 0x01;
         subtraction_n_from_accumulator(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x60);
         assert_eq!(registers.accumulator, 0x0F);
@@ -1103,7 +1103,7 @@ mod opcode_test
         //No Carry Set & Zero
         registers.flags = 0x00;
         registers.accumulator = 0x00;
-        system_data.mem_map[0x01] = 0x00;
+        system_data.mmu.mem_map[0x01] = 0x00;
         add_8_bit_to_accumulator_with_carry(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0x00);
         assert_eq!(registers.flags, 0x80);
@@ -1111,7 +1111,7 @@ mod opcode_test
         //Carry
         registers.flags = 0x10;
         registers.accumulator = 0x0F;
-        system_data.mem_map[0x03] = 0x00;
+        system_data.mmu.mem_map[0x03] = 0x00;
         add_8_bit_to_accumulator_with_carry(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0x10);
         assert_eq!(registers.flags, 0x20);
@@ -1119,7 +1119,7 @@ mod opcode_test
         //Half Carry
         registers.flags = 0x10;
         registers.accumulator = 0xF0;
-        system_data.mem_map[0x05] = 0x20;
+        system_data.mmu.mem_map[0x05] = 0x20;
         add_8_bit_to_accumulator_with_carry(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0x11);
         assert_eq!(registers.flags, 0x10);
@@ -1135,8 +1135,8 @@ mod opcode_test
         let fail_flags: Vec<u8> = vec![0x80, 0x00, 0x10, 0x00];
         let flags: Vec<Vec<u8>> = vec![pass_flags, fail_flags];
         let locations: Vec<u16> = vec![0x1234, 0x0001];
-        system_data.mem_map[0x100] = 0x34;
-        system_data.mem_map[0x101] = 0x12;
+        system_data.mmu.mem_map[0x100] = 0x34;
+        system_data.mmu.mem_map[0x101] = 0x12;
 
         for i in 0..opcodes.len()
         {
@@ -1181,15 +1181,15 @@ mod opcode_test
         registers.mapped_16_bit_register_setter(3, 0x1234);
 
         //Zero flag test
-        system_data.mem_map[0x1234] = 0x00;
+        system_data.mmu.mem_map[0x1234] = 0x00;
         shift_hl_location_right_logical(&mut system_data, &mut registers);
-        assert_eq!(system_data.mem_map[0x1234], 0x00);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0x00);
         assert_eq!(registers.flags, 0x80);
 
-        system_data.mem_map[0x1234] = 0xFF;
+        system_data.mmu.mem_map[0x1234] = 0xFF;
         shift_hl_location_right_logical(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x10);
-        assert_eq!(system_data.mem_map[0x1234], 0x7F);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0x7F);
     }
 
     #[test]
@@ -1202,8 +1202,8 @@ mod opcode_test
         let fail_flags: Vec<u8> = vec![0x80, 0x00, 0x10, 0x00];
         let flags: Vec<Vec<u8>> = vec![pass_flags, fail_flags];
         let locations: Vec<u16> = vec![0x1234, 0x0003];
-        system_data.mem_map[0x0001] = 0x34;
-        system_data.mem_map[0x0002] = 0x12;
+        system_data.mmu.mem_map[0x0001] = 0x34;
+        system_data.mmu.mem_map[0x0002] = 0x12;
         for i in 0..opcodes.len()
         {
             for j in 0..locations.len()
@@ -1250,24 +1250,24 @@ mod opcode_test
         registers.mapped_16_bit_register_setter(3, 0x1234);
 
         //No Set
-        system_data.mem_map[0x1234] = 0x02;
+        system_data.mmu.mem_map[0x1234] = 0x02;
         registers.flags = 0x00;
         rotate_hl_location_right_through_carry(&mut system_data, &mut registers);
-        assert_eq!(system_data.mem_map[0x1234], 0x01);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0x01);
         assert_eq!(registers.flags, 0x00);
 
         //Zero Flag
-        system_data.mem_map[0x1234] = 0x00;
+        system_data.mmu.mem_map[0x1234] = 0x00;
         registers.flags = 0x00;
         rotate_hl_location_right_through_carry(&mut system_data, &mut registers);
-        assert_eq!(system_data.mem_map[0x1234], 0x00);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0x00);
         assert_eq!(registers.flags, 0x80);
 
         //Carry
-        system_data.mem_map[0x1234] = 0xFF;
+        system_data.mmu.mem_map[0x1234] = 0xFF;
         registers.flags = 0x10;
         rotate_hl_location_right_through_carry(&mut system_data, &mut registers);
-        assert_eq!(system_data.mem_map[0x1234], 0xFF);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0xFF);
         assert_eq!(registers.flags, 0x10);
     }
 
@@ -1275,8 +1275,8 @@ mod opcode_test
     fn xor_accumulator_with_n_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
-        system_data.mem_map[0x01] = 0xFF;
-        system_data.mem_map[0x03] = 0xFF;
+        system_data.mmu.mem_map[0x01] = 0xFF;
+        system_data.mmu.mem_map[0x03] = 0xFF;
         registers.accumulator = 0xFF;
         xor_accumulator_with_n(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x80);
@@ -1351,7 +1351,7 @@ mod opcode_test
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();
         registers.mapped_16_bit_register_setter(3, 0x1234);
-        system_data.mem_map[0x1234] = 0x00;
+        system_data.mmu.mem_map[0x1234] = 0x00;
         //Zero-flag
         registers.accumulator = 0x00;
         or_hl_location(&mut system_data, &mut registers);
@@ -1359,7 +1359,7 @@ mod opcode_test
         assert_eq!(registers.accumulator, 0x00);
         //Non-zero;
         registers.accumulator = 0x00;
-        system_data.mem_map[0x1234] = 0xFF;
+        system_data.mmu.mem_map[0x1234] = 0xFF;
         or_hl_location(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x00);
         assert_eq!(registers.accumulator, 0xFF);
@@ -1373,19 +1373,19 @@ mod opcode_test
         let mut registers : Registers = Registers::new();
         registers.mapped_16_bit_register_setter(3, 0x1234);
         //H flag
-        system_data.mem_map[0x1234] = 0x10;
+        system_data.mmu.mem_map[0x1234] = 0x10;
         decrement_hl_location(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x60);
-        assert_eq!(system_data.mem_map[0x1234], 0x0F);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0x0F);
         //No flag
         decrement_hl_location(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x40);
-        assert_eq!(system_data.mem_map[0x1234], 0x0E);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0x0E);
         //Z flag
-        system_data.mem_map[0x1234] = 0x01;
+        system_data.mmu.mem_map[0x1234] = 0x01;
         decrement_hl_location(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0xC0);
-        assert_eq!(system_data.mem_map[0x1234], 0x00);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0x00);
     }
 
     #[test]
@@ -1396,7 +1396,7 @@ mod opcode_test
         registers.mapped_16_bit_register_setter(2, 0x1234);
         registers.accumulator = 0xFF;
         load_de_location_with_accumulator(&mut system_data, &mut registers);
-        assert_eq!(system_data.mem_map[0x1234], 0xFF);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0xFF);
     }
 
     #[test]
@@ -1405,19 +1405,19 @@ mod opcode_test
         let mut registers : Registers = Registers::new();
         //Half Carry
         registers.stack_pointer = 0x000F;
-        system_data.mem_map[0x01] = 0x01;
+        system_data.mmu.mem_map[0x01] = 0x01;
         load_hl_with_stack_pointer_plus_n(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x20);
         assert_eq!(registers.mapped_16_bit_register_getter(3), 0x10);
         //Carry
         registers.stack_pointer = 0x00F0;
-        system_data.mem_map[0x03] = 0x10;
+        system_data.mmu.mem_map[0x03] = 0x10;
         load_hl_with_stack_pointer_plus_n(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x10);
         assert_eq!(registers.mapped_16_bit_register_getter(3), 0x100);
         //Negative
         registers.stack_pointer = 0x0001;
-        system_data.mem_map[0x05] = 0xFF;
+        system_data.mmu.mem_map[0x05] = 0xFF;
         load_hl_with_stack_pointer_plus_n(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x00);
         assert_eq!(registers.mapped_16_bit_register_getter(3), 0x00);

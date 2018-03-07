@@ -13,7 +13,7 @@ mod gpu_register_tests
         let values = vec![0x00, 0xFF];
         for i in 0..values.len()
         {
-            system_data.mem_map[0xFF40] = values[i];
+            system_data.mmu.mem_map[0xFF40] = values[i];
             lcdc_register.update_lcdc_register(&system_data);
             assert_eq!(lcdc_register.value , values[i]);
             let mut states = vec![lcdc_register.display_enable, lcdc_register.window_display_select, 
@@ -35,7 +35,7 @@ mod gpu_register_tests
         let values = vec![0x00, 0xFF];
         for i in 0..values.len()
         {
-            system_data.mem_map[0xFF41] = values[i];
+            system_data.mmu.mem_map[0xFF41] = values[i];
             lcdc_status.update_lcdc_status(&system_data);
             assert_eq!(lcdc_status.value , values[i]);
             let mut states = vec![lcdc_status.lyc_ly_coincidence_interrupt, lcdc_status.mode_2_oam_interrupt, 
@@ -49,7 +49,7 @@ mod gpu_register_tests
 
         for i in 0..4
         {
-            system_data.mem_map[0xFF41] = i;
+            system_data.mmu.mem_map[0xFF41] = i;
             lcdc_status.update_lcdc_status(&system_data);
             assert_eq!(lcdc_status.mode_flag, i);
         }
@@ -69,13 +69,13 @@ mod gpu_register_tests
             {
                 assert_eq!(reset_flag, false);
                 assert_eq!(ly_register.value, i + 1);
-                assert_eq!(system_data.mem_map[0xFF44], i + 1);
+                assert_eq!(system_data.mmu.mem_map[0xFF44], i + 1);
             }
             else
             {
                 assert_eq!(reset_flag, true);
                 assert_eq!(ly_register.value, 0);
-                assert_eq!(system_data.mem_map[0xFF44], 0);
+                assert_eq!(system_data.mmu.mem_map[0xFF44], 0);
             }
         }
 
@@ -121,7 +121,7 @@ mod gpu_register_tests
         {
             for addr_index in 0..5
             {
-                system_data.mem_map[mem_addrs[addr_index as usize]] = value as u8;
+                system_data.mmu.mem_map[mem_addrs[addr_index as usize]] = value as u8;
             }
             lcd_position.update(&mut system_data);
             let registers: Vec<u8> = vec![lcd_position.scroll_x, lcd_position.scroll_y,

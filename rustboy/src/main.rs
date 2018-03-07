@@ -12,6 +12,7 @@ extern crate piston_window;
 mod cpu;
 mod gpu;
 mod system;
+mod mmu;
 
 use piston_window::*;
 use image::ImageBuffer;
@@ -26,6 +27,7 @@ use std::env;
 use cpu::cpu::*;
 use gpu::gpu::*;
 use gpu::gpu_registers::*;
+use mmu::*;
 use system::*;
 use self::hex::FromHex;
 
@@ -39,7 +41,7 @@ fn main()
     let emulator_type: String = String::from("CLASSIC");
     let file_name: &String = &args[1];
     let mut system_data : SystemData = get_system_data(&emulator_type);
-    system_data.mem_map = read_gb_file(file_name);
+    system_data.mmu.mem_map = read_gb_file(file_name);
     let mut registers: Registers = Registers::new();
     let mut gpu_registers: GPU_Registers = GPU_Registers::new();
     init_emulator_state(&mut system_data, &mut registers);
@@ -70,9 +72,9 @@ fn main()
         {
             while !gpu_registers.v_blank_draw_flag
             {   //Default until joypad implementation
-                system_data.mem_map[0xFF00] = 0xFF;//system_data.mem_map[0xFF00] | 0x0F;
+                system_data.mmu.set_to_memory(0xFF00, 0xFF, false); //system_data.mem_map[0xFF00] | 0x0F;
                 //^^^^ Delete when joypad implemented ^^^^^^
-                let opcode = system_data.mem_map[registers.program_counter as usize];
+                let opcode = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
                 let address = registers.program_counter;
                 cpu_continue(&mut system_data, &mut registers);
                 update_gpu(&mut system_data, &mut registers, &mut gpu_registers);     
@@ -131,7 +133,7 @@ fn read_gb_file(file_name: &str) -> Vec<u8>
             return buffer;
         }        
     }
-    return vec![0;0];
+    return buffer;
 }
 
 fn create_background_img(background_tile_map: &TileMap) -> RgbaImage
@@ -169,16 +171,6 @@ fn pixel_color_map(pixel_data: u8) -> Rgba<u8>
     }
 }
 
-
-fn output_mem_selection(mem_map: &Vec<u8>, start: u16, end:u16)
-{
-    for index in start .. end
-    {
-        print!("{}-{:x}\t", index, mem_map[index as usize]);
-    }
-    print!("\n");
-}
-
 fn init_emulator_state(system_data: &mut SystemData, registers: &mut Registers)
 {
     registers.program_counter = 0x100;
@@ -196,7 +188,7 @@ fn init_emulator_state(system_data: &mut SystemData, registers: &mut Registers)
 
     for i in 0..states.len()
     {
-        system_data.mem_map[mem_locations[i]] = states[i];
+        system_data.mmu.set_to_memory(mem_locations[i], states[i] ,false);
     }
 
     let register_states: Vec<u16> = vec![0x01B0, 0x0013, 0x00D8, 0x014D, 0xFFFE];
