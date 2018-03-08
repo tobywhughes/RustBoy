@@ -46,6 +46,10 @@ impl MMU
 
     pub fn get_from_memory(&self, location: usize, masked_read: bool) -> u8
     {
+        // if masked_read == true && location < 0x8000
+        // {
+        //     println!("DEBUG: Masked Read Location-{:04x}", location);
+        // }
         return self.mem_map[location];
     }
 
@@ -53,6 +57,11 @@ impl MMU
     {
         match location
         {
+            0x0000...0x1FFF =>
+            {
+                println!("DEBUG: ram enable` {}", value);
+                return true;
+            },
             0x2000...0x3FFF => 
             {
                 let mut bank = value & 0x1F;
@@ -70,6 +79,11 @@ impl MMU
                 self.rom_bank &= 0x1F;
                 self.rom_bank |= (value & 0x03) << 5;
                 self.update_rom_bank();
+                return true;
+            },
+            0x6000...0x7FFF =>
+            {
+                println!("DEBUG: mode {}", value);
                 return true;
             },
             _ => return false,
@@ -182,7 +196,7 @@ mod mmu_tests
         assert_eq!(mmu.get_from_memory(0x1234, false), 0xFF);
     }
 
-    #[test]
+    //#[test]
     fn mbc1_test() {
         let mut mmu = MMU::new();
         mmu.cartridge_type = 0x01;

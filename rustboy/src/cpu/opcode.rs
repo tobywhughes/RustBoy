@@ -51,7 +51,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x04 => increment_8_bit_register(&mut system_data, &mut registers, opcode),
 0x05 => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
 0x06 => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
-0x07 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x07 => rlca(&mut system_data, &mut registers),
 0x08 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
 0x09 => add_16_bit_register_to_hl(&mut system_data, &mut registers, opcode),
 0x0A => load_accumulator_with_bc_address(&mut system_data, &mut registers),
@@ -1620,6 +1620,17 @@ pub fn bcd_adjust(system_data: &mut SystemData, registers: &mut Registers)
     }
     registers.flags |= carry_set;
     registers.accumulator = (new_value & 0x00FF) as u8;
+}
+
+pub fn rlca(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    registers.flags = 0;
+    let set_bit = (registers.accumulator & 0x80) >> 7;
+    registers.accumulator = registers.accumulator << 1;
+    registers.accumulator |= set_bit;
+    registers.flags |= (set_bit << 4);
+    system_data.cycles = 1;
 }
 
 //##########################################################################

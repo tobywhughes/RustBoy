@@ -1556,4 +1556,19 @@ mod opcode_test
         assert_eq!(registers.accumulator, 0x01);
         assert_eq!(registers.flags, 0x50);
     }
+
+    #[test]
+    fn rlca_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.accumulator = 0x80;
+        registers.flags = 0x00;
+        rlca(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x01);
+        assert_eq!(registers.flags, 0x10);
+        rlca(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0x02);
+        assert_eq!(registers.flags, 0x00);
+    }
 }
