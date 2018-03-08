@@ -1699,7 +1699,7 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
     {
         rotate_register_left_carry_set(&mut system_data, &mut registers, opcode);      
     }
-    else if (opcode & 0xF8) == 0x80
+    else if (opcode & 0xF8) == 0x08
     {
         rotate_register_right_carry_set(&mut system_data, &mut registers, opcode);      
     }
