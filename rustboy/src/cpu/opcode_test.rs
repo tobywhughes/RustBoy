@@ -1608,4 +1608,23 @@ mod opcode_test
         flip_carry_flag(&mut system_data, &mut registers);
         assert_eq!(registers.flags, 0x80);
     }
+
+    #[test]
+    fn rotate_register_left_carry_set_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0x07, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05];
+        for i in 0..opcodes.len()
+        {   
+            registers.mapped_register_setter(i as u8, 0x80);
+            rotate_register_left_carry_set(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x01);
+            assert_eq!(registers.flags, 0x10);
+            registers.mapped_register_setter(i as u8, 0x00);
+            rotate_register_left_carry_set(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x00);
+            assert_eq!(registers.flags, 0x80);
+        }
+    }
 }

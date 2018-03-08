@@ -1695,6 +1695,10 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
         let test_bit: u8 = (opcode & 0x38) >> 3;
         bit_check_register(&mut system_data, &mut registers, opcode, test_bit)
     }
+    else if (opcode & 0xF8) == 0x00
+    {
+        rotate_register_left_carry_set(&mut system_data, &mut registers, opcode);      
+    }
     else if (opcode & 0xF8) == 0x10
     {
         system_data.cycles = 2;
@@ -1995,4 +1999,38 @@ pub fn reset_bit_in_register(system_data: &mut SystemData, registers: &mut Regis
     let bit_removal = 0xFF ^ (0x01 << bit_shift);
     registers.mapped_register_setter(register_code, start_value & bit_removal);
     registers.program_counter += 2;
+}
+
+pub fn rotate_register_left_carry_set(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let mut register_code = 0;
+    match opcode
+    {
+        0x07 => register_code = 0,
+        0x00 => register_code = 1,
+        0x01 => register_code = 2,
+        0x02 => register_code = 3,
+        0x03 => register_code = 4,
+        0x04 => register_code = 5,
+        0x05 => register_code = 6,
+        _ => {
+            system_data.cycles = 0;
+            println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+            return;
+        },
+    }
+
+    registers.flags = 0x00;
+    let current_value = registers.mapped_register_getter(register_code);
+    let carry_bit = (current_value >> 7);
+    let new_value = (current_value << 1) | carry_bit;
+    registers.mapped_register_setter(register_code, new_value);
+    if new_value == 0
+    {
+        registers.flags |= 0x80;
+    }
+    registers.flags |= (carry_bit << 4);
+    registers.program_counter += 2;
+    system_data.cycles = 2;
+    
 }
