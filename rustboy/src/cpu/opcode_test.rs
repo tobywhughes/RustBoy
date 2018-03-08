@@ -1646,4 +1646,42 @@ mod opcode_test
             assert_eq!(registers.flags, 0x80);
         }
     }
+
+    #[test]
+    fn shift_left_load_carry_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0x27, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25];
+        for i in 0..opcodes.len()
+        {   
+            registers.mapped_register_setter(i as u8, 0x80);
+            shift_left_load_carry(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x00);
+            assert_eq!(registers.flags, 0x90);
+            registers.mapped_register_setter(i as u8, 0x00);
+            shift_left_load_carry(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x00);
+            assert_eq!(registers.flags, 0x80);
+        }
+    }
+
+    #[test]
+    fn shift_right_load_carry_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let opcodes: Vec<u8> = vec![0x2F, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D];
+        for i in 0..opcodes.len()
+        {   
+            registers.mapped_register_setter(i as u8, 0x01);
+            shift_right_load_carry(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x00);
+            assert_eq!(registers.flags, 0x90);
+            registers.mapped_register_setter(i as u8, 0x00);
+            shift_right_load_carry(&mut system_data, &mut registers, opcodes[i]);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x00);
+            assert_eq!(registers.flags, 0x80);
+        }
+    }
 }

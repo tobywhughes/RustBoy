@@ -1703,6 +1703,14 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
     {
         rotate_register_right_carry_set(&mut system_data, &mut registers, opcode);      
     }
+    else if (opcode & 0xF8) == 0x20
+    {
+        shift_left_load_carry(&mut system_data, &mut registers, opcode);
+    }
+    else if (opcode & 0xF8) == 0x28
+    {
+        shift_right_load_carry(&mut system_data, &mut registers, opcode);
+    }
     else if (opcode & 0xF8) == 0x10
     {
         system_data.cycles = 2;
@@ -2070,5 +2078,68 @@ pub fn rotate_register_right_carry_set(system_data: &mut SystemData, registers: 
     registers.flags |= (carry_bit >> 3);
     registers.program_counter += 2;
     system_data.cycles = 2;
-    
+}
+
+pub fn shift_left_load_carry(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let mut register_code = 0;
+    match opcode
+    {
+        0x27 => register_code = 0,
+        0x20 => register_code = 1,
+        0x21 => register_code = 2,
+        0x22 => register_code = 3,
+        0x23 => register_code = 4,
+        0x24 => register_code = 5,
+        0x25 => register_code = 6,
+        _ => {
+            system_data.cycles = 0;
+            println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+            return;
+        },
+    }
+    registers.flags = 0x00;
+    let current_value = registers.mapped_register_getter(register_code);
+    let carry_bit = (current_value & 0x80) >> 3;
+    registers.flags |= carry_bit;
+    let new_value = current_value << 1;
+    registers.mapped_register_setter(register_code, new_value);
+    if new_value == 0
+    {
+        registers.flags |= 0x80;
+    }
+    registers.program_counter += 2;
+    system_data.cycles = 2;
+}
+
+pub fn shift_right_load_carry(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
+{
+    let mut register_code = 0;
+    match opcode
+    {
+        0x2F => register_code = 0,
+        0x28 => register_code = 1,
+        0x29 => register_code = 2,
+        0x2A => register_code = 3,
+        0x2B => register_code = 4,
+        0x2C => register_code = 5,
+        0x2D => register_code = 6,
+        _ => {
+            system_data.cycles = 0;
+            println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+            return;
+        },
+    }
+    registers.flags = 0x00;
+    let current_value = registers.mapped_register_getter(register_code);
+    let carry_bit = (current_value & 0x01) << 4;
+    registers.flags |= carry_bit;
+    let new_value = current_value >> 1;
+    registers.mapped_register_setter(register_code, new_value);
+    if new_value == 0
+    {
+        registers.flags |= 0x80;
+    }
+    registers.program_counter += 2;
+    system_data.cycles = 2;
 }
