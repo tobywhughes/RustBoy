@@ -59,7 +59,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x0C => increment_8_bit_register(&mut system_data, &mut registers, opcode),
 0x0D => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
 0x0E => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
-0x0F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), //Unimplemented
+0x0F => rrca(&mut system_data, &mut registers),
 
 0x10 => stop(&mut system_data, &mut registers), //TEMP FOR DEBUGGING. CHANGE WHEN IMPLEMENTING INTERUPTS
 0x11 => load_nn_to_16bit_register(&mut system_data, &mut registers, opcode),
@@ -1636,6 +1636,17 @@ pub fn rlca(system_data: &mut SystemData, registers: &mut Registers)
     let set_bit = (registers.accumulator & 0x80) >> 7;
     registers.accumulator = registers.accumulator << 1;
     registers.accumulator |= set_bit;
+    registers.flags |= (set_bit << 4);
+    system_data.cycles = 1;
+}
+
+pub fn rrca(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    registers.flags = 0;
+    let set_bit = (registers.accumulator & 0x01);
+    registers.accumulator = registers.accumulator >> 1;
+    registers.accumulator |= set_bit << 7;
     registers.flags |= (set_bit << 4);
     system_data.cycles = 1;
 }
