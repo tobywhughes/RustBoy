@@ -1571,4 +1571,26 @@ mod opcode_test
         assert_eq!(registers.accumulator, 0x02);
         assert_eq!(registers.flags, 0x00);
     }
+
+    #[test]
+    fn set_carry_flag_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.flags = 0xE0;
+        set_carry_flag(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x90);
+    }
+
+    #[test]
+    fn flip_carry_flag_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.flags = 0xE0;
+        flip_carry_flag(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x90);
+        flip_carry_flag(&mut system_data, &mut registers);
+        assert_eq!(registers.flags, 0x80);
+    }
 }

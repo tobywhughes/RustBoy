@@ -61,7 +61,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x0E => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
 0x0F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), //Unimplemented
 
-0x10 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),
+0x10 => stop(&mut system_data, &mut registers), //TEMP FOR DEBUGGING. CHANGE WHEN IMPLEMENTING INTERUPTS
 0x11 => load_nn_to_16bit_register(&mut system_data, &mut registers, opcode),
 0x12 => load_de_location_with_accumulator(&mut system_data, &mut registers),
 0x13 => increment_16_bit_register(&mut system_data, &mut registers, opcode),
@@ -102,7 +102,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x34 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
 0x35 => decrement_hl_location(&mut system_data, &mut registers),
 0x36 => load_n_to_hl_location(&mut system_data, &mut registers),
-0x37 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x37 => set_carry_flag(&mut system_data, &mut registers),
 0x38 => jump_displacement_on_flag(&mut system_data, &mut registers, opcode),
 0x39 => add_16_bit_register_to_hl(&mut system_data, &mut registers, opcode),
 0x3A => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), //Unimplemented
@@ -110,7 +110,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x3C => increment_8_bit_register(&mut system_data, &mut registers, opcode),
 0x3D => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
 0x3E => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
-0x3F => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), //Unimplemented
+0x3F => flip_carry_flag(&mut system_data, &mut registers),
 
 0x40 => load_8_bit_register_to_register(&mut system_data, &mut registers, opcode),
 0x41 => load_8_bit_register_to_register(&mut system_data, &mut registers, opcode),
@@ -351,6 +351,13 @@ pub fn enable_interupts(system_data: &mut SystemData, registers: &mut Registers)
     system_data.cycles = 1;
     registers.program_counter += 1;
     registers.interrupt_master_enable_delay_flag = true;
+}
+
+pub fn stop(system_data: &mut SystemData, registers: &mut Registers)
+{
+    //Temporary debugging
+    registers.program_counter += 2;
+    system_data.cycles = 1;
 }
 
 pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
@@ -1631,6 +1638,23 @@ pub fn rlca(system_data: &mut SystemData, registers: &mut Registers)
     registers.accumulator |= set_bit;
     registers.flags |= (set_bit << 4);
     system_data.cycles = 1;
+}
+
+pub fn set_carry_flag(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    system_data.cycles = 1;
+    registers.flags &= 0x80;
+    registers.flags |= 0x10;
+}
+
+pub fn flip_carry_flag(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    system_data.cycles = 1;
+    let carry_set = (registers.flags ^ 0xFF) & 0x10;
+    registers.flags &= 0x80;
+    registers.flags |= carry_set;
 }
 
 //##########################################################################
