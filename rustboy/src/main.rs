@@ -13,6 +13,7 @@ mod cpu;
 mod gpu;
 mod system;
 mod mmu;
+mod timer;
 
 use piston_window::*;
 use image::ImageBuffer;
@@ -26,6 +27,7 @@ use cpu::cpu::*;
 use gpu::gpu::*;
 use gpu::gpu_registers::*;
 use mmu::*;
+use timer::*;
 use system::*;
 use self::hex::FromHex;
 
