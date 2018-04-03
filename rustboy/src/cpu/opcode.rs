@@ -36,11 +36,36 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     // }
     //println!("{:08b}", system_data.mem_map[0xFF40]);
 
+    //Interrupt Handling
+    if registers.interrupt_master_enable_flag
+    {
+        let enabled_interrupts = system_data.mmu.mem_map[0xFFFF];
+        let requested_interrupts = system_data.mmu.mem_map[0xFFFE];
+        let runnable_interrupts = enabled_interrupts & requested_interrupts;
+        if runnable_interrupts > 0x00 && runnable_interrupts <= 0x1F
+        {
+            let mut interrupt_vector = 0;
+            if runnable_interrupts & 0x01 == 0x01 {interrupt_vector = 0x40; system_data.mmu.mem_map[0xFFFE] = requested_interrupts & 0x1E;}
+            else if runnable_interrupts & 0x02 == 0x02 {interrupt_vector = 0x48; system_data.mmu.mem_map[0xFFFE] = requested_interrupts & 0x1D;}
+            else if runnable_interrupts & 0x04 == 0x04 {interrupt_vector = 0x50; system_data.mmu.mem_map[0xFFFE] = requested_interrupts & 0x1B;}
+            else if runnable_interrupts & 0x08 == 0x08 {interrupt_vector = 0x58; system_data.mmu.mem_map[0xFFFE] = requested_interrupts & 0x17;}
+            else if runnable_interrupts & 0x10 == 0x10 {interrupt_vector = 0x60; system_data.mmu.mem_map[0xFFFE] = requested_interrupts & 0x0F;}
+            registers.stack_pointer -= 2;
+            system_data.mmu.mem_map[registers.stack_pointer as usize + 1] = ((registers.program_counter & 0xFF00) >> 8) as u8;
+            system_data.mmu.mem_map[registers.stack_pointer as usize] = (registers.program_counter & 0x00FF) as u8;
+            registers.program_counter = interrupt_vector as u16;
+
+            registers.interrupt_master_enable_flag = !registers.interrupt_master_enable_flag;
+        }
+        
+    }
+
     if registers.interrupt_master_enable_delay_flag
     {
         registers.interrupt_master_enable_delay_flag = false;
         registers.interrupt_master_enable_flag = true;
     }
+
 
     match opcode
     {
