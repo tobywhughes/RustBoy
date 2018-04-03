@@ -78,7 +78,8 @@ fn main()
                 let opcode = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
                 let address = registers.program_counter;
                 cpu_continue(&mut system_data, &mut registers);
-                update_gpu(&mut system_data, &mut registers, &mut gpu_registers);     
+                update_gpu(&mut system_data, &mut registers, &mut gpu_registers);
+                system_data.tima_tick();
             }
         }
 

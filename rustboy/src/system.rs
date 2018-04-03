@@ -1,8 +1,10 @@
 use mmu::MMU;
+use timer::Timer;
 
 pub struct SystemData
 {
     pub mmu: MMU,
+    pub timer: Timer,
     pub width: u16,
     pub tile_width: u16,
     pub height: u16,
@@ -11,6 +13,19 @@ pub struct SystemData
     pub horizontal_sync: u32,
     pub vertical_sync: f64,
     pub cycles: u8,
+}
+
+impl SystemData{
+    pub fn tima_tick(&mut self)
+    {
+        self.timer.update_registers(&self.mmu.mem_map);
+        let overflow_flag = self.timer.tima_tick(self.cycles);
+        self.mmu.mem_map[0xFF05] = self.timer.timer_counter;
+        if overflow_flag
+        {
+            self.mmu.mem_map[0xFFFE] |= 0x04;
+        }
+    }   
 }
 
 pub struct Registers 
@@ -140,6 +155,7 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
         "CLASSIC" => return SystemData
         {
             mmu: MMU::new(),
+            timer: Timer::new(),
             width: 256,
             tile_width: 20,
             height: 256,
@@ -153,6 +169,7 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
         return SystemData
         {
             mmu: MMU::new(),
+            timer: Timer::new(),
             width: 0,
             tile_width: 0,
             height: 0,

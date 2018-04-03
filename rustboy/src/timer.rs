@@ -36,14 +36,22 @@ impl Timer
         }
     }
 
-    pub fn tima_tick(&mut self, system_data: &mut SystemData) -> bool
+    pub fn update_registers(&mut self, mem_map: &Vec<u8>)
+    {
+        self.divider_register = mem_map[0xFF04];
+        self.timer_counter = mem_map[0xFF05];
+        self.timer_modulo = mem_map[0xFF06];
+        self.timer_control = mem_map[0xFF07];
+    }
+
+    pub fn tima_tick(&mut self, cycles: u8) -> bool
     {
         if (self.timer_control & 0x04) == 0x00
         {
             return false;
         }
         let mut overflow_flag = false;
-        self.tima_cycles += system_data.cycles as u16;
+        self.tima_cycles += cycles as u16;
         
         let cycle_tick_threshold = self.map_timer_control_speed();
         if self.tima_cycles >= cycle_tick_threshold
@@ -58,12 +66,12 @@ impl Timer
             {
                 self.timer_counter += 1;
             }
-            system_data.mmu.mem_map[0xFF05] = self.timer_counter;
+            
         }
-
         return overflow_flag;
     }
 }
+
 
 #[cfg(test)]
 mod timer_tests
@@ -97,7 +105,7 @@ mod timer_tests
         {
             for cycles in 0..0x10
             {
-                interrupt = timer.tima_tick(&mut system_data);
+                interrupt = timer.tima_tick(system_data.cycles);
             }
             
             assert_eq!(timer.timer_counter, tick + 1);
@@ -105,7 +113,7 @@ mod timer_tests
         }
         for cycles in 0..0x10
         {
-            interrupt = timer.tima_tick(&mut system_data);
+            interrupt = timer.tima_tick(system_data.cycles);
         }
         assert_eq!(timer.timer_counter, 0x10);
         assert!(interrupt);
