@@ -123,7 +123,7 @@ mod gpu_register_tests
             {
                 system_data.mmu.mem_map[mem_addrs[addr_index as usize]] = value as u8;
             }
-            lcd_position.update(&mut system_data);
+            lcd_position.update(&mut system_data, lcdc_status.lyc_ly_coincidence_interrupt);
             let registers: Vec<u8> = vec![lcd_position.scroll_x, lcd_position.scroll_y,
                                           lcd_position.window_x, lcd_position.window_y,
                                           lcd_position.ly_compare];

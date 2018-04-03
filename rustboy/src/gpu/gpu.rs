@@ -100,6 +100,8 @@ pub fn update_gpu(system_data_original: &mut SystemData, registers_original: &mu
     let mut gpu_registers = gpu_registers_original;
     LCD_Y_Coordinate_Update(&mut system_data, &mut gpu_registers);
     gpu_registers.lcdc_register.update_lcdc_register(&system_data);
+    gpu_registers.lcdc_status.update_lcdc_status(&system_data);
+    gpu_registers.lcd_position.update(&mut system_data, gpu_registers.lcdc_status.lyc_ly_coincidence_interrupt);
 }
 
 pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_registers: &mut GPU_Registers)
@@ -113,11 +115,13 @@ pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_regist
         if gpu_registers.lcd_position.ly_register.value == 144
         {
             gpu_registers.v_blank = true;
+            system_data.mmu.mem_map[0xFFFE] |= 0x01;
             gpu_registers.v_blank_draw_flag = true;
         }
         if reset_flag
         {
             gpu_registers.v_blank = false;
+            system_data.mmu.mem_map[0xFFFE] &= 0xFE;
         }
     }
 }    

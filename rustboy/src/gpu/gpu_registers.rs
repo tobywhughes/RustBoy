@@ -6,6 +6,7 @@ pub struct GPU_Registers
     pub v_blank: bool,
     pub v_blank_draw_flag: bool,
     pub lcdc_register: LCDC_Register,
+    pub lcdc_status: LCDC_Status,
 }
 
 impl GPU_Registers
@@ -18,6 +19,7 @@ impl GPU_Registers
             v_blank: false,
             v_blank_draw_flag: false,
             lcdc_register: LCDC_Register::new(),
+            lcdc_status: LCDC_Status::new()
         }
     }
 }
@@ -47,7 +49,7 @@ impl LCD_Position
         }
     }
 
-    pub fn update(&mut self, system_data: &mut SystemData)
+    pub fn update(&mut self, system_data: &mut SystemData, interrupt_enabled: bool)
     {
         self.scroll_x = system_data.mmu.mem_map[0xFF43];
         self.scroll_y = system_data.mmu.mem_map[0xFF42];
@@ -57,10 +59,18 @@ impl LCD_Position
         if self.ly_compare == self.ly_register.value
         {
             system_data.mmu.mem_map[0xFF41] |= 0x04;
+            if interrupt_enabled
+            {
+                system_data.mmu.mem_map[0xFFFE] |= 0x02;
+            }
         }
         else 
         {
             system_data.mmu.mem_map[0xFF41] &= 0xFB;
+            if interrupt_enabled
+            {
+                system_data.mmu.mem_map[0xFFFE] &= 0xFD;
+            }
         }
     }
 }
