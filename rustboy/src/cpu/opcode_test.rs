@@ -43,6 +43,31 @@ mod opcode_test
         }
     }
 
+    #[test]
+    fn increment_hl_location_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+
+        //Normal flag
+        increment_hl_location(&mut system_data, &mut registers);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 1);
+        assert_eq!(registers.flags, 0x00);
+        //Half flag
+        system_data.mmu.mem_map[0x1234] = 0x0F;
+        increment_hl_location(&mut system_data, &mut registers);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0x10);
+        assert_eq!(registers.flags, 0x20);
+
+        //Zero flag
+        system_data.mmu.mem_map[0x1234] = 0xFF;
+        increment_hl_location(&mut system_data, &mut registers);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0x00);
+        assert_eq!(registers.flags, 0x80);
+    }
+
 
     #[test]
     fn increment_16_bit_register_test() {

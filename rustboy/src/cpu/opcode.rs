@@ -25,12 +25,12 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
     system_data.cycles = 0;
     let mut opcode: u8 = system_data.mmu.mem_map[registers.program_counter as usize];
-    // if (registers.program_counter >= 0xC2B5  && registers.program_counter < 0xC320) || registers.program_counter < 0x100
-    // {
-    //     println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
-    //     println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
-    //     io::stdin().read_line(&mut String::new());
-    // }
+    //  if (registers.program_counter >= 0x312  && registers.program_counter < 0xC320) || registers.program_counter < 0x100
+    //  {
+    //      println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+    //      println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
+    //      io::stdin().read_line(&mut String::new());
+    //  }
     
     if opcode == 0xE0 || opcode == 0xE2 || opcode == 0xF0 || opcode == 0xF2
     {
@@ -140,7 +140,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x31 => load_nn_to_16bit_register(&mut system_data, &mut registers, opcode),
 0x32 => load_decrement_hl_register_location_with_accumulator(&mut system_data, &mut registers),
 0x33 => increment_16_bit_register(&mut system_data, &mut registers, opcode),
-0x34 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x34 => increment_hl_location(&mut system_data, &mut registers),
 0x35 => decrement_hl_location(&mut system_data, &mut registers),
 0x36 => load_n_to_hl_location(&mut system_data, &mut registers),
 0x37 => set_carry_flag(&mut system_data, &mut registers),
@@ -445,6 +445,31 @@ pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Re
         }
 }
 
+pub fn increment_hl_location(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    system_data.cycles = 3;
+    registers.flags = registers.flags & 0x10;
+
+    let mut current_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
+    if current_value == 0xFF{
+        current_value = 0;
+    }
+    else {
+        current_value += 1;
+    }
+    if current_value == 0
+    {
+        registers.flags = registers.flags | 0x80;
+    }
+    else if current_value &0x0F == 0x0
+    {
+        registers.flags = registers.flags | 0x20;
+    }
+
+    system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(3) as usize, current_value, true);
+}
+
 pub fn increment_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
     registers.program_counter += 1;
@@ -619,7 +644,7 @@ pub fn load_accumulator_to_io_port_with_c_offset(system_data: &mut SystemData, r
 {
     system_data.cycles = 2;
     system_data.mmu.mem_map[(0xFF00 + registers.c_register as u16) as usize] = registers.accumulator;
-    registers.program_counter += 2;  
+    registers.program_counter += 1;  
 }
 
 pub fn load_accumulator_to_io_port_with_n_offset(system_data: &mut SystemData, registers: &mut Registers)
