@@ -61,7 +61,7 @@ impl LCD_Position
             system_data.mmu.mem_map[0xFF41] |= 0x04;
             if interrupt_enabled
             {
-                system_data.mmu.mem_map[0xFFFE] |= 0x02;
+                system_data.mmu.mem_map[0xFF0F] |= 0x02;
             }
         }
         else 
@@ -69,7 +69,7 @@ impl LCD_Position
             system_data.mmu.mem_map[0xFF41] &= 0xFB;
             if interrupt_enabled
             {
-                system_data.mmu.mem_map[0xFFFE] &= 0xFD;
+                system_data.mmu.mem_map[0xFF0F] &= 0xFD;
             }
         }
     }

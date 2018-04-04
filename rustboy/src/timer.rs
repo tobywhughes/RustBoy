@@ -7,6 +7,7 @@ pub struct Timer
     pub timer_modulo: u8,
     pub timer_control: u8,
     pub tima_cycles: u16,
+    pub divider_cycles: u16,
 }
 
 impl Timer
@@ -19,6 +20,7 @@ impl Timer
             timer_counter: 0,
             timer_modulo: 0,
             timer_control: 0,
+            divider_cycles: 0,
             tima_cycles: 0,
         }
     }
@@ -44,12 +46,30 @@ impl Timer
         self.timer_control = mem_map[0xFF07];
     }
 
+    pub fn divider_tick(&mut self, cycles: u8)
+    {
+        self.divider_cycles += cycles as u16;
+        if self.divider_cycles >= 0x0100
+        {
+            self.divider_cycles -= 0x0100;
+            if self.divider_register == 0xFF
+            {
+                self.divider_register = 0x00;
+            }
+            else
+            {
+                self.divider_register += 1;
+            }
+        }
+    }
+
     pub fn tima_tick(&mut self, cycles: u8) -> bool
     {
         if (self.timer_control & 0x04) == 0x00
         {
             return false;
         }
+        println!("########");
         let mut overflow_flag = false;
         self.tima_cycles += cycles as u16;
         
@@ -60,6 +80,7 @@ impl Timer
             if self.timer_counter == 0xFF
             {
                 self.timer_counter = self.timer_modulo;
+                
                 overflow_flag = true;
             }
             else 
@@ -90,6 +111,25 @@ mod timer_tests
         assert_eq!(timer.map_timer_control_speed(), 0x40);
         timer.timer_control = 0x03;
         assert_eq!(timer.map_timer_control_speed(), 0x100);
+    }
+
+    #[test]
+    fn update_register_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        assert_eq!(system_data.timer.divider_register, 0);
+        assert_eq!(system_data.timer.timer_counter, 0);
+        assert_eq!(system_data.timer.timer_modulo, 0);
+        assert_eq!(system_data.timer.timer_control, 0);
+        system_data.mmu.mem_map[0xFF04] = 1;
+        system_data.mmu.mem_map[0xFF05] = 1;
+        system_data.mmu.mem_map[0xFF06] = 1;
+        system_data.mmu.mem_map[0xFF07] = 1;
+        system_data.timer.update_registers(&system_data.mmu.mem_map);
+        assert_eq!(system_data.timer.divider_register, 1);
+        assert_eq!(system_data.timer.timer_counter, 1);
+        assert_eq!(system_data.timer.timer_modulo, 1);
+        assert_eq!(system_data.timer.timer_control, 1);
     }
 
     #[test]

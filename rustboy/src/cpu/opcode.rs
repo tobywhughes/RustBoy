@@ -11,13 +11,26 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     let mut system_data = system_data_original;
     let mut registers = registers_original;
 
+    if registers.halt_flag
+    {
+        if (system_data.mmu.mem_map[0xFF0F] & 0x1F) != 0x00
+        {
+            registers.halt_flag = false;
+        }
+        else{
+            system_data.cycles = 4;
+            return;
+        }
+    }
+
     system_data.cycles = 0;
-    let opcode: u8 = system_data.mmu.mem_map[registers.program_counter as usize];
- //if registers.program_counter > 0x2BA || registers.program_counter < 0x200
-   //{
-        //println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
-        //println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
-    //}
+    let mut opcode: u8 = system_data.mmu.mem_map[registers.program_counter as usize];
+    // if (registers.program_counter >= 0xC2B5  && registers.program_counter < 0xC320) || registers.program_counter < 0x100
+    // {
+    //     println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+    //     println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), registers.mapped_16_bit_register_getter(4)) ;
+    //     io::stdin().read_line(&mut String::new());
+    // }
     
     if opcode == 0xE0 || opcode == 0xE2 || opcode == 0xF0 || opcode == 0xF2
     {
@@ -40,21 +53,24 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     if registers.interrupt_master_enable_flag
     {
         let enabled_interrupts = system_data.mmu.mem_map[0xFFFF];
-        let requested_interrupts = system_data.mmu.mem_map[0xFFFE];
+        let requested_interrupts = system_data.mmu.mem_map[0xFF0F];
         let runnable_interrupts = enabled_interrupts & requested_interrupts;
+        if requested_interrupts != 0 {
+            //println!("{} -- {} -- {}", enabled_interrupts, requested_interrupts, runnable_interrupts);
+        }
         if runnable_interrupts > 0x00 && runnable_interrupts <= 0x1F
         {
             let mut interrupt_vector = 0;
-            if runnable_interrupts & 0x01 == 0x01 {interrupt_vector = 0x40; system_data.mmu.mem_map[0xFFFE] = requested_interrupts & 0x1E;}
-            else if runnable_interrupts & 0x02 == 0x02 {interrupt_vector = 0x48; system_data.mmu.mem_map[0xFFFE] = requested_interrupts & 0x1D;}
-            else if runnable_interrupts & 0x04 == 0x04 {interrupt_vector = 0x50; system_data.mmu.mem_map[0xFFFE] = requested_interrupts & 0x1B;}
-            else if runnable_interrupts & 0x08 == 0x08 {interrupt_vector = 0x58; system_data.mmu.mem_map[0xFFFE] = requested_interrupts & 0x17;}
-            else if runnable_interrupts & 0x10 == 0x10 {interrupt_vector = 0x60; system_data.mmu.mem_map[0xFFFE] = requested_interrupts & 0x0F;}
+            if runnable_interrupts & 0x01 == 0x01 {interrupt_vector = 0x40; system_data.mmu.mem_map[0xFF0F] = requested_interrupts & 0x1E;}
+            else if runnable_interrupts & 0x02 == 0x02 {interrupt_vector = 0x48; system_data.mmu.mem_map[0xFF0F] = requested_interrupts & 0x1D;}
+            else if runnable_interrupts & 0x04 == 0x04 {interrupt_vector = 0x50; system_data.mmu.mem_map[0xFF0F] = requested_interrupts & 0x1B;}
+            else if runnable_interrupts & 0x08 == 0x08 {interrupt_vector = 0x58; system_data.mmu.mem_map[0xFF0F] = requested_interrupts & 0x17;}
+            else if runnable_interrupts & 0x10 == 0x10 {interrupt_vector = 0x60; system_data.mmu.mem_map[0xFF0F] = requested_interrupts & 0x0F;}
             registers.stack_pointer -= 2;
             system_data.mmu.mem_map[registers.stack_pointer as usize + 1] = ((registers.program_counter & 0xFF00) >> 8) as u8;
             system_data.mmu.mem_map[registers.stack_pointer as usize] = (registers.program_counter & 0x00FF) as u8;
             registers.program_counter = interrupt_vector as u16;
-
+            opcode = system_data.mmu.mem_map[registers.program_counter as usize];
             registers.interrupt_master_enable_flag = !registers.interrupt_master_enable_flag;
         }
         
@@ -194,7 +210,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x73 => load_hl_address_with_register(&mut system_data, &mut registers, opcode),
 0x74 => load_hl_address_with_register(&mut system_data, &mut registers, opcode),
 0x75 => load_hl_address_with_register(&mut system_data, &mut registers, opcode),
-0x76 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode),// Unimplemented
+0x76 => halt(&mut system_data, &mut registers),
 0x77 => load_hl_address_with_register(&mut system_data, &mut registers, opcode),
 0x78 => load_8_bit_register_to_register(&mut system_data, &mut registers, opcode),
 0x79 => load_8_bit_register_to_register(&mut system_data, &mut registers, opcode),
@@ -383,6 +399,13 @@ pub fn stop(system_data: &mut SystemData, registers: &mut Registers)
     //Temporary debugging
     registers.program_counter += 2;
     system_data.cycles = 1;
+}
+
+pub fn halt(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    system_data.cycles = 1;
+    registers.halt_flag = true;
 }
 
 pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)

@@ -16,14 +16,16 @@ pub struct SystemData
 }
 
 impl SystemData{
-    pub fn tima_tick(&mut self)
+    pub fn timer_tick(&mut self)
     {
+        //println!("@@@@@");
         self.timer.update_registers(&self.mmu.mem_map);
+        self.timer.divider_tick(self.cycles);
         let overflow_flag = self.timer.tima_tick(self.cycles);
         self.mmu.mem_map[0xFF05] = self.timer.timer_counter;
         if overflow_flag
         {
-            self.mmu.mem_map[0xFFFE] |= 0x04;
+            self.mmu.mem_map[0xFF0F] |= 0x04;
         }
     }   
 }
@@ -42,6 +44,7 @@ pub struct Registers
     pub program_counter: u16,
     pub interrupt_master_enable_flag: bool,
     pub interrupt_master_enable_delay_flag: bool,
+    pub halt_flag: bool,
 }
 
 impl Registers{
@@ -61,6 +64,7 @@ impl Registers{
             program_counter: 0, 
             interrupt_master_enable_flag: false,
             interrupt_master_enable_delay_flag: false,
+            halt_flag: false,
         };
     }
 
