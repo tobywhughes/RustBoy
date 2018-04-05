@@ -315,7 +315,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0xD6 => subtraction_n_from_accumulator(&mut system_data, &mut registers),
 0xD7 => rst_jump(&mut system_data, &mut registers, opcode),
 0xD8 => return_from_call_conditional(&mut system_data, &mut registers, opcode),
-0xD9 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), //Unimplemented
+0xD9 => return_from_call_ei(&mut system_data, &mut registers),
 0xDA => jump_address_with_conditional(&mut system_data, &mut registers, opcode),
 0xDB => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
 0xDC => call_function_nn_on_conditional(&mut system_data, &mut registers, opcode),
@@ -845,6 +845,14 @@ pub fn return_from_call(system_data: &mut SystemData, registers: &mut Registers)
    system_data.cycles = 4;
    registers.program_counter = (system_data.mmu.mem_map[registers.stack_pointer as usize] as u16) | (system_data.mmu.mem_map[registers.stack_pointer as usize + 1] as u16) << 8;
    registers.stack_pointer += 2;
+}
+
+pub fn return_from_call_ei(system_data: &mut SystemData, registers: &mut Registers)
+{
+   system_data.cycles = 4;
+   registers.program_counter = (system_data.mmu.mem_map[registers.stack_pointer as usize] as u16) | (system_data.mmu.mem_map[registers.stack_pointer as usize + 1] as u16) << 8;
+   registers.stack_pointer += 2;
+   registers.interrupt_master_enable_delay_flag = true;
 }
 
 pub fn push_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
