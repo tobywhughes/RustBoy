@@ -32,6 +32,8 @@ pub struct LCD_Position
     pub ly_compare: u8,
     pub window_x: u8,
     pub window_y: u8,
+    pub scroll_x_buffer: Vec<u8>,
+    pub scroll_y_buffer: Vec<u8>,
 }
 
 impl LCD_Position
@@ -46,6 +48,8 @@ impl LCD_Position
             ly_compare: 0,
             window_x: 0,
             window_y: 0,
+            scroll_x_buffer: vec![0; 144],
+            scroll_y_buffer: vec![0; 144],
         }
     }
 

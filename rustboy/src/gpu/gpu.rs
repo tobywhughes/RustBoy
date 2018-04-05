@@ -1,5 +1,7 @@
 use system::*;
 use gpu::gpu_registers::GPU_Registers;
+use image::ImageBuffer;
+use image::{RgbaImage, Rgba};
 
 pub struct TileMap
 {
@@ -112,17 +114,79 @@ pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_regist
     if tick_flag
     {
         let reset_flag = gpu_registers.lcd_position.ly_register.tick(&mut system_data);
-        if gpu_registers.lcd_position.ly_register.value == 144
+        let ly_value = gpu_registers.lcd_position.ly_register.value;
+        if ly_value == 144
         {
             gpu_registers.v_blank = true;
             system_data.mmu.mem_map[0xFFFE] |= 0x01;
             gpu_registers.v_blank_draw_flag = true;
+        }
+        else if ly_value < 144
+        {
+            gpu_registers.lcd_position.scroll_x_buffer[ly_value as usize] = gpu_registers.lcd_position.scroll_x;
+            gpu_registers.lcd_position.scroll_y_buffer[ly_value as usize] = gpu_registers.lcd_position.scroll_y;
         }
         if reset_flag
         {
             gpu_registers.v_blank = false;
             system_data.mmu.mem_map[0xFFFE] &= 0xFE;
         }
+    }
+}
+
+pub fn create_background_img(background_tile_map: &TileMap) -> RgbaImage
+{
+
+    let mut buffer = ImageBuffer::new(256, 256);
+    for tile_y in 0..32
+    {
+        for tile_x in 0..32
+        {
+            for pixel_y in 0..8
+            {
+                for pixel_x in 0..8
+                {
+                    let tile = background_tile_map.map[(tile_y * 32) + tile_x];
+                    let pixel_data = background_tile_map.tiles[tile as usize].data[(pixel_y * 8) + pixel_x];
+                    let pixel = pixel_color_map(pixel_data);
+                    buffer.put_pixel(((tile_x * 8) + pixel_x) as u32, ((tile_y * 8) + pixel_y) as u32, pixel);
+                }
+            }
+        }
+    }
+    return buffer;
+}
+
+fn build_bitmap(background_tile_map: &TileMap) -> Vec<u8>
+{
+    let mut buffer = vec![0; 0x10000];
+    for tile_y in 0..32
+    {
+        for tile_x in 0..32
+        {
+            for pixel_y in 0..8
+            {
+                for pixel_x in 0..8
+                {
+                    let tile = background_tile_map.map[(tile_y * 32) + tile_x];
+                    let pixel_data = background_tile_map.tiles[tile as usize].data[(pixel_y * 8) + pixel_x];
+                    buffer[tile_y * 32 + tile_x] = pixel_data;
+                }
+            }
+        }
+    }
+    return buffer;
+}
+
+fn pixel_color_map(pixel_data: u8) -> Rgba<u8>
+{
+    match pixel_data 
+    {
+        0 => return Rgba([156,189,15, 0xFF]),
+        1 => return Rgba([140,173,15, 0xFF]),
+        2 => return Rgba([48,98,48, 0xFF]),
+        3 => return Rgba([15, 56, 15, 0xFF]),
+        _ => return Rgba([0, 0, 0, 0xFF]),
     }
 }    
 
