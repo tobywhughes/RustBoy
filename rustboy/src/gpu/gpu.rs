@@ -136,28 +136,21 @@ pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_regist
 
 pub fn create_background_img(background_tile_map: &TileMap) -> RgbaImage
 {
-
-    let mut buffer = ImageBuffer::new(256, 256);
-    for tile_y in 0..32
+    let mut image_buffer = ImageBuffer::new(256, 256);
+    let background_buffer = build_background_bitmap(background_tile_map);
+    for row_y in 0..256
     {
-        for tile_x in 0..32
+        for row_x in 0..256
         {
-            for pixel_y in 0..8
-            {
-                for pixel_x in 0..8
-                {
-                    let tile = background_tile_map.map[(tile_y * 32) + tile_x];
-                    let pixel_data = background_tile_map.tiles[tile as usize].data[(pixel_y * 8) + pixel_x];
-                    let pixel = pixel_color_map(pixel_data);
-                    buffer.put_pixel(((tile_x * 8) + pixel_x) as u32, ((tile_y * 8) + pixel_y) as u32, pixel);
-                }
-            }
+           let pixel_data = background_buffer[(row_y * 256) + row_x];
+           let pixel = pixel_color_map(pixel_data);
+           image_buffer.put_pixel(row_x as u32, row_y as u32, pixel);
         }
     }
-    return buffer;
+   return image_buffer;
 }
 
-fn build_bitmap(background_tile_map: &TileMap) -> Vec<u8>
+fn build_background_bitmap(background_tile_map: &TileMap) -> Vec<u8>
 {
     let mut buffer = vec![0; 0x10000];
     for tile_y in 0..32
@@ -170,7 +163,7 @@ fn build_bitmap(background_tile_map: &TileMap) -> Vec<u8>
                 {
                     let tile = background_tile_map.map[(tile_y * 32) + tile_x];
                     let pixel_data = background_tile_map.tiles[tile as usize].data[(pixel_y * 8) + pixel_x];
-                    buffer[tile_y * 32 + tile_x] = pixel_data;
+                    buffer[(256 * ((tile_y * 8) + pixel_y)) + ((tile_x * 8) + pixel_x)] = pixel_data;
                 }
             }
         }
