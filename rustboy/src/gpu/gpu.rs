@@ -87,8 +87,8 @@ pub fn get_tile_data(tile_index: u8, system_data: &mut SystemData, lcdc_data_sel
     {
         for bit in 0..8
         {
-            let upper_bit: u8 = (system_data.mmu.mem_map[(mem_loc + (2 * byte_pair as u16)) as usize] >> (7 - bit)) & 0x01;
-            let lower_bit: u8 = (system_data.mmu.mem_map[(mem_loc + (2 * byte_pair as u16)) as usize + 1] >> (7 - bit)) & 0x01;
+            let upper_bit: u8 = (system_data.mmu.mem_map[(mem_loc + (2 * byte_pair as u16)) as usize + 1] >> (7 - bit)) & 0x01;
+            let lower_bit: u8 = (system_data.mmu.mem_map[(mem_loc + (2 * byte_pair as u16)) as usize] >> (7 - bit)) & 0x01;
             tile_data.data[(byte_pair as usize * 8) + bit as usize] = (upper_bit << 1) | lower_bit;
         }
     }
@@ -134,8 +134,10 @@ pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_regist
     }
 }
 
-pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_Registers) -> RgbaImage
+pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_Registers, system_data: &SystemData) -> RgbaImage
 {
+    //Technically switchable by the row, will implement later
+    let palette_data = system_data.mmu.mem_map[0xFF47];
     let mut image_buffer = ImageBuffer::new(160, 144);
     let background_buffer = build_background_bitmap(background_tile_map);
     for row_y in 0..144
@@ -145,7 +147,7 @@ pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_
            let mut row_x_scrolled = (row_x + gpu_registers.lcd_position.scroll_x_buffer[row_y] as usize) % 256;
            let mut row_y_scrolled = (row_y + gpu_registers.lcd_position.scroll_y_buffer[row_y] as usize) % 256;
            let pixel_data = background_buffer[(row_y_scrolled * 256) + row_x_scrolled];
-           let pixel = pixel_color_map(pixel_data);
+           let pixel = pixel_color_map(pixel_data, palette_data);
            image_buffer.put_pixel(row_x as u32, row_y as u32, pixel);
         }
     }
@@ -173,9 +175,19 @@ fn build_background_bitmap(background_tile_map: &TileMap) -> Vec<u8>
     return buffer;
 }
 
-fn pixel_color_map(pixel_data: u8) -> Rgba<u8>
+fn pixel_color_map(pixel_data: u8, palette_data: u8) -> Rgba<u8>
 {
-    match pixel_data 
+    let mut pixel_shade = 0;
+    match pixel_data
+    {
+        0 => pixel_shade = palette_data & 0x03,
+        1 => pixel_shade = (palette_data & 0x0C) >> 2,
+        2 => pixel_shade = (palette_data & 0x30) >> 4,
+        3 => pixel_shade = (palette_data & 0xC0) >> 6,
+        _ => (),
+    }
+
+    match pixel_shade 
     {
         0 => return Rgba([156,189,15, 0xFF]),
         1 => return Rgba([140,173,15, 0xFF]),
