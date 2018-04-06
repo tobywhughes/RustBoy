@@ -160,9 +160,9 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
         {
             mmu: MMU::new(),
             timer: Timer::new(),
-            width: 256,
+            width: 160,
             tile_width: 20,
-            height: 256,
+            height: 144,
             tile_height: 18,
             clock_speed: 4194304,
             horizontal_sync: 9198000,

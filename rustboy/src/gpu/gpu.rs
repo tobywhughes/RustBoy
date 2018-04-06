@@ -134,15 +134,17 @@ pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_regist
     }
 }
 
-pub fn create_background_img(background_tile_map: &TileMap) -> RgbaImage
+pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_Registers) -> RgbaImage
 {
-    let mut image_buffer = ImageBuffer::new(256, 256);
+    let mut image_buffer = ImageBuffer::new(160, 144);
     let background_buffer = build_background_bitmap(background_tile_map);
-    for row_y in 0..256
+    for row_y in 0..144
     {
-        for row_x in 0..256
+        for row_x in 0..160
         {
-           let pixel_data = background_buffer[(row_y * 256) + row_x];
+           let mut row_x_scrolled = (row_x + gpu_registers.lcd_position.scroll_x_buffer[row_y] as usize) % 256;
+           let mut row_y_scrolled = (row_y + gpu_registers.lcd_position.scroll_y_buffer[row_y] as usize) % 256;
+           let pixel_data = background_buffer[(row_y_scrolled * 256) + row_x_scrolled];
            let pixel = pixel_color_map(pixel_data);
            image_buffer.put_pixel(row_x as u32, row_y as u32, pixel);
         }

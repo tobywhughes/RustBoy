@@ -87,8 +87,7 @@ fn main()
             gpu_registers.v_blank_draw_flag = false;
             background_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.background_display_select);  
             window_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.window_display_select);
-            //let background_image: RgbaImage = create_background_img(&background_tile_map);
-            let background_image: RgbaImage = create_background_img(&window_tile_map);
+            let background_image: RgbaImage = create_background_img(&background_tile_map, &gpu_registers);
             app.render(&background_image, &r);
             // break;
         }
