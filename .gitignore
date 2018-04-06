@@ -2,3 +2,4 @@
 *.gb
 pandocs.txt
 .vscode
+*.sym

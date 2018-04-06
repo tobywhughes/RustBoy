@@ -207,7 +207,7 @@ mod gpu_tests
     fn get_tile_data_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
 
-        let temp_memory_values : Vec<u8> = vec![0b00001111, 0b00110011, 0b11110000, 0b11001100];
+        let temp_memory_values : Vec<u8> = vec![0b00110011, 0b00001111, 0b11001100, 0b11110000];
 
         for vram_offset in vec![0x8000, 0x8800].iter()
         {

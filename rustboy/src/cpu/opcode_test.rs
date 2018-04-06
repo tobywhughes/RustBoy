@@ -1720,4 +1720,16 @@ mod opcode_test
             assert_eq!(registers.flags, 0x80);
         }
     }
+
+    #[test]
+    fn load_stack_pointer_to_nn_address_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.stack_pointer = 0xFFEE;
+        system_data.mmu.mem_map[0x0001] = 0x34;
+        system_data.mmu.mem_map[0x0002] = 0x12;
+        load_stack_pointer_to_nn_address(&mut system_data, &mut registers);
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0xEE);
+        assert_eq!(system_data.mmu.mem_map[0x1235], 0xFF);
+    }
 }

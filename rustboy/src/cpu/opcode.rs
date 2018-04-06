@@ -25,17 +25,17 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
     system_data.cycles = 0;
     let mut opcode: u8 = system_data.mmu.mem_map[registers.program_counter as usize];
-    //if (registers.program_counter >= 0x312  && registers.program_counter < 0xC320) || registers.program_counter < 0x100
+    // if (registers.program_counter >= 0x312  && registers.program_counter < 0xC320) || registers.program_counter < 0x100
     //  {
-        //  println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
-        //  println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X} LY {} IE {:02X} IF {:02X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), 
-        //                                                                                             registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), 
-        //                                                                                             registers.mapped_16_bit_register_getter(4), system_data.mmu.mem_map[0xFF44]
-        //                                                                                             , system_data.mmu.mem_map[0xFFFF], system_data.mmu.mem_map[0xFF0F]);
-        //  if registers.program_counter >= 0x36C && registers.program_counter <= 0x36F && system_data.mmu.mem_map[0xFF44] >= 143
-        //  {
-        //     io::stdin().read_line(&mut String::new());
-        //  }
+    //      println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+    //      println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X} LY {} IE {:02X} IF {:02X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), 
+    //                                                                                                 registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), 
+    //                                                                                                 registers.mapped_16_bit_register_getter(4), system_data.mmu.mem_map[0xFF44]
+    //                                                                                                 , system_data.mmu.mem_map[0xFFFF], system_data.mmu.mem_map[0xFF0F]);
+    // //      if registers.program_counter >= 0x36C && registers.program_counter <= 0x36F && system_data.mmu.mem_map[0xFF44] >= 143
+    //      {
+    //         io::stdin().read_line(&mut String::new());
+    //      }
     //  }
     
     if opcode == 0xE0 || opcode == 0xE2 || opcode == 0xF0 || opcode == 0xF2
@@ -99,7 +99,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x05 => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
 0x06 => load_n_to_8bit_register(&mut system_data, &mut registers, opcode),
 0x07 => rlca(&mut system_data, &mut registers),
-0x08 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x08 => load_stack_pointer_to_nn_address(&mut system_data, &mut registers),
 0x09 => add_16_bit_register_to_hl(&mut system_data, &mut registers, opcode),
 0x0A => load_accumulator_with_bc_address(&mut system_data, &mut registers),
 0x0B => decrement_16_bit_register(&mut system_data, &mut registers, opcode),
@@ -1229,6 +1229,17 @@ pub fn load_accumulator_with_nn_address(system_data: &mut SystemData, registers:
     registers.program_counter += 3;
 }
 
+pub fn load_stack_pointer_to_nn_address(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 5;
+    let lower = system_data.mmu.mem_map[registers.program_counter as usize + 1] as u16;
+    let upper = system_data.mmu.mem_map[registers.program_counter as usize + 2] as u16;
+    let address = lower | (upper << 8);
+    system_data.mmu.set_to_memory(address as usize, (registers.stack_pointer & 0xFF) as u8, true);
+    system_data.mmu.set_to_memory(address as usize + 1, ((registers.stack_pointer & 0xFF00) >> 8) as u8, true);
+    registers.program_counter += 3
+}
+
 pub fn call_function_nn_on_conditional(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
     let condition_code = (opcode & 0x38) >> 3;
@@ -1827,7 +1838,7 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
     }
     else if (opcode & 0xC0) == 0xC0
     {
-        if opcode & 0x07 == 0x06
+        if (opcode & 0x07) == 0x06
         {
             system_data.cycles = 4;
             set_bit_of_hl_location(&mut system_data, &mut registers, opcode);
@@ -1881,8 +1892,16 @@ pub fn bit_check_register(system_data: &mut SystemData, registers: &mut Register
 
     if register_code == 7
     {
-        system_data.cycles = 0;
-        println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+        system_data.cycles = 4;
+        registers.flags = registers.flags & 0x10;
+        if (system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize ,true) >> test_bit) & 0x01 == 0x00
+        {   
+            registers.flags = registers.flags | 0xA0;
+        }
+        else
+        {
+            registers.flags = registers.flags | 0x20;
+        }
     }
     else
     {
@@ -2105,8 +2124,13 @@ pub fn reset_bit_in_register(system_data: &mut SystemData, registers: &mut Regis
         0x84 | 0x8C | 0x94 | 0x9C | 0xA4 | 0xAC | 0xB4 | 0xBC => register_code = 5, 
         0x85 | 0x8D | 0x95 | 0x9D | 0xA5 | 0xAD | 0xB5 | 0xBD => register_code = 6, 
         _ => {
-            system_data.cycles = 0;
-            println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+            system_data.cycles = 4;
+            let bit_shift = (opcode & 0x38) >> 3;
+            let start_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
+            let bit_removal = 0xFF ^ (0x01 << bit_shift);
+            system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(3) as usize, start_value & bit_removal, true);
+            registers.program_counter += 2;
+            return;
         }, 
     }
 
