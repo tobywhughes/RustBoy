@@ -750,6 +750,17 @@ mod opcode_test
     }
 
     #[test]
+    fn load_accumulator_with_hl_then_decrement_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.mapped_16_bit_register_setter(3, 0x1234);
+        system_data.mmu.mem_map[0x1234] = 0xFF;
+        load_accumulator_with_hl_then_decrement(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0xFF);
+        assert_eq!(registers.mapped_16_bit_register_getter(3), 0x1233);
+    }
+
+    #[test]
     fn ones_complement_test() {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
         let mut registers : Registers = Registers::new();

@@ -118,7 +118,7 @@ pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_regist
         if ly_value == 144
         {
             gpu_registers.v_blank = true;
-            system_data.mmu.mem_map[0xFFFE] |= 0x01;
+            system_data.mmu.mem_map[0xFF0F] |= 0x01;
             gpu_registers.v_blank_draw_flag = true;
         }
         else if ly_value < 144
@@ -129,7 +129,7 @@ pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_regist
         if reset_flag
         {
             gpu_registers.v_blank = false;
-            system_data.mmu.mem_map[0xFFFE] &= 0xFE;
+            system_data.mmu.mem_map[0xFF0F] &= 0xFE;
         }
     }
 }
