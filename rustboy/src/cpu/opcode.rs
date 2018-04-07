@@ -250,7 +250,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x93 => subtract_8_bit(&mut system_data, &mut registers, opcode),
 0x94 => subtract_8_bit(&mut system_data, &mut registers, opcode),
 0x95 => subtract_8_bit(&mut system_data, &mut registers, opcode),
-0x96 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x96 => subtract_8_bit(&mut system_data, &mut registers, opcode),
 0x97 => subtract_8_bit(&mut system_data, &mut registers, opcode),
 0x98 => subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode),
 0x99 => subtract_register_and_carry_from_accumulator(&mut system_data, &mut registers, opcode),
@@ -984,30 +984,31 @@ pub fn subtract_8_bit(system_data: &mut SystemData, registers: &mut Registers, o
     {
         register_code = 0;
     }
+    let mut sub_register = 0;
     if register_code == 7
     {
-        system_data.cycles = 0;
-        println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+        sub_register = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
+        system_data.cycles = 2;
     }
-    else
+    else 
     {
-        let sub_register = registers.mapped_register_getter(register_code as u8);
-        if sub_register & 0x0F > registers.accumulator & 0x0F
-        {
-            registers.flags = registers.flags | 0x20;
-        }
-        if sub_register > registers.accumulator
-        {
-            registers.flags = registers.flags | 0x10;
-            registers.accumulator = ((0x100 + registers.accumulator as u16) - sub_register as u16) as u8
-        }
-        else {
-            registers.accumulator -= sub_register
-        }        
-        if registers.accumulator == 0
-        {
-            registers.flags = registers.flags | 0x80;
-        }
+        sub_register = registers.mapped_register_getter(register_code as u8);    
+    }
+    if sub_register & 0x0F > registers.accumulator & 0x0F
+    {
+        registers.flags = registers.flags | 0x20;
+    }
+    if sub_register > registers.accumulator
+    {
+        registers.flags = registers.flags | 0x10;
+        registers.accumulator = ((0x100 + registers.accumulator as u16) - sub_register as u16) as u8
+    }
+    else {
+        registers.accumulator -= sub_register
+    }        
+    if registers.accumulator == 0
+    {
+        registers.flags = registers.flags | 0x80;
     }
     registers.program_counter += 1;
 }

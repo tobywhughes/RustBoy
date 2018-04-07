@@ -69,7 +69,6 @@ impl Timer
         {
             return false;
         }
-        println!("########");
         let mut overflow_flag = false;
         self.tima_cycles += cycles as u16;
         
