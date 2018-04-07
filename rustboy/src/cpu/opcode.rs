@@ -1919,7 +1919,6 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
     }
     else if (opcode & 0xF8) == 0x30
     {
-        system_data.cycles = 2;
         swap_nibbles(&mut system_data, &mut registers, opcode);
     }
     else if (opcode & 0xC0) == 0xC0
@@ -2051,30 +2050,39 @@ pub fn rotate_left_through_carry(system_data: &mut SystemData, registers: &mut R
 
 pub fn swap_nibbles(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
+    system_data.cycles = 2;
     let mut register_code = (opcode & 0x07) + 1;
+    if register_code == 8
+    {
+        register_code = 0;
+    }
+    let mut previous_value = 0;
     if register_code == 7
     {
-        system_data.cycles = 0;
-        println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+        previous_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
+        system_data.cycles = 4;
     }
     else 
     {
-        if register_code == 8
-        {
-            register_code = 0;
-        }
-        let previous_value = registers.mapped_register_getter(register_code);
-        let high_nibble = previous_value & 0x80;
-        let low_nibble = previous_value & 0x01;
-        let new_value = (previous_value & 0x7E) | (high_nibble >> 7) | (low_nibble << 7);
-        registers.mapped_register_setter(register_code, new_value);
-        registers.flags = 0x00;
-        if new_value == 0
-        {
-            registers.flags |= 0x80;
-        }
-        registers.program_counter += 2;
+        previous_value = registers.mapped_register_getter(register_code); 
     }
+    let high_nibble = previous_value & 0x80;
+    let low_nibble = previous_value & 0x01;
+    let new_value = (previous_value & 0x7E) | (high_nibble >> 7) | (low_nibble << 7);
+    if register_code == 7
+    {
+        system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(3) as usize, new_value, true);
+    }
+    else 
+    {
+        registers.mapped_register_setter(register_code, new_value);
+    }
+    registers.flags = 0x00;
+    if new_value == 0
+    {
+        registers.flags |= 0x80;
+    }
+    registers.program_counter += 2;
 }
 
 pub fn set_bit_in_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
