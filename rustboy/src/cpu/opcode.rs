@@ -93,7 +93,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     {
 0x00 => no_operation(&mut system_data, &mut registers),
 0x01 => load_nn_to_16bit_register(&mut system_data, &mut registers, opcode),
-0x02 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented?
+0x02 => load_accumulator_to_address_at_bc(&mut system_data, &mut registers),
 0x03 => increment_16_bit_register(&mut system_data, &mut registers, opcode),
 0x04 => increment_8_bit_register(&mut system_data, &mut registers, opcode),
 0x05 => decrement_8_bit_register(&mut system_data, &mut registers, opcode),
@@ -1781,6 +1781,13 @@ pub fn flip_carry_flag(system_data: &mut SystemData, registers: &mut Registers)
     let carry_set = (registers.flags ^ 0xFF) & 0x10;
     registers.flags &= 0x80;
     registers.flags |= carry_set;
+}
+
+pub fn load_accumulator_to_address_at_bc(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.program_counter += 1;
+    system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(1) as usize, registers.accumulator, true);
+    system_data.cycles = 2;
 }
 
 //##########################################################################

@@ -1732,4 +1732,15 @@ mod opcode_test
         assert_eq!(system_data.mmu.mem_map[0x1234], 0xEE);
         assert_eq!(system_data.mmu.mem_map[0x1235], 0xFF);
     }
+
+    #[test]
+    fn load_accumulator_to_address_at_bc_test()
+    {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.mapped_16_bit_register_setter(1, 0x1234);
+        registers.accumulator = 0xFF;
+        load_accumulator_to_address_at_bc(&mut system_data, &mut registers);       
+        assert_eq!(system_data.mmu.mem_map[0x1234], 0xFF);
+    }
 }
