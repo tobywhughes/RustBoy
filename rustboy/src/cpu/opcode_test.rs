@@ -1171,7 +1171,7 @@ mod opcode_test
         system_data.mmu.mem_map[0x01] = 0x01;
         subtract_8_bit_from_accumulator_with_carry(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0x00);
-        assert_eq!(registers.flags, 0x80);
+        assert_eq!(registers.flags, 0xC0);
 
         //Half Carry
         registers.flags = 0x10;
@@ -1179,7 +1179,7 @@ mod opcode_test
         system_data.mmu.mem_map[0x03] = 0x00;
         subtract_8_bit_from_accumulator_with_carry(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0x0F);
-        assert_eq!(registers.flags, 0x20);
+        assert_eq!(registers.flags, 0x60);
         
         //Carry
         registers.flags = 0x10;
@@ -1187,7 +1187,7 @@ mod opcode_test
         system_data.mmu.mem_map[0x05] = 0x10;
         subtract_8_bit_from_accumulator_with_carry(&mut system_data, &mut registers);
         assert_eq!(registers.accumulator, 0xF0);
-        assert_eq!(registers.flags, 0x10);
+        assert_eq!(registers.flags, 0x50);
     }
 
     #[test]
@@ -1771,5 +1771,26 @@ mod opcode_test
         registers.accumulator = 0xFF;
         load_accumulator_to_address_at_bc(&mut system_data, &mut registers);       
         assert_eq!(system_data.mmu.mem_map[0x1234], 0xFF);
+    }
+
+    #[test]
+    fn add_signed_8_bit_to_stack_pointer_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        let stack_pointer_init_values: Vec<u16> = vec![0x0000, 0x0001, 0x000F, 0x00F0];
+        let stack_pointer_result_values: Vec<u16> = vec![0x0001, 0x0000, 0x0010, 0x0100];
+        let add_values: Vec<u8> = vec![0x01, 0xFF, 0x01, 0x10];
+        let flag_values: Vec<u8> = vec![0x00, 0x00, 0x20, 0x10];
+
+        for i in 0..add_values.len()
+        {
+            println!("@@@@{}", i);
+            registers.program_counter = 0;
+            system_data.mmu.mem_map[0x0001] = add_values[i];
+            registers.stack_pointer = stack_pointer_init_values[i];
+            add_signed_8_bit_to_stack_pointer(&mut system_data, &mut registers);
+            assert_eq!(registers.stack_pointer, stack_pointer_result_values[i]);
+            assert_eq!(registers.flags, flag_values[i]);
+        }
     }
 }

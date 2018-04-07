@@ -337,7 +337,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0xE5 => push_16_bit_register(&mut system_data, &mut registers, opcode),
 0xE6 => and_nn_with_accumulator(&mut system_data, &mut registers),
 0xE7 => rst_jump(&mut system_data, &mut registers, opcode),
-0xE8 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xE8 => add_signed_8_bit_to_stack_pointer(&mut system_data, &mut registers),
 0xE9 => jump_to_hl(&mut system_data, &mut registers),
 0xEA => load_nn_with_accumulator(&mut system_data, &mut registers),
 0xEB => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
@@ -1452,7 +1452,7 @@ pub fn subtract_8_bit_from_accumulator_with_carry(system_data: &mut SystemData, 
     let n_value = system_data.mmu.mem_map[registers.program_counter as usize + 1];
     let sub_value = (n_value as u16) + (carry_bit as u16);
     let accumulator_value = registers.accumulator as u16;
-    registers.flags = 0x00;
+    registers.flags = 0x40;
     if (sub_value & 0x0F) > (accumulator_value & 0x0F)
     {
         registers.flags |= 0x20;
@@ -1833,6 +1833,34 @@ pub fn load_accumulator_to_address_at_bc(system_data: &mut SystemData, registers
     registers.program_counter += 1;
     system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(1) as usize, registers.accumulator, true);
     system_data.cycles = 2;
+}
+
+pub fn add_signed_8_bit_to_stack_pointer(system_data: &mut SystemData, registers: &mut Registers)
+{
+    registers.flags = 0x00;
+    let add_value = system_data.mmu.mem_map[registers.program_counter as usize + 1] as i8 as i32;
+    let stack_ponter_value = registers.stack_pointer as i32;
+    if (add_value & 0x0F) + (stack_ponter_value & 0x0F) >= 0x10 && add_value > 0
+    {
+        registers.flags |= 0x20;
+    }
+    if (add_value & 0xF0) + (stack_ponter_value & 0xF0) >= 0x100 && add_value > 0
+    {
+        registers.flags |= 0x10;
+    }
+    if add_value + stack_ponter_value >= 0x10000
+    {
+        registers.stack_pointer = (add_value + stack_ponter_value - 0x10000) as u16;
+    }
+    else if add_value + stack_ponter_value < 0
+    {
+        registers.stack_pointer = (add_value + stack_ponter_value + 0x10000) as u16;
+    }
+    else {
+        registers.stack_pointer = (add_value + stack_ponter_value) as u16;
+    }
+    system_data.cycles = 4;
+    registers.program_counter += 2;
 }
 
 //##########################################################################
