@@ -348,7 +348,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
 0xF0 => load_accumulator_with_io_port_with_n_offset(&mut system_data, &mut registers),
 0xF1 => pop_16_bit_register(&mut system_data, &mut registers, opcode),
-0xF2 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xF2 => read_io_port_with_c_offset_to_accumulator(&mut system_data, &mut registers),
 0xF3 => disable_interupts(&mut system_data, &mut registers),
 0xF4 => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
 0xF5 => push_16_bit_register(&mut system_data, &mut registers, opcode),
@@ -650,6 +650,13 @@ pub fn load_accumulator_to_io_port_with_c_offset(system_data: &mut SystemData, r
 {
     system_data.cycles = 2;
     system_data.mmu.mem_map[(0xFF00 + registers.c_register as u16) as usize] = registers.accumulator;
+    registers.program_counter += 1;  
+}
+
+pub fn read_io_port_with_c_offset_to_accumulator(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 2;
+    registers.accumulator = system_data.mmu.mem_map[(0xFF00 + registers.c_register as u16) as usize];
     registers.program_counter += 1;  
 }
 

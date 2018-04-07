@@ -166,6 +166,16 @@ mod opcode_test
     }
 
     #[test]
+    fn read_io_port_with_c_offset_to_accumulator_test() {
+        let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
+        let mut registers : Registers = Registers::new();
+        registers.c_register = 1;
+        system_data.mmu.mem_map[0xFF01] = 0xFF;
+        read_io_port_with_c_offset_to_accumulator(&mut system_data, &mut registers);
+        assert_eq!(registers.accumulator, 0xFF);
+    }
+
+    #[test]
     fn loads_nn_to_correct_register_16_bit() 
     {
         let mut system_data : SystemData = get_system_data(&String::from("CLASSIC"));
