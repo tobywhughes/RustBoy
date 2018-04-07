@@ -241,7 +241,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0x8B => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode),
 0x8C => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode),
 0x8D => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode),
-0x8E => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0x8E => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode),
 0x8F => add_registers_to_accumulator_with_carry(&mut system_data, &mut registers, opcode),
 
 0x90 => subtract_8_bit(&mut system_data, &mut registers, opcode),
@@ -1535,6 +1535,7 @@ pub fn add_registers_to_accumulator_with_carry(system_data: &mut SystemData, reg
         0x8B => register_code = 4,
         0x8C => register_code = 5,
         0x8D => register_code = 6,
+        0x8E => register_code = 7,
         _ => {
             system_data.cycles = 0; 
             println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
@@ -1543,7 +1544,17 @@ pub fn add_registers_to_accumulator_with_carry(system_data: &mut SystemData, reg
     }
     let carry_bit = ((registers.flags & 0x10) >> 4) as u16;
     let accumulator_value = registers.accumulator as u16;
-    let register_value = registers.mapped_register_getter(register_code) as u16;
+    let mut register_value = 0;
+    if register_code != 7 
+    {
+        register_value = registers.mapped_register_getter(register_code) as u16;
+        system_data.cycles = 1;
+    }
+    else 
+    {
+        register_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true) as u16;
+        system_data.cycles = 2;
+    }
     let add_value =  register_value + carry_bit;
     registers.flags = 0x00;
     if (accumulator_value & 0x0F) + ((register_value & 0x0F) + carry_bit) >= 0x10
@@ -1564,7 +1575,7 @@ pub fn add_registers_to_accumulator_with_carry(system_data: &mut SystemData, reg
     }
     registers.accumulator = new_value as u8;
 
-    system_data.cycles = 1;
+    
     registers.program_counter += 1;
 }
 
