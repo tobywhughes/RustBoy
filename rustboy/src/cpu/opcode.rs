@@ -267,7 +267,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0xA3 => and_8_bit_register(&mut system_data, &mut registers, opcode),
 0xA4 => and_8_bit_register(&mut system_data, &mut registers, opcode),
 0xA5 => and_8_bit_register(&mut system_data, &mut registers, opcode),
-0xA6 => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), //Unimplemented
+0xA6 => and_8_bit_register(&mut system_data, &mut registers, opcode),
 0xA7 => and_8_bit_register(&mut system_data, &mut registers, opcode),
 0xA8 => xor_8_bit_register(&mut system_data, &mut registers, opcode),
 0xA9 => xor_8_bit_register(&mut system_data, &mut registers, opcode),
@@ -739,26 +739,28 @@ pub fn or_8_bit_register(system_data: &mut SystemData, registers: &mut Registers
 
 pub fn and_8_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
+    system_data.cycles = 1;
     let mut register_code = (opcode & 0x07) + 1;
-    if register_code == 7{
-        println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
-        system_data.cycles = 0;
+    if register_code == 8
+    {
+        register_code = 0;
+    } 
+    let mut compare_value = 0;
+    if register_code == 7
+    {
+        compare_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
+        system_data.cycles = 2;
     }
     else {
-        if register_code == 8
-        {
-            register_code = 0;
-        } 
-        registers.accumulator = registers.accumulator & registers.mapped_register_getter(register_code);
-        registers.flags = 0x20;
-        if registers.accumulator == 0
-        {
-            registers.flags |= 0x80;
-        }
-
-        system_data.cycles = 1;
-        registers.program_counter += 1;
+        compare_value = registers.mapped_register_getter(register_code);
     }
+    registers.accumulator = registers.accumulator & compare_value;
+    registers.flags = 0x20;
+    if registers.accumulator == 0
+    {
+        registers.flags |= 0x80;
+    }
+    registers.program_counter += 1;
 }
 
 pub fn jump_displacement(system_data: &mut SystemData, registers: &mut Registers)
