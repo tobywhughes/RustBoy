@@ -326,7 +326,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 0xDB => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
 0xDC => call_function_nn_on_conditional(&mut system_data, &mut registers, opcode),
 0xDD => println!("Illegal Opcode - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Illegal
-0xDE => println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode), // Unimplemented
+0xDE => subtract_8_bit_from_accumulator_with_carry(&mut system_data, &mut registers),
 0xDF => rst_jump(&mut system_data, &mut registers, opcode),
 
 0xE0 => load_accumulator_to_io_port_with_n_offset(&mut system_data, &mut registers),
@@ -1435,6 +1435,37 @@ pub fn add_8_bit_to_accumulator_with_carry(system_data: &mut SystemData, registe
     else
     {
         registers.accumulator = (add_value + accumulator_value) as u8;
+    }
+
+    if registers.accumulator == 0x00
+    {
+        registers.flags |= 0x80;
+    }
+
+    registers.program_counter += 2;
+}
+
+pub fn subtract_8_bit_from_accumulator_with_carry(system_data: &mut SystemData, registers: &mut Registers)
+{
+    system_data.cycles = 2;
+    let carry_bit = (registers.flags & 0x10) >> 4;
+    let n_value = system_data.mmu.mem_map[registers.program_counter as usize + 1];
+    let sub_value = (n_value as u16) + (carry_bit as u16);
+    let accumulator_value = registers.accumulator as u16;
+    registers.flags = 0x00;
+    if (sub_value & 0x0F) > (accumulator_value & 0x0F)
+    {
+        registers.flags |= 0x20;
+    }
+
+    if sub_value > accumulator_value
+    {
+        registers.flags |= 0x10;
+        registers.accumulator = ((accumulator_value + 0x100) - sub_value) as u8;
+    }
+    else
+    {
+        registers.accumulator = (accumulator_value - sub_value) as u8;
     }
 
     if registers.accumulator == 0x00
