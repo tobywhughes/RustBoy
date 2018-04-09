@@ -73,9 +73,6 @@ fn main()
 
     while let Some(e) = events.next(&mut window)
     {
-        //while !gpu_registers.v_blank_draw_flag
-        //{
-
         if let Some(Button::Keyboard(key)) = e.press_args()
         {
             match key
@@ -125,7 +122,7 @@ fn main()
 
 
         if let Some(r) = e.render_args(){
-            
+                //println!("{:08b}", system_data.mmu.mem_map[0xFF40]);
                 gpu_registers.v_blank_draw_flag = false;
                 background_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.background_display_select);  
                 window_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.window_display_select);

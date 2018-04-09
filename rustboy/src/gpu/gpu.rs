@@ -139,7 +139,7 @@ pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_
     //Technically switchable by the row, will implement later
     let palette_data = system_data.mmu.mem_map[0xFF47];
     let mut image_buffer = ImageBuffer::new(160, 144);
-    let background_buffer = build_background_bitmap(background_tile_map);
+    let background_buffer = build_background_bitmap(background_tile_map, gpu_registers.lcdc_register.tile_data);
     for row_y in 0..144
     {
         for row_x in 0..160
@@ -154,8 +154,9 @@ pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_
    return image_buffer;
 }
 
-fn build_background_bitmap(background_tile_map: &TileMap) -> Vec<u8>
+fn build_background_bitmap(background_tile_map: &TileMap, tile_data_select: bool) -> Vec<u8>
 {
+
     let mut buffer = vec![0; 0x10000];
     for tile_y in 0..32
     {
@@ -165,7 +166,12 @@ fn build_background_bitmap(background_tile_map: &TileMap) -> Vec<u8>
             {
                 for pixel_x in 0..8
                 {
-                    let tile = background_tile_map.map[(tile_y * 32) + tile_x];
+                    let mut tile = background_tile_map.map[(tile_y * 32) + tile_x];
+                    if !tile_data_select
+                    {
+                        let tile_temp = tile as i8 as i16;
+                        tile = (tile_temp + 0x80) as u8;
+                    }
                     let pixel_data = background_tile_map.tiles[tile as usize].data[(pixel_y * 8) + pixel_x];
                     buffer[(256 * ((tile_y * 8) + pixel_y)) + ((tile_x * 8) + pixel_x)] = pixel_data;
                 }
