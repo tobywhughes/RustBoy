@@ -64,6 +64,8 @@ fn main()
     //events.set_max_fps(60);
     let mut background_tile_map: TileMap = TileMap::new();
     let mut window_tile_map: TileMap = TileMap::new();
+    let mut oam_tile_map: TileMap = TileMap::new();
+    let mut oam_table = OAM_Table::new();
   
     //Operation loop
     let mut emulator_loop = true;
@@ -126,8 +128,10 @@ fn main()
                 gpu_registers.v_blank_draw_flag = false;
                 background_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.background_display_select);  
                 window_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.window_display_select);
-                let background_image: RgbaImage = create_background_img(&background_tile_map, &gpu_registers, &system_data);
-                app.render(&background_image, &r, scale_factor);
+                oam_tile_map.populate_tile_map(&mut system_data, true, true);
+                oam_table.populate_oam_table(&system_data);
+                let image: RgbaImage = create_background_img(&background_tile_map, &gpu_registers, &system_data, &oam_table, &oam_tile_map);
+                app.render(&image, &r, scale_factor);
                 // break;
         }
     }

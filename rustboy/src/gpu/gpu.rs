@@ -193,12 +193,18 @@ pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_regist
     }
 }
 
-pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_Registers, system_data: &SystemData) -> RgbaImage
+pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_Registers, system_data: &SystemData, oam_table: &OAM_Table, oam_tile_map: &TileMap) -> RgbaImage
 {
     //Technically switchable by the row, will implement later
     let palette_data = system_data.mmu.mem_map[0xFF47];
+    let object_palette_0 = system_data.mmu.mem_map[0xFF48];
+    let object_palette_1 = system_data.mmu.mem_map[0xFF49];
     let mut image_buffer = ImageBuffer::new(160, 144);
-    let background_buffer = build_background_bitmap(background_tile_map, gpu_registers.lcdc_register.tile_data);
+    let mut background_buffer = build_background_bitmap(background_tile_map, gpu_registers.lcdc_register.tile_data);
+    if gpu_registers.lcdc_register.sprite_enable
+    {
+        background_buffer = apply_oam_table_to_bitmap(&oam_table, background_buffer, object_palette_0, object_palette_1, gpu_registers.lcdc_register.sprite_size, &oam_tile_map);
+    }
     for row_y in 0..144
     {
         for row_x in 0..160
@@ -238,6 +244,27 @@ fn build_background_bitmap(background_tile_map: &TileMap, tile_data_select: bool
         }
     }
     return buffer;
+}
+
+fn apply_oam_table_to_bitmap(oam_table: &OAM_Table, bitmap: Vec<u8>, palette_0: u8, palette_1: u8, large_sprites: bool, tile_map: &TileMap) -> Vec<u8>
+{
+    let mut tile = TileData::new();
+    let mut tile_big = TileData::new();
+    for i in 0..oam_table.table.len()
+    {
+        let start_y_bit = oam_table.table[i].y_position as i16 - 16;
+        let start_x_bit = oam_table.table[i].x_position as i16 - 8;
+        if !large_sprites
+        {
+            // tile = tile_map.tiles[oam_table.table[i].tile_number as usize];
+        }
+        else 
+        {
+            // tile = tile_map.tiles[oam_table.table[i].tile_number as usize & 0xFE];
+            // tile_big = tile_map.tiles[oam_table.table[i].tile_number as usize | 0x01];
+        } 
+    }
+    return bitmap;
 }
 
 fn pixel_color_map(pixel_data: u8, palette_data: u8, shade_profile: &ShadeProfile) -> Rgba<u8>
