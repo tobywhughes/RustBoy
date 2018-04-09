@@ -52,6 +52,65 @@ impl TileMap {
 }
 
 #[derive(Clone)]
+pub struct SpriteAttribute
+{
+    pub y_position: u8,
+    pub x_position: u8,
+    pub tile_number: u8,
+    pub flags: u8,
+}
+
+impl SpriteAttribute {
+    pub fn new() -> SpriteAttribute
+    {
+        return SpriteAttribute
+        {
+            y_position: 0,
+            x_position: 0,
+            tile_number: 0,
+            flags: 0,
+        }
+    }
+
+    pub fn update_sprite(&mut self, y_position: u8, x_position: u8, tile_number: u8, flags: u8)
+    {
+        self.y_position = y_position;
+        self.x_position = x_position;
+        self.tile_number = tile_number;
+        self.flags = flags;
+    }
+}
+
+pub struct OAM_Table
+{
+    pub table: Vec<SpriteAttribute>,
+}
+
+impl OAM_Table {
+    pub fn new() -> OAM_Table
+    {
+        return OAM_Table
+        {
+            table: vec![SpriteAttribute::new();40],
+        }
+    }
+
+    pub fn populate_oam_table(&mut self, system_data: &SystemData)
+    {
+        for i in 0..40
+        {
+            let mut sprite_attribute = SpriteAttribute::new();
+            let y_position = system_data.mmu.mem_map[0xFE00 + (i * 4)];
+            let x_position = system_data.mmu.mem_map[0xFE01 + (i * 4)];
+            let tile_number = system_data.mmu.mem_map[0xFE02 + (i * 4)];
+            let flags = system_data.mmu.mem_map[0xFE03 + (i * 4)];
+            sprite_attribute.update_sprite(y_position, x_position, tile_number, flags);
+            self.table[i] = sprite_attribute;
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct TileData
 {
     pub data: Vec<u8>,
