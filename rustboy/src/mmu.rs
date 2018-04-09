@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
+use std::io;
 
 pub struct MMU
 {
@@ -9,6 +10,7 @@ pub struct MMU
     pub rom_size: u8,
     pub ram_size: u8,
     pub rom_bank: u8,
+    pub banking_mode: u8,
 }
 
 impl MMU
@@ -23,6 +25,7 @@ impl MMU
             rom_size: 0x00,
             ram_size: 0x00,
             rom_bank: 1,
+            banking_mode: 0,
         }
     }
 
@@ -55,15 +58,22 @@ impl MMU
 
     fn mbc1_parse(&mut self, location: usize, value: u8) -> bool
     {
+        
         match location
         {
             0x0000...0x1FFF =>
             {
+                println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
                 println!("DEBUG: ram enable` {}", value);
                 return true;
             },
             0x2000...0x3FFF => 
             {
+            //     for i in 0..0x4000
+            //     {
+            //         self.memory_banks[self.rom_bank as usize][i] = self.mem_map[(i as usize) + 0x4000];
+            //     }
+            println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
                 let mut bank = value & 0x1F;
                 if bank == 0
                 {
@@ -76,24 +86,38 @@ impl MMU
             },
             0x4000...0x5FFF =>
             {
+                // for i in 0..0x4000
+                // {
+                //     self.memory_banks[self.rom_bank as usize][i] = self.mem_map[(i as usize) + 0x4000];
+                // }
+                println!("Value: 0x{:02X} -- {} Location: 0x{:04X}", value, (value & 0x03) << 5 ,location);
                 self.rom_bank &= 0x1F;
-                self.rom_bank |= (value & 0x03) << 5;
+                if self.banking_mode == 0{
+                    self.rom_bank |= ((value & 0x03) << 5);
+                }
                 self.update_rom_bank();
                 return true;
             },
             0x6000...0x7FFF =>
             {
+                println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
                 println!("DEBUG: mode {}", value);
+                self.banking_mode = value;
                 return true;
             },
-            _ => return false,
+            _ => 
+            {
+                 //println!("Value: 0x{:02X} Location: 0x{:04X}", value, location); 
+                 //io::stdin().read_line(&mut String::new());
+                 return false;
+            },
         }
     }
 
     fn update_rom_bank(&mut self)
     {
         let bank = self.rom_bank as usize;
-        println!("Rom-bank switch: {}", bank);
+        println!("Rom-bank switch: 0x{:02x}", bank);
         for i in 0..0x4000
         {
             self.mem_map[(i as usize) + 0x4000] = self.memory_banks[bank][i];
@@ -236,5 +260,25 @@ mod mmu_tests
         assert_eq!(mmu.memory_banks[1][0x0000], 0xC3);
         assert_eq!(mmu.memory_banks[2][0x0000], 0xC3);
         assert_eq!(mmu.memory_banks[3][0x0000], 0xC3);
+    }
+
+    #[test]
+    fn rom_bank_switch_test() 
+    {
+        let mut mmu = MMU::new();
+        mmu.initialize_cartridge("roms/cpu_instrs.gb");
+        assert_eq!(mmu.rom_size, 4);
+        assert_eq!(mmu.ram_size, 0);
+        assert_eq!(mmu.cartridge_type, 1);
+        assert_eq!(mmu.mem_map[0x0000], 0x3C);
+        assert_eq!(mmu.mem_map[0x4300], 0x3E);
+        mmu.mbc1_parse(0x2000, 0x00);
+        assert_eq!(mmu.mem_map[0x4300], 0x3E);
+        mmu.mbc1_parse(0x2000, 0x02);
+        assert_eq!(mmu.mem_map[0x4300], 0xE0);
+        mmu.mbc1_parse(0x2000, 0x03);
+        assert_eq!(mmu.mem_map[0x4900], 0x72);
+        mmu.mbc1_parse(0x2000, 0x00);
+        assert_eq!(mmu.mem_map[0x4300], 0x3E);
     }
 }
