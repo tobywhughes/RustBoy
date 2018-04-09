@@ -1,5 +1,5 @@
 use system::*;
-use gpu::gpu_registers::GPU_Registers;
+use gpu::gpu_registers::{GPU_Registers, ShadeProfile};
 use image::ImageBuffer;
 use image::{RgbaImage, Rgba};
 
@@ -147,7 +147,7 @@ pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_
            let mut row_x_scrolled = (row_x + gpu_registers.lcd_position.scroll_x_buffer[row_y] as usize) % 256;
            let mut row_y_scrolled = (row_y + gpu_registers.lcd_position.scroll_y_buffer[row_y] as usize) % 256;
            let pixel_data = background_buffer[(row_y_scrolled * 256) + row_x_scrolled];
-           let pixel = pixel_color_map(pixel_data, palette_data);
+           let pixel = pixel_color_map(pixel_data, palette_data, &gpu_registers.shade_profile);
            image_buffer.put_pixel(row_x as u32, row_y as u32, pixel);
         }
     }
@@ -175,7 +175,7 @@ fn build_background_bitmap(background_tile_map: &TileMap) -> Vec<u8>
     return buffer;
 }
 
-fn pixel_color_map(pixel_data: u8, palette_data: u8) -> Rgba<u8>
+fn pixel_color_map(pixel_data: u8, palette_data: u8, shade_profile: &ShadeProfile) -> Rgba<u8>
 {
     let mut pixel_shade = 0;
     match pixel_data
@@ -189,13 +189,14 @@ fn pixel_color_map(pixel_data: u8, palette_data: u8) -> Rgba<u8>
 
     match pixel_shade 
     {
-        0 => return Rgba([156,189,15, 0xFF]),
-        1 => return Rgba([140,173,15, 0xFF]),
-        2 => return Rgba([48,98,48, 0xFF]),
-        3 => return Rgba([15, 56, 15, 0xFF]),
-        _ => return Rgba([0, 0, 0, 0xFF]),
+        0 => return shade_profile.shade_0,
+        1 => return shade_profile.shade_1,
+        2 => return shade_profile.shade_2,
+        3 => return shade_profile.shade_3,
+        _ => return shade_profile.default,
     }
-}    
+}
+
 
 #[cfg(test)]
 mod gpu_tests

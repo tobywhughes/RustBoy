@@ -1,4 +1,5 @@
 use system::SystemData;
+use image::{RgbaImage, Rgba};
 
 pub struct GPU_Registers
 {
@@ -7,6 +8,7 @@ pub struct GPU_Registers
     pub v_blank_draw_flag: bool,
     pub lcdc_register: LCDC_Register,
     pub lcdc_status: LCDC_Status,
+    pub shade_profile: ShadeProfile,
 }
 
 impl GPU_Registers
@@ -19,7 +21,8 @@ impl GPU_Registers
             v_blank: false,
             v_blank_draw_flag: false,
             lcdc_register: LCDC_Register::new(),
-            lcdc_status: LCDC_Status::new()
+            lcdc_status: LCDC_Status::new(),
+            shade_profile: ShadeProfile::new(0),
         }
     }
 }
@@ -248,5 +251,48 @@ impl LCDC_Status
         }
 
         self.mode_flag = self.value &0b00000011;
+    }
+}
+
+pub struct ShadeProfile
+{
+    pub shade_0: Rgba<u8>,
+    pub shade_1: Rgba<u8>,
+    pub shade_2: Rgba<u8>,
+    pub shade_3: Rgba<u8>,
+    pub default: Rgba<u8>,
+}
+
+impl ShadeProfile
+{
+    pub fn new(profile: u8) -> ShadeProfile
+    {
+        match profile
+        {
+            0 => return ShadeProfile
+            {
+                shade_0: Rgba([156,189,15, 0xFF]),
+                shade_1: Rgba([140,173,15, 0xFF]),
+                shade_2: Rgba([48,98,48, 0xFF]),
+                shade_3: Rgba([15, 56, 15, 0xFF]),
+                default: Rgba([0, 0, 0, 0xFF]),
+            },
+            1 => return ShadeProfile
+            {
+                shade_0: Rgba([255,0,0, 0xFF]),
+                shade_1: Rgba([0,255,0, 0xFF]),
+                shade_2: Rgba([0,0, 255, 0xFF]),
+                shade_3: Rgba([255, 255, 255, 0xFF]),
+                default: Rgba([0, 0, 0, 0xFF]),
+            },
+            _ => return ShadeProfile
+            {
+                shade_0: Rgba([0, 0, 0, 0xFF]),
+                shade_1: Rgba([0, 0, 0, 0xFF]),
+                shade_2: Rgba([0, 0, 0, 0xFF]),
+                shade_3: Rgba([0, 0, 0, 0xFF]),
+                default: Rgba([0, 0, 0, 0xFF]),
+            },
+        }
     }
 }
