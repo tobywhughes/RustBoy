@@ -125,6 +125,7 @@ impl TileData
             data: vec![0; 64],
         }
     }
+
 }
 
 
@@ -200,7 +201,8 @@ pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_
     let object_palette_0 = system_data.mmu.mem_map[0xFF48];
     let object_palette_1 = system_data.mmu.mem_map[0xFF49];
     let mut image_buffer = ImageBuffer::new(160, 144);
-    let mut background_buffer = build_background_bitmap(background_tile_map, gpu_registers.lcdc_register.tile_data);
+    let mut background_buffer = build_background_bitmap(background_tile_map, gpu_registers.lcdc_register.tile_data, palette_data);
+    //Convert scroll
     if gpu_registers.lcdc_register.sprite_enable
     {
         background_buffer = apply_oam_table_to_bitmap(&oam_table, background_buffer, object_palette_0, object_palette_1, gpu_registers.lcdc_register.sprite_size, &oam_tile_map);
@@ -212,14 +214,15 @@ pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_
            let mut row_x_scrolled = (row_x + gpu_registers.lcd_position.scroll_x_buffer[row_y] as usize) % 256;
            let mut row_y_scrolled = (row_y + gpu_registers.lcd_position.scroll_y_buffer[row_y] as usize) % 256;
            let pixel_data = background_buffer[(row_y_scrolled * 256) + row_x_scrolled];
-           let pixel = pixel_color_map(pixel_data, palette_data, &gpu_registers.shade_profile);
+           //let pixel_shade = pixel_shade_map(pixel_data, palette_data);
+           let pixel = pixel_color_map(pixel_data, &gpu_registers.shade_profile);
            image_buffer.put_pixel(row_x as u32, row_y as u32, pixel);
         }
     }
    return image_buffer;
 }
 
-fn build_background_bitmap(background_tile_map: &TileMap, tile_data_select: bool) -> Vec<u8>
+fn build_background_bitmap(background_tile_map: &TileMap, tile_data_select: bool, palette_data:u8) -> Vec<u8>
 {
 
     let mut buffer = vec![0; 0x10000];
@@ -237,7 +240,8 @@ fn build_background_bitmap(background_tile_map: &TileMap, tile_data_select: bool
                         let tile_temp = tile as i8 as i16;
                         tile = (tile_temp + 0x80) as u8;
                     }
-                    let pixel_data = background_tile_map.tiles[tile as usize].data[(pixel_y * 8) + pixel_x];
+                    let mut pixel_data = background_tile_map.tiles[tile as usize].data[(pixel_y * 8) + pixel_x];
+                    pixel_data = pixel_shade_map(pixel_data, palette_data);
                     buffer[(256 * ((tile_y * 8) + pixel_y)) + ((tile_x * 8) + pixel_x)] = pixel_data;
                 }
             }
@@ -252,33 +256,75 @@ fn apply_oam_table_to_bitmap(oam_table: &OAM_Table, bitmap: Vec<u8>, palette_0: 
     let mut tile_big = TileData::new();
     for i in 0..oam_table.table.len()
     {
-        let start_y_bit = oam_table.table[i].y_position as i16 - 16;
-        let start_x_bit = oam_table.table[i].x_position as i16 - 8;
+        let y_position = oam_table.table[i].y_position as i16 - 16;
+        let x_position = oam_table.table[i].x_position as i16 - 8;
+        let tile_num = oam_table.table[i].tile_number as usize;
         if !large_sprites
         {
-            // tile = tile_map.tiles[oam_table.table[i].tile_number as usize];
+            tile = tile_map.tiles[tile_num].clone(); 
         }
         else 
         {
-            // tile = tile_map.tiles[oam_table.table[i].tile_number as usize & 0xFE];
-            // tile_big = tile_map.tiles[oam_table.table[i].tile_number as usize | 0x01];
-        } 
+            tile = tile_map.tiles[tile_num & 0xFE].clone();
+            tile_big = tile_map.tiles[tile_num | 0x01].clone();
+        }
+
+        let flags = oam_table.table[i].flags;
+        let y_flip = (flags) & 0x40 >> 6;
+        let x_flip = (flags) & 0x20 >> 5;
+        let palette = (flags) & 0x10 >> 4;
+
+        // if !large_sprites
+        // {
+        //     if y_flip == 1
+        //     {
+        //         for row in 0..4
+        //         {
+        //             for index in 0..8
+        //             {
+        //                 let temp = tile.data[(row * 8) + index];
+        //                 tile.data[(row * 8) + index] = tile.data[]
+        //             }
+        //         }
+        //     }
+        // }
+        
+        //Add to bitmap
+        for row in 0..8
+        {
+            for index in 0..8
+            {
+                if (y_position + row) >= 0
+                {
+                    if (x_position + index) >= 0
+                    {
+                        let tile_position = ((y_position + row) * 256) + (x_position + index);
+                        //Translate pallete to bitmap
+                    }
+                }
+            }
+        }
     }
     return bitmap;
 }
 
-fn pixel_color_map(pixel_data: u8, palette_data: u8, shade_profile: &ShadeProfile) -> Rgba<u8>
+
+//Split into two
+fn pixel_shade_map(pixel_data: u8, palette_data: u8,) -> u8
 {
     let mut pixel_shade = 0;
     match pixel_data
     {
-        0 => pixel_shade = palette_data & 0x03,
-        1 => pixel_shade = (palette_data & 0x0C) >> 2,
-        2 => pixel_shade = (palette_data & 0x30) >> 4,
-        3 => pixel_shade = (palette_data & 0xC0) >> 6,
-        _ => (),
+        0 => return palette_data & 0x03,
+        1 => return (palette_data & 0x0C) >> 2,
+        2 => return (palette_data & 0x30) >> 4,
+        3 => return (palette_data & 0xC0) >> 6,
+        _ => return 4,
     }
+}
 
+fn pixel_color_map(pixel_shade: u8, shade_profile: &ShadeProfile) -> Rgba<u8>
+{
     match pixel_shade 
     {
         0 => return shade_profile.shade_0,
