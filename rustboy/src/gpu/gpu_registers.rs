@@ -285,6 +285,14 @@ impl ShadeProfile
                 shade_3: Rgba([255, 255, 255, 0xFF]),
                 default: Rgba([0, 0, 0, 0xFF]),
             },
+            2 => return ShadeProfile
+            {
+                shade_0: Rgba([230,10,10, 0xFF]),
+                shade_1: Rgba([250,243,0, 0xFF]),
+                shade_2: Rgba([50,0, 0, 0xFF]),
+                shade_3: Rgba([0, 0, 0, 0xFF]),
+                default: Rgba([0, 0, 0, 0xFF]),
+            },
             _ => return ShadeProfile
             {
                 shade_0: Rgba([0, 0, 0, 0xFF]),
