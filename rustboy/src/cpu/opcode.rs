@@ -806,7 +806,14 @@ pub fn load_increment_hl_register_location_with_accumulator(system_data: &mut Sy
 {
     let mut mem_loc: u16 = registers.l_register as u16 | (registers.h_register as u16) << 8;
     system_data.mmu.set_to_memory(mem_loc as usize, registers.accumulator, true);
-    mem_loc += 1;
+    if mem_loc == 0xFFFF
+    {
+        mem_loc = 0x0000;
+    }
+    else 
+    {
+        mem_loc += 1;
+    }
     registers.l_register = (mem_loc & 0x00FF) as u8;
     registers.h_register = ((mem_loc & 0xFF00) >> 8) as u8;
     system_data.cycles = 2;

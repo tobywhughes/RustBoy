@@ -5,6 +5,7 @@ pub struct SystemData
 {
     pub mmu: MMU,
     pub timer: Timer,
+    pub input: PlayerInput,
     pub width: u16,
     pub tile_width: u16,
     pub height: u16,
@@ -152,6 +153,89 @@ impl Registers{
     }
 }
 
+pub struct PlayerInput
+{
+    pub left: bool,
+    pub right: bool,
+    pub up: bool,
+    pub down: bool,
+    pub select: bool,
+    pub start: bool,
+    pub a_button: bool,
+    pub b_button: bool, 
+}
+
+impl PlayerInput
+{
+    pub fn new()-> PlayerInput
+    {
+        return PlayerInput
+        {
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            select: false,
+            start: false,
+            a_button: false,
+            b_button: false, 
+        }
+    }
+
+    pub fn update_input(&self, system_data: &SystemData) -> u8
+    {
+        let mut input_value = system_data.mmu.mem_map[0xFF00];
+        let option = (input_value & 0x30) >> 4;
+        if option == 1
+        {
+            match self.a_button
+            {
+                true => input_value &= 0xFE,
+                false => input_value |= 0x01,
+            }
+            match self.b_button
+            {
+                true => input_value &= 0xFD,
+                false => input_value |= 0x02,
+            }
+            match self.select
+            {
+                true => input_value &= 0xFB,
+                false => input_value |= 0x04,
+            }
+            match self.start
+            {
+                true => input_value &= 0xF7,
+                false => input_value |= 0x08,
+            }
+        }
+        else if option == 2
+        {
+            match self.right
+            {
+                true => input_value &= 0xFE,
+                false => input_value |= 0x01,
+            }
+            match self.left
+            {
+                true => input_value &= 0xFD,
+                false => input_value |= 0x02,
+            }
+            match self.up
+            {
+                true => input_value &= 0xFB,
+                false => input_value |= 0x04,
+            }
+            match self.down
+            {
+                true => input_value &= 0xF7,
+                false => input_value |= 0x08,
+            }
+        }
+        return input_value;
+    } 
+}
+
 pub fn get_system_data(emulator_type: &str) -> SystemData
 {
     match emulator_type.as_ref()
@@ -160,6 +244,7 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
         {
             mmu: MMU::new(),
             timer: Timer::new(),
+            input: PlayerInput::new(),
             width: 160,
             tile_width: 20,
             height: 144,
@@ -174,6 +259,7 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
         {
             mmu: MMU::new(),
             timer: Timer::new(),
+            input: PlayerInput::new(),
             width: 0,
             tile_width: 0,
             height: 0,

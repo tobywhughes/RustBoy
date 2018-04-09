@@ -49,7 +49,8 @@ fn main()
 
     //Initialize Screen
     let opengl = OpenGL::V3_2;
-    let mut window: PistonWindow = WindowSettings::new("RustBoy", [system_data.width as u32, system_data.height as u32])
+    let scale_factor = 1.5;
+    let mut window: PistonWindow = WindowSettings::new("RustBoy", [(system_data.width as f64 * scale_factor) as u32, (system_data.height as f64 * scale_factor) as u32])
                                         .opengl(opengl)
                                         .exit_on_esc(true)
                                         .build()
@@ -59,38 +60,78 @@ fn main()
     {
         gl: GlGraphics::new(opengl),
     };
-    let mut events = Events::new(EventSettings::new().max_fps(60));
+    let mut events = Events::new(EventSettings::new());
     //events.set_max_fps(60);
     let mut background_tile_map: TileMap = TileMap::new();
     let mut window_tile_map: TileMap = TileMap::new();
   
     //Operation loop
     let mut emulator_loop = true;
+    gpu_registers.v_blank_draw_flag = false;
+
+    let mut space_flag = false;
 
     while let Some(e) = events.next(&mut window)
     {
-        if let Some(r) = e.update_args()
+        //while !gpu_registers.v_blank_draw_flag
+        //{
+
+        if let Some(Button::Keyboard(key)) = e.press_args()
         {
+            match key
+            {
+                Key::A => system_data.input.left = true,
+                Key::D => system_data.input.right = true,
+                Key::W => system_data.input.up = true,
+                Key::S => system_data.input.down = true,
+                Key::NumPad1 => system_data.input.a_button = true,
+                Key::NumPad2 => system_data.input.b_button = true,
+                Key::Return => system_data.input.start = true,
+                Key::Space => system_data.input.select = true,
+                _ => (),
+            }
+        } 
+        
+        if let Some(Button::Keyboard(key)) = e.release_args()
+        {
+            match key
+            {
+                Key::A => system_data.input.left = false,
+                Key::D => system_data.input.right = false,
+                Key::W => system_data.input.up = false,
+                Key::S => system_data.input.down = false,
+                Key::NumPad1 => system_data.input.a_button = false,
+                Key::NumPad2 => system_data.input.b_button = false,
+                Key::Return => system_data.input.start = false,
+                Key::Space => system_data.input.select = false,
+                _ => (),
+            }
+        }    
+
+
+       if let Some(r) = e.update_args()
+       {
             while !gpu_registers.v_blank_draw_flag
-            {   //Default until joypad implementation
-                system_data.mmu.set_to_memory(0xFF00, 0xFF, false); //system_data.mem_map[0xFF00] | 0x0F;
-                //system_data.mmu.set_to_memory(0xFF00, 0xDE, false);
-                //^^^^ Delete when joypad implemented ^^^^^^
+            {
+                let joypad_input = system_data.input.update_input(&system_data);
+                system_data.mmu.mem_map[0xFF00] = joypad_input;
                 let opcode = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
                 let address = registers.program_counter;
                 cpu_continue(&mut system_data, &mut registers);
                 update_gpu(&mut system_data, &mut registers, &mut gpu_registers);
                 system_data.timer_tick();
             }
-        }
+       }
+
 
         if let Some(r) = e.render_args(){
-            gpu_registers.v_blank_draw_flag = false;
-            background_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.background_display_select);  
-            window_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.window_display_select);
-            let background_image: RgbaImage = create_background_img(&background_tile_map, &gpu_registers, &system_data);
-            app.render(&background_image, &r);
-            // break;
+            
+                gpu_registers.v_blank_draw_flag = false;
+                background_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.background_display_select);  
+                window_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.window_display_select);
+                let background_image: RgbaImage = create_background_img(&background_tile_map, &gpu_registers, &system_data);
+                app.render(&background_image, &r, scale_factor);
+                // break;
         }
     }
         // if system_data.cycles == 0  //|| registers.program_counter == 0x6d 
@@ -109,7 +150,7 @@ pub struct App
 
 impl App
 {
-    fn render(&mut self, img: &RgbaImage, args: &RenderArgs)
+    fn render(&mut self, img: &RgbaImage, args: &RenderArgs, scale_factor: f64)
     {
             use graphics::*;
             let BLANK: types::Color = color::hex("9CBD0F");
@@ -118,7 +159,7 @@ impl App
             self.gl.draw(args.viewport(), |c, gl| 
             {
                 clear(color::BLACK, gl);
-                let transform = c.transform.trans(0.0,0.0);
+                let transform = c.transform.trans(0.0,0.0).zoom(scale_factor);
                 image(&tile, transform, gl);
             });
     }
@@ -150,5 +191,3 @@ fn init_emulator_state(system_data: &mut SystemData, registers: &mut Registers)
         registers.mapped_16_bit_register_setter(i as u8, register_states[i]);
     }
 }
-
-
