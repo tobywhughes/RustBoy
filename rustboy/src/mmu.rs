@@ -34,6 +34,10 @@ impl MMU
         let mut rom_flag = false;
         if masked_set
         {
+            if location == 0xFF46
+            {
+                self.oam_dma_transfer(value);
+            }
             match self.cartridge_type
             {
                 0x00 => (),
@@ -44,6 +48,15 @@ impl MMU
         if !rom_flag
         {
             self.mem_map[location] = value;
+        }
+    }
+
+    fn oam_dma_transfer(&mut self, value: u8)
+    {
+        let start_address = ((value as u16) << 8) as usize;
+        for i in 0..0xA0
+        {
+            self.mem_map[0xFE00 + i] = self.mem_map[start_address + i];
         }
     }
 
@@ -280,5 +293,33 @@ mod mmu_tests
         assert_eq!(mmu.mem_map[0x4900], 0x72);
         mmu.mbc1_parse(0x2000, 0x00);
         assert_eq!(mmu.mem_map[0x4300], 0x3E);
+    }
+
+    #[test]
+    fn oam_dma_transfer_test() {
+        let mut mmu = MMU::new();
+        for i in 0..0xA0
+        {
+            mmu.mem_map[i] = i as u8;
+            mmu.mem_map[0x8000 + i] = i as u8;
+        }
+
+        mmu.set_to_memory(0xFF46, 0x00, true);
+        for i in 0..0xA0
+        {
+            assert_eq!(mmu.mem_map[0xFE00+i], i as u8);
+        }
+
+        mmu.set_to_memory(0xFF46, 0x01, true);
+        for i in 0..0xA0
+        {
+            assert_eq!(mmu.mem_map[0xFE00+i], 0);
+        }
+
+        mmu.set_to_memory(0xFF46, 0x80, true);
+        for i in 0..0xA0
+        {
+            assert_eq!(mmu.mem_map[0xFE00+i], i as u8);
+        }
     }
 }
