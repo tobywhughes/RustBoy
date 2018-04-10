@@ -13,7 +13,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
     if registers.halt_flag
     {
-        if (system_data.mmu.mem_map[0xFF0F] & 0x1F) != 0x00
+        if (system_data.mmu.get_from_memory(0xFF0F, false) & 0x1F) != 0x00
         {
             registers.halt_flag = false;
         }
@@ -24,7 +24,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     }
 
     system_data.cycles = 0;
-    let mut opcode: u8 = system_data.mmu.mem_map[registers.program_counter as usize];
+    let mut opcode: u8 = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
     // if (registers.program_counter >= 0x312  && registers.program_counter < 0xC320) || registers.program_counter < 0x100
     //  {
         // if registers.program_counter >= 0x29FC && registers.program_counter <= 0x3000
@@ -32,8 +32,8 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         //  println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
         //  println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X} LY {} IE {:02X} IF {:02X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), 
         //                                                                                             registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), 
-        //                                                                                             registers.mapped_16_bit_register_getter(4), system_data.mmu.mem_map[0xFF44]
-        //                                                                                             , system_data.mmu.mem_map[0xFFFF], system_data.mmu.mem_map[0xFF0F]);
+        //                                                                                             registers.mapped_16_bit_register_getter(4), system_data.mmu.get_from_memory(0xFF44, false)
+        //                                                                                             , system_data.mmu.get_from_memory(0xFFFF, false), system_data.mmu.get_from_memory(0xFF0F, false));
         //     io::stdin().read_line(&mut String::new());
         //  }
     //  }
@@ -58,8 +58,8 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     //Interrupt Handling
     if registers.interrupt_master_enable_flag
     {
-        let enabled_interrupts = system_data.mmu.mem_map[0xFFFF];
-        let requested_interrupts = system_data.mmu.mem_map[0xFF0F];
+        let enabled_interrupts = system_data.mmu.get_from_memory(0xFFFF, false);
+        let requested_interrupts = system_data.mmu.get_from_memory(0xFF0F, false);
         let runnable_interrupts = enabled_interrupts & requested_interrupts;
         if requested_interrupts != 0 {
             //println!("{} -- {} -- {}", enabled_interrupts, requested_interrupts, runnable_interrupts);
@@ -67,16 +67,16 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         if runnable_interrupts > 0x00 && runnable_interrupts <= 0x1F
         {
             let mut interrupt_vector = 0;
-            if runnable_interrupts & 0x01 == 0x01 {interrupt_vector = 0x40; system_data.mmu.mem_map[0xFF0F] = requested_interrupts & 0x1E;}
-            else if runnable_interrupts & 0x02 == 0x02 {interrupt_vector = 0x48; system_data.mmu.mem_map[0xFF0F] = requested_interrupts & 0x1D;}
-            else if runnable_interrupts & 0x04 == 0x04 {interrupt_vector = 0x50; system_data.mmu.mem_map[0xFF0F] = requested_interrupts & 0x1B;}
-            else if runnable_interrupts & 0x08 == 0x08 {interrupt_vector = 0x58; system_data.mmu.mem_map[0xFF0F] = requested_interrupts & 0x17;}
-            else if runnable_interrupts & 0x10 == 0x10 {interrupt_vector = 0x60; system_data.mmu.mem_map[0xFF0F] = requested_interrupts & 0x0F;}
+            if runnable_interrupts & 0x01 == 0x01 {interrupt_vector = 0x40; system_data.mmu.set_to_memory(0xFF0F,requested_interrupts & 0x1E, false);}
+            else if runnable_interrupts & 0x02 == 0x02 {interrupt_vector = 0x48; system_data.mmu.set_to_memory(0xFF0F, requested_interrupts & 0x1D, false);}
+            else if runnable_interrupts & 0x04 == 0x04 {interrupt_vector = 0x50; system_data.mmu.set_to_memory(0xFF0F, requested_interrupts & 0x1B, false);}
+            else if runnable_interrupts & 0x08 == 0x08 {interrupt_vector = 0x58; system_data.mmu.set_to_memory(0xFF0F, requested_interrupts & 0x17, false);}
+            else if runnable_interrupts & 0x10 == 0x10 {interrupt_vector = 0x60; system_data.mmu.set_to_memory(0xFF0F, requested_interrupts & 0x0F, false);}
             registers.stack_pointer -= 2;
-            system_data.mmu.mem_map[registers.stack_pointer as usize + 1] = ((registers.program_counter & 0xFF00) >> 8) as u8;
-            system_data.mmu.mem_map[registers.stack_pointer as usize] = (registers.program_counter & 0x00FF) as u8;
+            system_data.mmu.set_to_memory(registers.stack_pointer as usize + 1, ((registers.program_counter & 0xFF00) >> 8) as u8, true);
+            system_data.mmu.set_to_memory(registers.stack_pointer as usize, (registers.program_counter & 0x00FF) as u8, true);
             registers.program_counter = interrupt_vector as u16;
-            opcode = system_data.mmu.mem_map[registers.program_counter as usize];
+            opcode = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
             registers.interrupt_master_enable_flag = !registers.interrupt_master_enable_flag;
         }
         
@@ -562,7 +562,7 @@ pub fn add_8_bit(system_data: &mut SystemData, registers: &mut Registers, opcode
     if register_code == 7
     {
         system_data.cycles += 1;
-        add_num = system_data.mmu.mem_map[(((registers.h_register as u16) << 8)|(registers.l_register as u16)) as usize];
+        add_num = system_data.mmu.get_from_memory((((registers.h_register as u16) << 8)|(registers.l_register as u16)) as usize, true);
     }
     else
     {
@@ -603,7 +603,7 @@ pub fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Reg
     else
     {
         let mem_loc: usize = registers.program_counter as usize + 1;
-        registers.mapped_register_setter(register_code, system_data.mmu.mem_map[mem_loc])
+        registers.mapped_register_setter(register_code, system_data.mmu.get_from_memory(mem_loc, false))
     }
 
     registers.program_counter += 2;
@@ -612,7 +612,7 @@ pub fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Reg
 pub fn load_n_to_hl_location(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 3;
-    let n_value = system_data.mmu.mem_map[registers.program_counter as usize + 1];
+    let n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(3) as usize, n_value, true);
     registers.program_counter += 2;
 }
@@ -656,14 +656,14 @@ pub fn load_accumulator_to_io_port_with_c_offset(system_data: &mut SystemData, r
 pub fn read_io_port_with_c_offset_to_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 2;
-    registers.accumulator = system_data.mmu.mem_map[(0xFF00 + registers.c_register as u16) as usize];
+    registers.accumulator = system_data.mmu.get_from_memory((0xFF00 + registers.c_register as u16) as usize, false);
     registers.program_counter += 1;  
 }
 
 pub fn load_accumulator_to_io_port_with_n_offset(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 3;
-    let n = system_data.mmu.mem_map[(registers.program_counter + 1) as usize];
+    let n = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     system_data.mmu.set_to_memory((0xFF00 + n as u16) as usize ,registers.accumulator, true);
     registers.program_counter += 2;  
 }
@@ -671,16 +671,16 @@ pub fn load_accumulator_to_io_port_with_n_offset(system_data: &mut SystemData, r
 pub fn load_accumulator_with_io_port_with_n_offset(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 3;
-    let n = system_data.mmu.mem_map[(registers.program_counter + 1) as usize];
-    registers.accumulator = system_data.mmu.mem_map[(0xFF00 + n as u16) as usize];
+    let n = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
+    registers.accumulator = system_data.mmu.get_from_memory((0xFF00 + n as u16) as usize, false);
     registers.program_counter += 2;  
 } 
 
 pub fn load_nn_to_16bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8){
     system_data.cycles = 3;
 
-    let lower = system_data.mmu.mem_map[(registers.program_counter + 1) as usize] as u16;
-    let upper = system_data.mmu.mem_map[(registers.program_counter + 2) as usize] as u16;
+    let lower = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
+    let upper = system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16;
     let set_value = lower | (upper << 8);
     match opcode
     {
@@ -773,15 +773,15 @@ pub fn and_8_bit_register(system_data: &mut SystemData, registers: &mut Register
 pub fn jump_displacement(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 3;
-    let pc_dest: i8 = (system_data.mmu.mem_map[(registers.program_counter + 1) as usize]) as i8;
+    let pc_dest: i8 = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as i8;
     registers.program_counter = ((registers.program_counter as i32 + pc_dest as i32) as u16) + 2;
 }
 
 pub fn jump_address(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 4;
-    let upper: u16 = system_data.mmu.mem_map[registers.program_counter as usize + 2] as u16;
-    let lower: u16 = system_data.mmu.mem_map[registers.program_counter as usize + 1] as u16;
+    let upper: u16 = system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16;
+    let lower: u16 = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     registers.program_counter = (upper << 8) | lower;
 }
 
@@ -857,22 +857,22 @@ pub fn call_nn(system_data: &mut SystemData, registers: &mut Registers)
     system_data.cycles = 6;
     let incremented_program_counter = registers.program_counter + 3;
     registers.stack_pointer -= 2;
-    system_data.mmu.mem_map[registers.stack_pointer as usize + 1] = ((incremented_program_counter & 0xFF00) >> 8) as u8;
-    system_data.mmu.mem_map[registers.stack_pointer as usize] = (incremented_program_counter & 0x00FF) as u8;
-    registers.program_counter = (system_data.mmu.mem_map[registers.program_counter as usize + 1] as u16) | (system_data.mmu.mem_map[registers.program_counter as usize + 2] as u16) << 8;
+    system_data.mmu.set_to_memory(registers.stack_pointer as usize + 1, ((incremented_program_counter & 0xFF00) >> 8) as u8, true);
+    system_data.mmu.set_to_memory(registers.stack_pointer as usize, (incremented_program_counter & 0x00FF) as u8, true);
+    registers.program_counter = (system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16) | (system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16) << 8;
 }
 
 pub fn return_from_call(system_data: &mut SystemData, registers: &mut Registers)
 {
    system_data.cycles = 4;
-   registers.program_counter = (system_data.mmu.mem_map[registers.stack_pointer as usize] as u16) | (system_data.mmu.mem_map[registers.stack_pointer as usize + 1] as u16) << 8;
+   registers.program_counter = (system_data.mmu.get_from_memory(registers.stack_pointer as usize, true) as u16) | (system_data.mmu.get_from_memory(registers.stack_pointer as usize + 1, true) as u16) << 8;
    registers.stack_pointer += 2;
 }
 
 pub fn return_from_call_ei(system_data: &mut SystemData, registers: &mut Registers)
 {
    system_data.cycles = 4;
-   registers.program_counter = (system_data.mmu.mem_map[registers.stack_pointer as usize] as u16) | (system_data.mmu.mem_map[registers.stack_pointer as usize + 1] as u16) << 8;
+   registers.program_counter = (system_data.mmu.get_from_memory(registers.stack_pointer as usize, true) as u16) | (system_data.mmu.get_from_memory(registers.stack_pointer as usize + 1, true) as u16) << 8;
    registers.stack_pointer += 2;
    registers.interrupt_master_enable_delay_flag = true;
 }
@@ -889,9 +889,9 @@ pub fn push_16_bit_register(system_data: &mut SystemData, registers: &mut Regist
     let upper = ((value & 0xFF00) >> 8) as u8;
     let lower = (value & 0x00FF) as u8;
     registers.stack_pointer -= 1;
-    system_data.mmu.mem_map[registers.stack_pointer as usize] = upper;
+    system_data.mmu.set_to_memory(registers.stack_pointer as usize, upper, true);
     registers.stack_pointer -= 1;
-    system_data.mmu.mem_map[registers.stack_pointer as usize] = lower;
+    system_data.mmu.set_to_memory(registers.stack_pointer as usize, lower, true);
 
     registers.program_counter += 1;
 }
@@ -909,9 +909,9 @@ pub fn pop_16_bit_register(system_data: &mut SystemData, registers: &mut Registe
         _ => (),
     }
     
-    let lower = system_data.mmu.mem_map[registers.stack_pointer as usize] as u16;
+    let lower = system_data.mmu.get_from_memory(registers.stack_pointer as usize, true) as u16;
     registers.stack_pointer += 1;
-    let upper = system_data.mmu.mem_map[registers.stack_pointer as usize] as u16;
+    let upper = system_data.mmu.get_from_memory(registers.stack_pointer as usize, true) as u16;
     registers.stack_pointer += 1;
     let mut full_value = (upper << 8) | lower;
     if register_code == 0
@@ -942,7 +942,7 @@ pub fn compare_with_n(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 2;
     registers.flags = 0x40;
-    let n_value = system_data.mmu.mem_map[registers.program_counter as usize + 1];
+    let n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     if registers.accumulator < n_value
     {
         registers.flags = registers.flags | 0x10;
@@ -985,7 +985,7 @@ pub fn compare_with_hl_address(system_data: &mut SystemData, registers: &mut Reg
 pub fn load_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 4;
-    let mem_loc = (system_data.mmu.mem_map[registers.program_counter as usize + 1] as u16) | (system_data.mmu.mem_map[registers.program_counter as usize + 2] as u16) << 8;
+    let mem_loc = (system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16) | (system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16) << 8;
     system_data.mmu.set_to_memory(mem_loc as usize, registers.accumulator, true);
     registers.program_counter += 3;
 
@@ -1072,7 +1072,7 @@ pub fn ones_complement(system_data: &mut SystemData, registers: &mut Registers)
 pub fn and_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 2;
-    let nn = system_data.mmu.mem_map[registers.program_counter as usize + 1];
+    let nn = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     registers.accumulator &= nn;
     registers.flags = 0x20;
     if registers.accumulator == 0
@@ -1087,9 +1087,9 @@ pub fn rst_jump(system_data: &mut SystemData, registers: &mut Registers, opcode:
     system_data.cycles = 4;
     registers.program_counter += 1;
     registers.stack_pointer -= 1;
-    system_data.mmu.mem_map[registers.stack_pointer as usize] = ((registers.program_counter & 0xFF00) >> 8) as u8;
+    system_data.mmu.set_to_memory(registers.stack_pointer as usize, ((registers.program_counter & 0xFF00) >> 8) as u8, true);
     registers.stack_pointer -= 1;
-    system_data.mmu.mem_map[registers.stack_pointer as usize] = ((registers.program_counter & 0x00FF)) as u8;
+    system_data.mmu.set_to_memory(registers.stack_pointer as usize, ((registers.program_counter & 0x00FF)) as u8, true);
     let locations: Vec<u16> = vec![0x0000, 0x0008, 0x0010, 0x0018, 0x0020, 0x0028, 0x0030, 0x0038];
     let location_index = (opcode & 0x38) >> 3;
     registers.program_counter = locations[location_index as usize];
@@ -1149,7 +1149,7 @@ pub fn load_register_with_hl_location(system_data: &mut SystemData, registers: &
 pub fn or_n(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 2;
-    registers.accumulator |= system_data.mmu.mem_map[registers.program_counter as usize + 1];
+    registers.accumulator |= system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     registers.flags = 0x00;
     if registers.accumulator == 0
     {
@@ -1239,8 +1239,8 @@ pub fn subtract_hl_location_and_carry_from_accumulator(system_data: &mut SystemD
 pub fn load_accumulator_with_nn_address(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 4;
-    let lower = system_data.mmu.mem_map[registers.program_counter as usize + 1] as u16;
-    let upper = system_data.mmu.mem_map[registers.program_counter as usize + 2] as u16;
+    let lower = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
+    let upper = system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16;
     let retrieved_value = system_data.mmu.get_from_memory((lower | (upper << 8)) as usize, true);
     registers.accumulator = retrieved_value;
     registers.program_counter += 3;
@@ -1249,8 +1249,8 @@ pub fn load_accumulator_with_nn_address(system_data: &mut SystemData, registers:
 pub fn load_stack_pointer_to_nn_address(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 5;
-    let lower = system_data.mmu.mem_map[registers.program_counter as usize + 1] as u16;
-    let upper = system_data.mmu.mem_map[registers.program_counter as usize + 2] as u16;
+    let lower = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
+    let upper = system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16;
     let address = lower | (upper << 8);
     system_data.mmu.set_to_memory(address as usize, (registers.stack_pointer & 0xFF) as u8, true);
     system_data.mmu.set_to_memory(address as usize + 1, ((registers.stack_pointer & 0xFF00) >> 8) as u8, true);
@@ -1301,15 +1301,15 @@ pub fn call_function_nn_on_conditional(system_data: &mut SystemData, registers: 
         if call_flag
         {
             system_data.cycles = 6;
-            let lower = system_data.mmu.mem_map[registers.program_counter as usize + 1] as u16;
-            let upper = system_data.mmu.mem_map[registers.program_counter as usize + 2] as u16;
+            let lower = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
+            let upper = system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16;
 
             registers.program_counter += 3;
 
             registers.stack_pointer -= 1;
-            system_data.mmu.mem_map[registers.stack_pointer as usize] = ((registers.program_counter & 0xFF00) >> 8) as u8;
+            system_data.mmu.set_to_memory(registers.stack_pointer as usize, ((registers.program_counter & 0xFF00) >> 8) as u8, true);
             registers.stack_pointer -= 1;
-            system_data.mmu.mem_map[registers.stack_pointer as usize] = (registers.program_counter & 0x00FF) as u8;
+            system_data.mmu.set_to_memory(registers.stack_pointer as usize, (registers.program_counter & 0x00FF) as u8, true);
 
 
             registers.program_counter = lower | (upper << 8);
@@ -1325,7 +1325,7 @@ pub fn call_function_nn_on_conditional(system_data: &mut SystemData, registers: 
 pub fn add_8_bit_to_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 2;
-    let n = system_data.mmu.mem_map[registers.program_counter as usize + 1] as u16;
+    let n = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     let accumulator_value = registers.accumulator as u16;
     registers.flags = 0x00;
     //Half
@@ -1354,7 +1354,7 @@ pub fn add_8_bit_to_accumulator(system_data: &mut SystemData, registers: &mut Re
 pub fn subtraction_n_from_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 2;
-    let n = system_data.mmu.mem_map[registers.program_counter as usize + 1] as u16;
+    let n = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     let accumulator_value = registers.accumulator as u16;
     registers.flags = 0x40;
     if (n & 0x0F) > (accumulator_value & 0x0F)
@@ -1410,7 +1410,7 @@ pub fn jump_displacement_on_flag(system_data: &mut SystemData, registers: &mut R
     else 
     {
         system_data.cycles = 3;
-        let jump_value: i8 = system_data.mmu.mem_map[registers.program_counter as usize + 1] as i8;
+        let jump_value: i8 = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as i8;
         registers.program_counter = ((registers.program_counter as i32) + (jump_value as i32)) as u16;
         registers.program_counter += 2;
    }
@@ -1432,7 +1432,7 @@ pub fn add_8_bit_to_accumulator_with_carry(system_data: &mut SystemData, registe
 {
     system_data.cycles = 2;
     let carry_bit = (registers.flags & 0x10) >> 4;
-    let n_value = system_data.mmu.mem_map[registers.program_counter as usize + 1];
+    let n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     let add_value = (n_value as u16) + (carry_bit as u16);
     let accumulator_value = registers.accumulator as u16;
     registers.flags = 0x00;
@@ -1463,7 +1463,7 @@ pub fn subtract_8_bit_from_accumulator_with_carry(system_data: &mut SystemData, 
 {
     system_data.cycles = 2;
     let carry_bit = (registers.flags & 0x10) >> 4;
-    let n_value = system_data.mmu.mem_map[registers.program_counter as usize + 1];
+    let n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     let sub_value = (n_value as u16) + (carry_bit as u16);
     let accumulator_value = registers.accumulator as u16;
     registers.flags = 0x40;
@@ -1512,9 +1512,9 @@ pub fn return_from_call_conditional(system_data: &mut SystemData, registers: &mu
     else
     {
         system_data.cycles = 5;
-        let lower = system_data.mmu.mem_map[registers.stack_pointer as usize] as u16;
+        let lower = system_data.mmu.get_from_memory(registers.stack_pointer as usize, true) as u16;
         registers.stack_pointer += 1;
-        let upper = system_data.mmu.mem_map[registers.stack_pointer as usize] as u16;
+        let upper = system_data.mmu.get_from_memory(registers.stack_pointer as usize, true) as u16;
         registers.stack_pointer += 1;
         registers.program_counter = lower | (upper << 8);
     }
@@ -1539,8 +1539,8 @@ pub fn jump_address_with_conditional(system_data: &mut SystemData, registers: &m
     }
     else
     {
-        let lower = system_data.mmu.mem_map[registers.program_counter as usize + 1] as u16;
-        let upper = system_data.mmu.mem_map[registers.program_counter as usize + 2] as u16;
+        let lower = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
+        let upper = system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16;
         registers.program_counter = lower | (upper << 8);
         system_data.cycles = 4;
     }
@@ -1562,7 +1562,7 @@ pub fn xor_accumulator_with_n(system_data: &mut SystemData, registers: &mut Regi
 {
     system_data.cycles = 2;
     registers.flags = 0x00;
-    let n_value = system_data.mmu.mem_map[registers.program_counter as usize + 1];
+    let n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     registers.accumulator ^= n_value;
     if registers.accumulator == 0
     {
@@ -1678,7 +1678,7 @@ pub fn load_de_location_with_accumulator(system_data: &mut SystemData, registers
 pub fn load_hl_with_stack_pointer_plus_n(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 3;
-    let n_value: i32 = system_data.mmu.mem_map[registers.program_counter as usize + 1] as i8 as i32;
+    let n_value: i32 = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as i8 as i32;
     let stack_pointer: i32 = registers.stack_pointer as i32;
     let mut new_value = stack_pointer + n_value;
     registers.flags = 0x00;
@@ -1852,7 +1852,7 @@ pub fn load_accumulator_to_address_at_bc(system_data: &mut SystemData, registers
 pub fn add_signed_8_bit_to_stack_pointer(system_data: &mut SystemData, registers: &mut Registers)
 {
     registers.flags = 0x00;
-    let add_value = system_data.mmu.mem_map[registers.program_counter as usize + 1] as i8 as i32;
+    let add_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as i8 as i32;
     let stack_ponter_value = registers.stack_pointer as i32;
     if (add_value & 0x0F) + (stack_ponter_value & 0x0F) >= 0x10 && add_value > 0
     {
@@ -1896,7 +1896,7 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
     //Borrow splitting
     let mut system_data = system_data_original;
     let mut registers = registers_original;
-    let opcode :u8 = system_data.mmu.mem_map[(registers.program_counter + 1) as usize];
+    let opcode :u8 = system_data.mmu.get_from_memory((registers.program_counter + 1) as usize, false);
     //bit b, r
     if (opcode & 0xC0) == 0x40
     {
@@ -1970,7 +1970,7 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
     else 
     {
         println!("Unimplemented CB code");
-        println!("Next Opcode: 0x{:x}", system_data.mmu.mem_map[registers.program_counter as usize + 1]);
+        println!("Next Opcode: 0x{:x}", system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false));
     }
 }
 

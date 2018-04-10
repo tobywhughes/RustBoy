@@ -29,8 +29,13 @@ impl MMU
         }
     }
 
-    pub fn set_to_memory(&mut self, location: usize, value: u8, masked_set: bool)
+    pub fn set_to_memory(&mut self, location_old: usize, value: u8, masked_set: bool)
     {
+        let mut location = location_old;
+        if location >= 0xE000 && location < 0xFE00
+        {
+            location -= 0x2000;
+        }
         let mut set_value = value;
         let mut rom_flag = false;
         if masked_set
@@ -42,7 +47,7 @@ impl MMU
             else if location == 0xFF00
             {
                 let previous_value = self.mem_map[location];
-                set_value = previous_value | (set_value & 0b00110000);
+                set_value = (previous_value & 0b11001111) | (set_value & 0b00110000);
             }
             match self.cartridge_type
             {
@@ -73,7 +78,12 @@ impl MMU
         // {
         //     println!("DEBUG: Masked Read Location-{:04x}", location);
         // }
-        return self.mem_map[location];
+        let mut location_fixed = location;
+        if location_fixed >= 0xE000 && location_fixed < 0xFE00
+        {
+            location_fixed -= 0x2000;
+        }
+        return self.mem_map[location_fixed];
     }
 
     fn mbc1_parse(&mut self, location: usize, value: u8) -> bool

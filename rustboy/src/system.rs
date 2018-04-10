@@ -265,9 +265,9 @@ impl PlayerInput
             return 0xFF;
         }
 
-        if (input_value & 0x0F) != 0x0F{
-            println!("system{:02X}", input_value);
-        }
+        // if (input_value & 0x0F) != 0x0F{
+        //     println!("system{:02X}", input_value);
+        // }
 
         return input_value;
     } 

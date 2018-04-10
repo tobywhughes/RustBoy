@@ -41,7 +41,6 @@ fn main()
     let emulator_type: String = String::from("CLASSIC");
     let file_name: &String = &args[1];
     let mut system_data : SystemData = get_system_data(&emulator_type);
-    //system_data.mmu.mem_map = system_data.mmu.read_gb_file(file_name);
     system_data.mmu.initialize_cartridge(file_name);
     let mut registers: Registers = Registers::new();
     let mut gpu_registers: GPU_Registers = GPU_Registers::new();
@@ -115,12 +114,10 @@ fn main()
                 let joypad_input = system_data.input.update_input(&system_data);
                 if (joypad_input & 0x0F) != 0x0F
                 {
-                    system_data.mmu.mem_map[0xFF0F] |= 0x10;
+                    let current_if = system_data.mmu.get_from_memory(0xFF0F, false);
+                    system_data.mmu.set_to_memory(0xFF0F, current_if | 0x10, false);
                 }
-                system_data.mmu.mem_map[0xFF00] = joypad_input;
-                // if (joypad_input & 0x0F) != 0x0F{
-                //     println!("main{:02X}", system_data.mmu.mem_map[0xFF00]);
-                // }
+                system_data.mmu.set_to_memory(0xFF00, joypad_input, false);
                 let opcode = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
                 let address = registers.program_counter;
                 cpu_continue(&mut system_data, &mut registers);
@@ -131,7 +128,6 @@ fn main()
 
 
         if let Some(r) = e.render_args(){
-                //println!("{:08b}", system_data.mmu.mem_map[0xFF40]);
                 gpu_registers.v_blank_draw_flag = false;
                 background_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.background_display_select);  
                 window_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.window_display_select);
