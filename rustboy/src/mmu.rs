@@ -31,23 +31,29 @@ impl MMU
 
     pub fn set_to_memory(&mut self, location: usize, value: u8, masked_set: bool)
     {
+        let mut set_value = value;
         let mut rom_flag = false;
         if masked_set
         {
             if location == 0xFF46
             {
-                self.oam_dma_transfer(value);
+                self.oam_dma_transfer(set_value);
+            }
+            else if location == 0xFF00
+            {
+                let previous_value = self.mem_map[location];
+                set_value = previous_value | (set_value & 0b00110000);
             }
             match self.cartridge_type
             {
                 0x00 => (),
-                0x01 => rom_flag = self.mbc1_parse(location, value),
+                0x01 => rom_flag = self.mbc1_parse(location, set_value),
                 _ => (),
             }
         }
         if !rom_flag
         {
-            self.mem_map[location] = value;
+            self.mem_map[location] = set_value;
         }
     }
 

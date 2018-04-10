@@ -235,9 +235,38 @@ impl PlayerInput
                 false => input_value |= 0x08,
             }
         }
+        else if option == 0
+        {
+            //println!("{}", option);
+            match (self.right | self.a_button)
+            {
+                true => input_value &= 0xFE,
+                false => input_value |= 0x01,
+            }
+            match (self.left | self.b_button)
+            {
+                true => input_value &= 0xFD,
+                false => input_value |= 0x02,
+            }
+            match (self.up | self.select)
+            {
+                true => input_value &= 0xFB,
+                false => input_value |= 0x04,
+            }
+            match (self.down | self.start)
+            {
+                true => input_value &= 0xF7,
+                false => input_value |= 0x08,
+            }
+        }
+
         else if option == 3
         {
             return 0xFF;
+        }
+
+        if (input_value & 0x0F) != 0x0F{
+            println!("system{:02X}", input_value);
         }
 
         return input_value;
