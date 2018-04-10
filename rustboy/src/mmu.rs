@@ -53,6 +53,7 @@ impl MMU
 
     fn oam_dma_transfer(&mut self, value: u8)
     {
+        //println!("DMA TRANSFER");
         let start_address = ((value as u16) << 8) as usize;
         for i in 0..0xA0
         {

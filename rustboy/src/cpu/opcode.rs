@@ -649,7 +649,7 @@ pub fn load_8_bit_register_to_register(system_data: &mut SystemData, registers: 
 pub fn load_accumulator_to_io_port_with_c_offset(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 2;
-    system_data.mmu.mem_map[(0xFF00 + registers.c_register as u16) as usize] = registers.accumulator;
+    system_data.mmu.set_to_memory((0xFF00 + registers.c_register as u16) as usize ,registers.accumulator, true);
     registers.program_counter += 1;  
 }
 
@@ -664,7 +664,7 @@ pub fn load_accumulator_to_io_port_with_n_offset(system_data: &mut SystemData, r
 {
     system_data.cycles = 3;
     let n = system_data.mmu.mem_map[(registers.program_counter + 1) as usize];
-    system_data.mmu.mem_map[(0xFF00 + n as u16) as usize] = registers.accumulator;
+    system_data.mmu.set_to_memory((0xFF00 + n as u16) as usize ,registers.accumulator, true);
     registers.program_counter += 2;  
 }
 

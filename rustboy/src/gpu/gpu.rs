@@ -1,5 +1,5 @@
 use system::*;
-use gpu::gpu_registers::{GPU_Registers, ShadeProfile};
+use gpu::gpu_registers::{GPU_Registers, ShadeProfile, LCD_Position};
 use image::ImageBuffer;
 use image::{RgbaImage, Rgba};
 
@@ -101,6 +101,7 @@ impl OAM_Table {
         {
             let mut sprite_attribute = SpriteAttribute::new();
             let y_position = system_data.mmu.mem_map[0xFE00 + (i * 4)];
+            //println!("{:04X}", system_data.mmu.mem_map[0xFE00]);
             let x_position = system_data.mmu.mem_map[0xFE01 + (i * 4)];
             let tile_number = system_data.mmu.mem_map[0xFE02 + (i * 4)];
             let flags = system_data.mmu.mem_map[0xFE03 + (i * 4)];
@@ -201,25 +202,42 @@ pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_
     let object_palette_0 = system_data.mmu.mem_map[0xFF48];
     let object_palette_1 = system_data.mmu.mem_map[0xFF49];
     let mut image_buffer = ImageBuffer::new(160, 144);
-    let mut background_buffer = build_background_bitmap(background_tile_map, gpu_registers.lcdc_register.tile_data, palette_data);
-    //Convert scroll
+    let background_buffer = build_background_bitmap(background_tile_map, gpu_registers.lcdc_register.tile_data, palette_data);
+    let mut scrolled_buffer = scroll_background_bitmap(background_buffer, &gpu_registers.lcd_position);
     if gpu_registers.lcdc_register.sprite_enable
     {
-        background_buffer = apply_oam_table_to_bitmap(&oam_table, background_buffer, object_palette_0, object_palette_1, gpu_registers.lcdc_register.sprite_size, &oam_tile_map);
+        scrolled_buffer = apply_oam_table_to_bitmap(&oam_table, scrolled_buffer, object_palette_0, object_palette_1, gpu_registers.lcdc_register.sprite_size, &oam_tile_map);
     }
     for row_y in 0..144
     {
         for row_x in 0..160
         {
-           let mut row_x_scrolled = (row_x + gpu_registers.lcd_position.scroll_x_buffer[row_y] as usize) % 256;
-           let mut row_y_scrolled = (row_y + gpu_registers.lcd_position.scroll_y_buffer[row_y] as usize) % 256;
-           let pixel_data = background_buffer[(row_y_scrolled * 256) + row_x_scrolled];
+        //    let mut row_x_scrolled = (row_x + gpu_registers.lcd_position.scroll_x_buffer[row_y] as usize) % 256;
+        //    let mut row_y_scrolled = (row_y + gpu_registers.lcd_position.scroll_y_buffer[row_y] as usize) % 256;
+        //    let pixel_data = background_buffer[(row_y_scrolled * 256) + row_x_scrolled];
            //let pixel_shade = pixel_shade_map(pixel_data, palette_data);
-           let pixel = pixel_color_map(pixel_data, &gpu_registers.shade_profile);
+           let pixel_shade = scrolled_buffer[(row_y * 160) + row_x];
+           let pixel = pixel_color_map(pixel_shade, &gpu_registers.shade_profile);
            image_buffer.put_pixel(row_x as u32, row_y as u32, pixel);
         }
     }
    return image_buffer;
+}
+
+fn scroll_background_bitmap(buffer: Vec<u8>, scroll: &LCD_Position) -> Vec<u8>
+{
+    let mut bitmap = vec![0; 0x5A00];
+    for row_y in 0..144
+    {
+        for row_x in 0..160
+        {
+           let row_x_scrolled = (row_x + scroll.scroll_x_buffer[row_y] as usize) % 256;
+           let row_y_scrolled = (row_y + scroll.scroll_y_buffer[row_y] as usize) % 256;
+           bitmap[(row_y * 160) + row_x] = buffer[(row_y_scrolled * 256) + row_x_scrolled];
+        }
+    }
+
+    return bitmap;
 }
 
 fn build_background_bitmap(background_tile_map: &TileMap, tile_data_select: bool, palette_data:u8) -> Vec<u8>
@@ -250,8 +268,9 @@ fn build_background_bitmap(background_tile_map: &TileMap, tile_data_select: bool
     return buffer;
 }
 
-fn apply_oam_table_to_bitmap(oam_table: &OAM_Table, bitmap: Vec<u8>, palette_0: u8, palette_1: u8, large_sprites: bool, tile_map: &TileMap) -> Vec<u8>
+fn apply_oam_table_to_bitmap(oam_table: &OAM_Table, scrolled_bitmap: Vec<u8>, palette_0: u8, palette_1: u8, large_sprites: bool, tile_map: &TileMap) -> Vec<u8>
 {
+    let mut bitmap = scrolled_bitmap;
     let mut tile = TileData::new();
     let mut tile_big = TileData::new();
     for i in 0..oam_table.table.len()
@@ -272,7 +291,15 @@ fn apply_oam_table_to_bitmap(oam_table: &OAM_Table, bitmap: Vec<u8>, palette_0: 
         let flags = oam_table.table[i].flags;
         let y_flip = (flags) & 0x40 >> 6;
         let x_flip = (flags) & 0x20 >> 5;
-        let palette = (flags) & 0x10 >> 4;
+        let mut palette = 0;
+        if ((flags) & 0x10 >> 4) == 1
+        {
+            palette = palette_1;
+        }
+        else 
+        {
+            palette = palette_0;    
+        }
 
         // if !large_sprites
         // {
@@ -290,16 +317,55 @@ fn apply_oam_table_to_bitmap(oam_table: &OAM_Table, bitmap: Vec<u8>, palette_0: 
         // }
         
         //Add to bitmap
-        for row in 0..8
+        if !large_sprites
         {
-            for index in 0..8
+            for row in 0..8
             {
-                if (y_position + row) >= 0
+                for index in 0..8
                 {
-                    if (x_position + index) >= 0
+                    //println!("y_position {}", y_position);
+                    if (y_position + row) >= 0 && (y_position + row) < 144
                     {
-                        let tile_position = ((y_position + row) * 256) + (x_position + index);
-                        //Translate pallete to bitmap
+                        if (x_position + index) >= 0 && (x_position + index) < 160
+                        {
+                            let tile_position = ((y_position + row) * 160) + (x_position + index);
+                            let pixel = tile.data[(row as usize* 8) + index as usize];
+                            if pixel != 0
+                            {
+                                let shade = pixel_shade_map(pixel, palette);
+                                bitmap[tile_position as usize] = shade;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else 
+        {
+            for row in 0..8
+            {
+                for index in 0..8
+                {
+                    if (y_position + row) >= 0 && (y_position + row) + 8 < 144
+                    {
+                        if (x_position + index) >= 0 && (x_position + index) < 160
+                        {
+                            let mut tile_position = ((y_position + row) * 160) + (x_position + index);
+                            let mut pixel = tile.data[(row as usize* 8) + index as usize];
+                            if pixel != 0
+                            {
+                                let shade = pixel_shade_map(pixel, palette);
+                                bitmap[tile_position as usize] = shade;
+                            }
+
+                            tile_position = ((y_position + row + 8) * 160) + (x_position + index);
+                            pixel = tile.data[((row + 8) as usize* 8) + index as usize];
+                            if pixel != 0
+                            {
+                                let shade = pixel_shade_map(pixel, palette);
+                                bitmap[tile_position as usize] = shade;
+                            }
+                        }
                     }
                 }
             }
