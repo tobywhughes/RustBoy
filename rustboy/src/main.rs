@@ -113,6 +113,10 @@ fn main()
             while !gpu_registers.v_blank_draw_flag
             {
                 let joypad_input = system_data.input.update_input(&system_data);
+                if (joypad_input & 0x0F) != 0x0F
+                {
+                    system_data.mmu.mem_map[0xFF0F] |= 0x10;
+                }
                 system_data.mmu.mem_map[0xFF00] = joypad_input;
                 let opcode = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
                 let address = registers.program_counter;

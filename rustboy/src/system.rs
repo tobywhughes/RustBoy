@@ -184,10 +184,12 @@ impl PlayerInput
 
     pub fn update_input(&self, system_data: &SystemData) -> u8
     {
-        let mut input_value = system_data.mmu.mem_map[0xFF00];
+        let mut input_value = (system_data.mmu.mem_map[0xFF00] | 0b11000000);
         let option = (input_value & 0x30) >> 4;
+        
         if option == 1
         {
+            //println!("{}", option);
             match self.a_button
             {
                 true => input_value &= 0xFE,
@@ -211,6 +213,7 @@ impl PlayerInput
         }
         else if option == 2
         {
+            //println!("{}", option);
             match self.right
             {
                 true => input_value &= 0xFE,
@@ -232,6 +235,11 @@ impl PlayerInput
                 false => input_value |= 0x08,
             }
         }
+        else if option == 3
+        {
+            return 0xFF;
+        }
+
         return input_value;
     } 
 }
