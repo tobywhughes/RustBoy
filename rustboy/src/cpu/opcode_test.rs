@@ -799,7 +799,7 @@ mod opcode_test
         {
             registers.mapped_register_setter(i as u8, 0x80);
             swap_nibbles(&mut system_data, &mut registers, opcodes[i]);
-            assert_eq!(registers.mapped_register_getter(i as u8), 0x01);
+            assert_eq!(registers.mapped_register_getter(i as u8), 0x08);
             assert_eq!(registers.flags, 0x00);
         }
 

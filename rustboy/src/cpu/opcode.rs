@@ -2073,9 +2073,9 @@ pub fn swap_nibbles(system_data: &mut SystemData, registers: &mut Registers, opc
     {
         previous_value = registers.mapped_register_getter(register_code); 
     }
-    let high_nibble = previous_value & 0x80;
-    let low_nibble = previous_value & 0x01;
-    let new_value = (previous_value & 0x7E) | (high_nibble >> 7) | (low_nibble << 7);
+    let high_nibble = previous_value & 0xF0;
+    let low_nibble = previous_value & 0x0F;
+    let new_value = (high_nibble >> 4) | (low_nibble << 4);
     if register_code == 7
     {
         system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(3) as usize, new_value, true);
