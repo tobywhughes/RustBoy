@@ -49,6 +49,10 @@ impl MMU
                 let previous_value = self.mem_map[location];
                 set_value = (previous_value & 0b11001111) | (set_value & 0b00110000);
             }
+            else if location == 0xFF04
+            {
+                set_value = 0;
+            }
             match self.cartridge_type
             {
                 0x00 => (),

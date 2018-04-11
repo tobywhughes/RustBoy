@@ -75,7 +75,14 @@ impl Timer
         let cycle_tick_threshold = self.map_timer_control_speed();
         if self.tima_cycles >= cycle_tick_threshold
         {
-            self.tima_cycles -= cycle_tick_threshold;
+            let mut increment = 0;
+            while self.tima_cycles >= cycle_tick_threshold
+            {
+                increment += 1;
+                self.tima_cycles -= cycle_tick_threshold;
+            }
+            while increment >= 0
+            {
             if self.timer_counter == 0xFF
             {
                 self.timer_counter = self.timer_modulo;
@@ -85,6 +92,8 @@ impl Timer
             else 
             {
                 self.timer_counter += 1;
+            }
+            increment -= 1;
             }
             
         }
