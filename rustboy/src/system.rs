@@ -26,7 +26,9 @@ impl SystemData{
         self.mmu.mem_map[0xFF05] = self.timer.timer_counter;
         if overflow_flag
         {
-            self.mmu.mem_map[0xFF0F] |= 0x04;
+            let mut value = self.mmu.get_from_memory(0xFF0F, false);
+            value |= 0x04;
+            self.mmu.set_to_memory(0xFF0F, value, false);
         }
     }   
 }

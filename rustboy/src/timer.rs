@@ -8,6 +8,7 @@ pub struct Timer
     pub timer_control: u8,
     pub tima_cycles: u16,
     pub divider_cycles: u16,
+    pub last_value_tima: u8,
 }
 
 impl Timer
@@ -22,6 +23,7 @@ impl Timer
             timer_control: 0,
             divider_cycles: 0,
             tima_cycles: 0,
+            last_value_tima: 0,
         }
     }
 
@@ -81,22 +83,23 @@ impl Timer
                 increment += 1;
                 self.tima_cycles -= cycle_tick_threshold;
             }
-            while increment >= 0
+            while increment > 0
             {
-            if self.timer_counter == 0xFF
-            {
-                self.timer_counter = self.timer_modulo;
-                
-                overflow_flag = true;
-            }
-            else 
-            {
-                self.timer_counter += 1;
-            }
-            increment -= 1;
+                if self.timer_counter == 0xFF
+                {
+                    self.timer_counter = self.timer_modulo;
+                    
+                    overflow_flag = true;
+                }
+                else 
+                {
+                    self.timer_counter += 1;
+                }
+                increment -= 1;
             }
             
         }
+        self.last_value_tima = self.timer_counter;
         return overflow_flag;
     }
 }

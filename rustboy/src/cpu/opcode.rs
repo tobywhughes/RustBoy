@@ -10,32 +10,35 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     //Borrow splitting
     let mut system_data = system_data_original;
     let mut registers = registers_original;
+    let mut bonus_cycles = 0;
 
     if registers.halt_flag
     {
         if (system_data.mmu.get_from_memory(0xFF0F, false) & 0x1F) != 0x00
         {
             registers.halt_flag = false;
+            bonus_cycles += 4;
         }
         else{
             system_data.cycles = 4;
             return;
         }
     }
-
+//42A6
     system_data.cycles = 0;
     let mut opcode: u8 = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
     // if (registers.program_counter >= 0x312  && registers.program_counter < 0xC320) || registers.program_counter < 0x100
-    //  {
-        // if registers.program_counter >= 0x29FC && registers.program_counter <= 0x3000
-        // {
-        //  println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
-        //  println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X} LY {} IE {:02X} IF {:02X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), 
-        //                                                                                             registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), 
-        //                                                                                             registers.mapped_16_bit_register_getter(4), system_data.mmu.get_from_memory(0xFF44, false)
-        //                                                                                             , system_data.mmu.get_from_memory(0xFFFF, false), system_data.mmu.get_from_memory(0xFF0F, false));
-        //     io::stdin().read_line(&mut String::new());
-        //  }
+    // //  {
+    //     if registers.program_counter >= 0xC2A6 && registers.program_counter <= 0xC300
+    //     {
+    //      println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+    //      println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X} LY {} IE {:02X} IF {:02X} TIMER {:02X} TIMA SUB {:02X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), 
+    //                                                                                                 registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), 
+    //                                                                                                 registers.mapped_16_bit_register_getter(4), system_data.mmu.get_from_memory(0xFF44, false)
+    //                                                                                                 , system_data.mmu.get_from_memory(0xFFFF, false), system_data.mmu.get_from_memory(0xFF0F, false),
+    //                                                                                                 system_data.mmu.get_from_memory(0xFF05, false), system_data.timer.tima_cycles);
+    //         io::stdin().read_line(&mut String::new());
+    //      }
     //  }
     
     if opcode == 0xE0 || opcode == 0xE2 || opcode == 0xF0 || opcode == 0xF2
@@ -78,6 +81,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
             registers.program_counter = interrupt_vector as u16;
             opcode = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
             registers.interrupt_master_enable_flag = !registers.interrupt_master_enable_flag;
+            bonus_cycles += 20;
         }
         
     }
@@ -371,6 +375,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         //println!("{:02x}", registers.accumulator);
     }
     system_data.cycles *= 4;
+    system_data.cycles += bonus_cycles;
 
     if system_data.cycles == 0
     {
@@ -1205,7 +1210,7 @@ pub fn subtract_register_and_carry_from_accumulator(system_data: &mut SystemData
 
 pub fn subtract_hl_location_and_carry_from_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 1;
+    system_data.cycles = 2;
 
     let mut accumulator_value = registers.accumulator as u16;
     let location_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true) as u16;
@@ -1984,7 +1989,7 @@ pub fn bit_check_register(system_data: &mut SystemData, registers: &mut Register
 
     if register_code == 7
     {
-        system_data.cycles = 4;
+        system_data.cycles = 3;
         registers.flags = registers.flags & 0x10;
         if (system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize ,true) >> test_bit) & 0x01 == 0x00
         {   

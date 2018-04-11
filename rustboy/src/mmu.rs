@@ -87,6 +87,10 @@ impl MMU
         {
             location_fixed -= 0x2000;
         }
+        else if location_fixed == 0xFF07
+        {
+            return self.mem_map[location_fixed] | 0b11111000;
+        }
         return self.mem_map[location_fixed];
     }
 
