@@ -1441,7 +1441,7 @@ pub fn add_8_bit_to_accumulator_with_carry(system_data: &mut SystemData, registe
     let add_value = (n_value as u16) + (carry_bit as u16);
     let accumulator_value = registers.accumulator as u16;
     registers.flags = 0x00;
-    if (add_value & 0x0F) + (accumulator_value & 0x0F) >= 0x10
+    if (n_value & 0x0F) + (accumulator_value as u8 & 0x0F) + carry_bit >= 0x10
     {
         registers.flags |= 0x20;
     }
@@ -1472,7 +1472,7 @@ pub fn subtract_8_bit_from_accumulator_with_carry(system_data: &mut SystemData, 
     let sub_value = (n_value as u16) + (carry_bit as u16);
     let accumulator_value = registers.accumulator as u16;
     registers.flags = 0x40;
-    if (sub_value & 0x0F) > (accumulator_value & 0x0F)
+    if ((n_value & 0x0F) + carry_bit) > (accumulator_value as u8 & 0x0F)
     {
         registers.flags |= 0x20;
     }
