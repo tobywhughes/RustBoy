@@ -52,6 +52,7 @@ impl MMU
             else if location == 0xFF04
             {
                 set_value = 0;
+                self.mem_map[0xFF05] = 0;
             }
             match self.cartridge_type
             {
