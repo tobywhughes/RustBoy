@@ -444,13 +444,13 @@ pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Re
                 current_register_value += 1;
             }
             registers.mapped_register_setter(register_code, current_register_value);
-            if registers.mapped_register_getter(register_code) == 0
+            if current_register_value == 0
             {
-                registers.flags = registers.flags | 0x80;
+                registers.flags |= 0x80;
             }
-            else if registers.mapped_register_getter(register_code) &0x0F == 0x0
+            else if current_register_value & 0x0F == 0
             {
-                registers.flags = registers.flags | 0x20;
+                registers.flags |= 0x20;
             }
             registers.program_counter += 1;
         }
@@ -1072,6 +1072,7 @@ pub fn ones_complement(system_data: &mut SystemData, registers: &mut Registers)
     system_data.cycles = 1;
     registers.program_counter += 1;
     registers.accumulator ^= 0xFF;
+    registers.flags |= 0x60;
 }
 
 pub fn and_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
@@ -1186,7 +1187,7 @@ pub fn subtract_register_and_carry_from_accumulator(system_data: &mut SystemData
         registers.flags = 0x40; 
 
         //Half
-        if (subtraction_value & 0x0F) > (accumulator_value & 0x0F)
+        if (register_value & 0x0F) + carry_bit > (accumulator_value & 0x0F)
         {
             registers.flags |= 0x20;
         }
