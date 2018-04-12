@@ -1683,20 +1683,19 @@ pub fn load_de_location_with_accumulator(system_data: &mut SystemData, registers
 pub fn load_hl_with_stack_pointer_plus_n(system_data: &mut SystemData, registers: &mut Registers)
 {
     system_data.cycles = 3;
+    let unsigned_n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     let n_value: i32 = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as i8 as i32;
-    let stack_pointer: i32 = registers.stack_pointer as i32;
+    let stack_pointer = registers.stack_pointer as i32;
     let mut new_value = stack_pointer + n_value;
     registers.flags = 0x00;
-    if n_value >= 0
+
+    if (unsigned_n_value & 0x0F) + (stack_pointer as u16 & 0x0F) >= 0x10
     {
-        if (n_value & 0x0F) + (stack_pointer & 0x0F) >= 0x10
-        {
-            registers.flags |= 0x20;
-        }
-        if (n_value & 0xFF) + (stack_pointer & 0xFF) >= 0x100
-        {
-            registers.flags |= 0x10;
-        }
+        registers.flags |= 0x20;
+    }
+    if (unsigned_n_value & 0xFF) + (stack_pointer as u16 & 0xFF) >= 0x100
+    {
+        registers.flags |= 0x10;
     }
     if new_value >= 0x10000
     {
@@ -1707,7 +1706,6 @@ pub fn load_hl_with_stack_pointer_plus_n(system_data: &mut SystemData, registers
         new_value += 0x10000;
     }
     registers.mapped_16_bit_register_setter(3, new_value as u16);
-
     registers.program_counter += 2;
 }
 
@@ -1857,25 +1855,30 @@ pub fn load_accumulator_to_address_at_bc(system_data: &mut SystemData, registers
 pub fn add_signed_8_bit_to_stack_pointer(system_data: &mut SystemData, registers: &mut Registers)
 {
     registers.flags = 0x00;
+    let unsigned_flag_calc = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     let add_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as i8 as i32;
     let stack_ponter_value = registers.stack_pointer as i32;
-    if (add_value & 0x0F) + (stack_ponter_value & 0x0F) >= 0x10 && add_value > 0
+    // if (add_value & 0x0F) + (stack_ponter_value & 0x0F) >= 0x10 && add_value > 0
+    if (unsigned_flag_calc & 0x0F) + (stack_ponter_value as u16 & 0x0F) >= 0x10
     {
         registers.flags |= 0x20;
     }
-    if (add_value & 0xF0) + (stack_ponter_value & 0xF0) >= 0x100 && add_value > 0
+    //if (add_value & 0xF0) + (stack_ponter_value & 0xF0) >= 0x100 && add_value > 0
+    if (unsigned_flag_calc & 0xFF) + (stack_ponter_value as u16 & 0xFF) >= 0x100
     {
         registers.flags |= 0x10;
     }
     if add_value + stack_ponter_value >= 0x10000
     {
         registers.stack_pointer = (add_value + stack_ponter_value - 0x10000) as u16;
+        
     }
     else if add_value + stack_ponter_value < 0
     {
         registers.stack_pointer = (add_value + stack_ponter_value + 0x10000) as u16;
     }
-    else {
+    else 
+    {
         registers.stack_pointer = (add_value + stack_ponter_value) as u16;
     }
     system_data.cycles = 4;
