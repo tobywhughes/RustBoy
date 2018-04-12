@@ -11,6 +11,7 @@ pub struct MMU
     pub ram_size: u8,
     pub rom_bank: u8,
     pub banking_mode: u8,
+    pub div_reset: bool,
 }
 
 impl MMU
@@ -26,6 +27,7 @@ impl MMU
             ram_size: 0x00,
             rom_bank: 1,
             banking_mode: 0,
+            div_reset: false,
         }
     }
 
@@ -52,7 +54,8 @@ impl MMU
             else if location == 0xFF04
             {
                 set_value = 0;
-                self.mem_map[0xFF05] = 0;
+                self.div_reset = true;
+                //self.mem_map[0xFF05] = 0;
             }
             match self.cartridge_type
             {
@@ -102,8 +105,8 @@ impl MMU
         {
             0x0000...0x1FFF =>
             {
-                println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
-                println!("DEBUG: ram enable` {}", value);
+                //println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
+                //println!("DEBUG: ram enable` {}", value);
                 return true;
             },
             0x2000...0x3FFF => 
@@ -112,7 +115,7 @@ impl MMU
             //     {
             //         self.memory_banks[self.rom_bank as usize][i] = self.mem_map[(i as usize) + 0x4000];
             //     }
-            println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
+            //println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
                 let mut bank = value & 0x1F;
                 if bank == 0
                 {
@@ -129,7 +132,7 @@ impl MMU
                 // {
                 //     self.memory_banks[self.rom_bank as usize][i] = self.mem_map[(i as usize) + 0x4000];
                 // }
-                println!("Value: 0x{:02X} -- {} Location: 0x{:04X}", value, (value & 0x03) << 5 ,location);
+                //println!("Value: 0x{:02X} -- {} Location: 0x{:04X}", value, (value & 0x03) << 5 ,location);
                 self.rom_bank &= 0x1F;
                 if self.banking_mode == 0{
                     self.rom_bank |= ((value & 0x03) << 5);
@@ -139,8 +142,8 @@ impl MMU
             },
             0x6000...0x7FFF =>
             {
-                println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
-                println!("DEBUG: mode {}", value);
+                //println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
+                //println!("DEBUG: mode {}", value);
                 self.banking_mode = value;
                 return true;
             },
@@ -156,7 +159,7 @@ impl MMU
     fn update_rom_bank(&mut self)
     {
         let bank = self.rom_bank as usize;
-        println!("Rom-bank switch: 0x{:02x}", bank);
+        //println!("Rom-bank switch: 0x{:02x}", bank);
         for i in 0..0x4000
         {
             self.mem_map[(i as usize) + 0x4000] = self.memory_banks[bank][i];

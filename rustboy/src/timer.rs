@@ -8,7 +8,8 @@ pub struct Timer
     pub timer_control: u8,
     pub tima_cycles: u16,
     pub divider_cycles: u16,
-    pub last_value_tima: u8,
+    pub cycle_register: u16,
+    pub tima_increment: u8,
 }
 
 impl Timer
@@ -23,7 +24,57 @@ impl Timer
             timer_control: 0,
             divider_cycles: 0,
             tima_cycles: 0,
-            last_value_tima: 0,
+            cycle_register: 0,
+            tima_increment: 0,
+        }
+    }
+
+    pub fn cycle_calculation(&mut self, mut cycles: u8, reset:bool)
+    {
+        let tac_check = self.map_tac_check();
+        if reset
+        {
+            let previous_tac_bit = ((self.cycle_register >> tac_check) & 0x0001) as u8 & ((self.timer_control & 0x04) >> 2);
+            self.cycle_register = 0;
+            let new_tac_bit = ((self.cycle_register >> tac_check) & 0x0001) as u8 & ((self.timer_control & 0x04) >> 2);
+            if (previous_tac_bit & !new_tac_bit) == 1
+            {
+                self.tima_increment += 1;
+            }
+        }
+        while cycles > 0
+        {
+            let previous_tac_bit = ((self.cycle_register >> tac_check) & 0x0001) as u8 & ((self.timer_control & 0x04) >> 2);
+            //println!("{}", (self.cycle_register >> tac_check) & 0x0001);
+            if self.cycle_register == 0xFFFC
+            {
+                self.cycle_register = 0;
+            }
+            else {
+                self.cycle_register += 4;
+            }
+            cycles -= 4;
+            let new_tac_bit = ((self.cycle_register >> tac_check) & 0x0001) as u8 & ((self.timer_control & 0x04) >> 2);
+            if (previous_tac_bit & (!new_tac_bit & 0x01)) == 1
+            {
+                
+                self.tima_increment += 1;
+            }
+        }
+
+        self.divider_register = ((self.cycle_register & 0xFF00) >> 8) as u8;
+    }
+
+    pub fn map_tac_check(&self) -> u8
+    {
+        let select = self.timer_control & 0x03;
+        match select
+        {
+            0x00 => return 9,
+            0x01 => return 3,
+            0x02 => return 5,
+            0x03 => return 7,
+            _ => return 0,
         }
     }
 
@@ -48,8 +99,13 @@ impl Timer
         self.timer_control = mem_map[0xFF07];
     }
 
-    pub fn divider_tick(&mut self, cycles: u8)
+    pub fn divider_tick(&mut self, cycles: u8, reset: bool)
     {
+        if reset
+        {
+            self.divider_cycles = 0;
+            self.tima_cycles = 0;
+        }
         self.divider_cycles += cycles as u16;
         if self.divider_cycles >= 0x0100
         {
@@ -65,45 +121,65 @@ impl Timer
         }
     }
 
+//     pub fn tima_tick(&mut self, cycles: u8) -> bool
+//     {
+//         if (self.timer_control & 0x04) == 0x00
+//         {
+//             return false;
+//         }
+//         let mut overflow_flag = false;
+//         self.tima_cycles += cycles as u16;
+        
+//         let cycle_tick_threshold = self.map_timer_control_speed();
+//         if self.tima_cycles >= cycle_tick_threshold
+//         {
+//             let mut increment = 0;
+//             while self.tima_cycles >= cycle_tick_threshold
+//             {
+//                 increment += 1;
+//                 self.tima_cycles -= cycle_tick_threshold;
+//             }
+//             while increment > 0
+//             {
+//                 if self.timer_counter == 0xFF
+//                 {
+//                     self.timer_counter = self.timer_modulo;
+                    
+//                     overflow_flag = true;
+//                 }
+//                 else 
+//                 {
+//                     self.timer_counter += 1;
+//                 }
+//                 increment -= 1;
+//             }
+            
+//         }
+//         return overflow_flag;
+//     }
+// }
+
     pub fn tima_tick(&mut self, cycles: u8) -> bool
     {
-        if (self.timer_control & 0x04) == 0x00
-        {
-            return false;
-        }
         let mut overflow_flag = false;
-        self.tima_cycles += cycles as u16;
-        
-        let cycle_tick_threshold = self.map_timer_control_speed();
-        if self.tima_cycles >= cycle_tick_threshold
+        while self.tima_increment > 0
         {
-            let mut increment = 0;
-            while self.tima_cycles >= cycle_tick_threshold
+            if self.timer_counter == 0xFF
             {
-                increment += 1;
-                self.tima_cycles -= cycle_tick_threshold;
+                self.timer_counter = self.timer_modulo;
+                
+                overflow_flag = true;
             }
-            while increment > 0
+            else 
             {
-                if self.timer_counter == 0xFF
-                {
-                    self.timer_counter = self.timer_modulo;
-                    
-                    overflow_flag = true;
-                }
-                else 
-                {
-                    self.timer_counter += 1;
-                }
-                increment -= 1;
+                self.timer_counter += 1;
             }
-            
+            self.tima_increment -= 1;
         }
-        self.last_value_tima = self.timer_counter;
+            
         return overflow_flag;
     }
 }
-
 
 #[cfg(test)]
 mod timer_tests

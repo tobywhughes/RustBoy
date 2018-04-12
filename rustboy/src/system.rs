@@ -20,8 +20,13 @@ impl SystemData{
     pub fn timer_tick(&mut self)
     {
         //println!("@@@@@");
+        self.timer.cycle_calculation(self.cycles, self.mmu.div_reset);
         self.timer.update_registers(&self.mmu.mem_map);
-        self.timer.divider_tick(self.cycles);
+        //self.timer.divider_tick(self.cycles, self.mmu.div_reset);
+        if self.mmu.div_reset
+        {
+            self.mmu.div_reset = false;
+        }
         let overflow_flag = self.timer.tima_tick(self.cycles);
         self.mmu.mem_map[0xFF05] = self.timer.timer_counter;
         if overflow_flag

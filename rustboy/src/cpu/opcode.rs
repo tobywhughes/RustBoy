@@ -29,16 +29,16 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
     let mut opcode: u8 = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
     // if (registers.program_counter >= 0x312  && registers.program_counter < 0xC320) || registers.program_counter < 0x100
     // //  {
-    //     if registers.program_counter >= 0xC2A6 && registers.program_counter <= 0xC300
-    //     {
-    //      println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
-    //      println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X} LY {} IE {:02X} IF {:02X} TIMER {:02X} TIMA SUB {:02X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), 
-    //                                                                                                 registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), 
-    //                                                                                                 registers.mapped_16_bit_register_getter(4), system_data.mmu.get_from_memory(0xFF44, false)
-    //                                                                                                 , system_data.mmu.get_from_memory(0xFFFF, false), system_data.mmu.get_from_memory(0xFF0F, false),
-    //                                                                                                 system_data.mmu.get_from_memory(0xFF05, false), system_data.timer.tima_cycles);
-    //         io::stdin().read_line(&mut String::new());
-    //      }
+   //     if registers.program_counter >= 0xC2A6 && registers.program_counter <= 0xC300
+  //      {
+        //  println!("Location: {:04X}\tOpcode: 0x{:02X}  {:08b}\t\t{:x} ===== {:x}", registers.program_counter, opcode, opcode, registers.accumulator, registers.flags);
+        //  println!("AF {:04X} BC {:04X} DE {:04X} HL {:04X} SP {:04X} LY {} IE {:02X} IF {:02X} TIMER {:02X} TIMA SUB {:02X}", registers.mapped_16_bit_register_getter(0), registers.mapped_16_bit_register_getter(1), 
+        //                                                                                             registers.mapped_16_bit_register_getter(2), registers.mapped_16_bit_register_getter(3), 
+        //                                                                                             registers.mapped_16_bit_register_getter(4), system_data.mmu.get_from_memory(0xFF44, false)
+        //                                                                                             , system_data.mmu.get_from_memory(0xFFFF, false), system_data.mmu.get_from_memory(0xFF0F, false),
+        //                                                                                             system_data.mmu.get_from_memory(0xFF05, false), system_data.timer.tima_cycles);
+        //     io::stdin().read_line(&mut String::new());
+          //}
     //  }
     
     if opcode == 0xE0 || opcode == 0xE2 || opcode == 0xF0 || opcode == 0xF2
