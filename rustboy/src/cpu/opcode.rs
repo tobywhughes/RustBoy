@@ -1221,13 +1221,13 @@ pub fn subtract_hl_location_and_carry_from_accumulator(system_data: &mut SystemD
     registers.flags = 0x40; 
 
     //Half
-    if (subtraction_value & 0x0F) > (accumulator_value & 0x0F)
+    if (location_value & 0x0F) + carry_bit > (accumulator_value & 0x0F)
     {
         registers.flags |= 0x20;
     }
 
     //Carry
-    if subtraction_value > accumulator_value
+    if (location_value + carry_bit) > accumulator_value
     {
         registers.flags |= 0x10; 
         accumulator_value += 0x0100;
