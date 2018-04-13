@@ -100,8 +100,7 @@ impl OAM_Table {
         for i in 0..40
         {
             let mut sprite_attribute = SpriteAttribute::new();
-            let y_position = system_data.mmu.mem_map[0xFE00 + (i * 4)];
-            //println!("{:04X}", system_data.mmu.mem_map[0xFE00]);
+            let y_position = system_data.mmu.mem_map[0xFE00 + (i * 4)];;
             let x_position = system_data.mmu.mem_map[0xFE01 + (i * 4)];
             let tile_number = system_data.mmu.mem_map[0xFE02 + (i * 4)];
             let flags = system_data.mmu.mem_map[0xFE03 + (i * 4)];
@@ -202,7 +201,7 @@ pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_
     let object_palette_0 = system_data.mmu.mem_map[0xFF48];
     let object_palette_1 = system_data.mmu.mem_map[0xFF49];
     let mut image_buffer = ImageBuffer::new(160, 144);
-    let background_buffer = build_background_bitmap(background_tile_map, gpu_registers.lcdc_register.tile_data, palette_data);
+    let background_buffer = build_background_bitmap(background_tile_map, gpu_registers.lcdc_register.tile_data, palette_data, gpu_registers.lcdc_register.display_enable);
     let mut scrolled_buffer = scroll_background_bitmap(background_buffer, &gpu_registers.lcd_position);
     if gpu_registers.lcdc_register.sprite_enable
     {
@@ -236,7 +235,7 @@ fn scroll_background_bitmap(buffer: Vec<u8>, scroll: &LCD_Position) -> Vec<u8>
     return bitmap;
 }
 
-fn build_background_bitmap(background_tile_map: &TileMap, tile_data_select: bool, palette_data:u8) -> Vec<u8>
+fn build_background_bitmap(background_tile_map: &TileMap, tile_data_select: bool, palette_data:u8, enable: bool) -> Vec<u8>
 {
 
     let mut buffer = vec![0; 0x10000];
@@ -256,7 +255,13 @@ fn build_background_bitmap(background_tile_map: &TileMap, tile_data_select: bool
                     }
                     let mut pixel_data = background_tile_map.tiles[tile as usize].data[(pixel_y * 8) + pixel_x];
                     pixel_data = pixel_shade_map(pixel_data, palette_data);
-                    buffer[(256 * ((tile_y * 8) + pixel_y)) + ((tile_x * 8) + pixel_x)] = pixel_data;
+                    if enable{
+                        buffer[(256 * ((tile_y * 8) + pixel_y)) + ((tile_x * 8) + pixel_x)] = pixel_data;
+                    }
+                    else 
+                    {
+                        buffer[(256 * ((tile_y * 8) + pixel_y)) + ((tile_x * 8) + pixel_x)] = 0;
+                    }
                 }
             }
         }

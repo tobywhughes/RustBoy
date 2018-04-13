@@ -54,13 +54,13 @@ fn main()
                                         .exit_on_esc(true)
                                         .build()
                                         .unwrap();
-    window.set_max_fps(60);
+    //window.set_max_fps(60);
     let mut app = App
     {
         gl: GlGraphics::new(opengl),
     };
     let mut events = Events::new(EventSettings::new());
-    events.set_max_fps(60);
+    events.set_max_fps(65);
     let mut background_tile_map: TileMap = TileMap::new();
     let mut window_tile_map: TileMap = TileMap::new();
     let mut oam_tile_map: TileMap = TileMap::new();
