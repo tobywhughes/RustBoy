@@ -54,13 +54,13 @@ fn main()
                                         .exit_on_esc(true)
                                         .build()
                                         .unwrap();
-    //window.set_max_fps(60);
+    window.set_max_fps(60);
     let mut app = App
     {
         gl: GlGraphics::new(opengl),
     };
     let mut events = Events::new(EventSettings::new());
-    //events.set_max_fps(60);
+    events.set_max_fps(60);
     let mut background_tile_map: TileMap = TileMap::new();
     let mut window_tile_map: TileMap = TileMap::new();
     let mut oam_tile_map: TileMap = TileMap::new();
@@ -107,27 +107,22 @@ fn main()
         }    
 
 
-       if let Some(r) = e.update_args()
-       {
-            while !gpu_registers.v_blank_draw_flag
-            {
-                let joypad_input = system_data.input.update_input(&system_data);
-                if (joypad_input & 0x0F) != 0x0F
-                {
-                    let current_if = system_data.mmu.get_from_memory(0xFF0F, false);
-                    system_data.mmu.set_to_memory(0xFF0F, current_if | 0x10, false);
-                }
-                system_data.mmu.set_to_memory(0xFF00, joypad_input, false);
-                let opcode = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
-                let address = registers.program_counter;
-                cpu_continue(&mut system_data, &mut registers);
-                update_gpu(&mut system_data, &mut registers, &mut gpu_registers);
-                system_data.timer_tick();
-            }
-       }
-
-
         if let Some(r) = e.render_args(){
+                while !gpu_registers.v_blank_draw_flag
+                {
+                    let joypad_input = system_data.input.update_input(&system_data);
+                    if (joypad_input & 0x0F) != 0x0F
+                    {
+                        let current_if = system_data.mmu.get_from_memory(0xFF0F, false);
+                        system_data.mmu.set_to_memory(0xFF0F, current_if | 0x10, false);
+                    }
+                    system_data.mmu.set_to_memory(0xFF00, joypad_input, false);
+                    let opcode = system_data.mmu.get_from_memory(registers.program_counter as usize, false);
+                    let address = registers.program_counter;
+                    cpu_continue(&mut system_data, &mut registers);
+                    update_gpu(&mut system_data, &mut registers, &mut gpu_registers);
+                    system_data.timer_tick();
+                }   
                 gpu_registers.v_blank_draw_flag = false;
                 background_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.background_display_select);  
                 window_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.window_display_select);

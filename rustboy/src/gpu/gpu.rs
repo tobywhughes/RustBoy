@@ -212,10 +212,6 @@ pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_
     {
         for row_x in 0..160
         {
-        //    let mut row_x_scrolled = (row_x + gpu_registers.lcd_position.scroll_x_buffer[row_y] as usize) % 256;
-        //    let mut row_y_scrolled = (row_y + gpu_registers.lcd_position.scroll_y_buffer[row_y] as usize) % 256;
-        //    let pixel_data = background_buffer[(row_y_scrolled * 256) + row_x_scrolled];
-           //let pixel_shade = pixel_shade_map(pixel_data, palette_data);
            let pixel_shade = scrolled_buffer[(row_y * 160) + row_x];
            let pixel = pixel_color_map(pixel_shade, &gpu_registers.shade_profile);
            image_buffer.put_pixel(row_x as u32, row_y as u32, pixel);
@@ -289,10 +285,11 @@ fn apply_oam_table_to_bitmap(oam_table: &OAM_Table, scrolled_bitmap: Vec<u8>, pa
         }
 
         let flags = oam_table.table[i].flags;
-        let y_flip = (flags) & 0x40 >> 6;
-        let x_flip = (flags) & 0x20 >> 5;
+        let y_flip = (flags & 0x40) >> 6;
+        let x_flip = (flags & 0x20) >> 5;
         let mut palette = 0;
-        if ((flags) & 0x10 >> 4) == 1
+        let behind = (flags & 0x80) >> 7;
+        if ((flags & 0x10) >> 4) == 1
         {
             palette = palette_1;
         }
@@ -301,29 +298,69 @@ fn apply_oam_table_to_bitmap(oam_table: &OAM_Table, scrolled_bitmap: Vec<u8>, pa
             palette = palette_0;    
         }
 
-        // if !large_sprites
-        // {
-        //     if y_flip == 1
-        //     {
-        //         for row in 0..4
-        //         {
-        //             for index in 0..8
-        //             {
-        //                 let temp = tile.data[(row * 8) + index];
-        //                 tile.data[(row * 8) + index] = tile.data[]
-        //             }
-        //         }
-        //     }
-        // }
+        if !large_sprites
+        {
+            if y_flip == 1
+            {
+                for row in 0..4
+                {
+                    for index in 0..8
+                    {
+                        let temp = tile.data[(row * 8) + index];
+                        tile.data[(row * 8) + index] = tile.data[((7 - row) * 8) + index];
+                        tile.data[((7 - row) * 8) + index] = temp;
+                    }
+                }
+            }
+
+            if x_flip == 1
+            {
+                for column in 0..4
+                {
+                    for row in 0..8
+                    {
+                        let temp = tile.data[(row * 8) + column];
+                        tile.data[(row * 8) + column] = tile.data[(row * 8) + (7 - column)];
+                        tile.data[(row * 8) + (7 - column)] = temp;
+                    }
+                }
+            }
+        }
+        else 
+        {
+            if y_flip == 1
+            {
+                for row in 0..8
+                {
+                    for index in 0..8
+                    {
+                        let temp = tile.data[(row * 8) + index];
+                        tile.data[(row * 8) + index] = tile.data[((15 - row) * 8) + index];
+                        tile.data[((15 - row) * 8) + index] = temp;
+                    }
+                }
+            }
+
+            if x_flip == 1
+            {
+                for column in 0..8
+                {
+                    for row in 0..8
+                    {
+                        let temp = tile.data[(row * 8) + column];
+                        tile.data[(row * 8) + column] = tile.data[(row * 8) + (15 - column)];
+                        tile.data[(row * 8) + (15 - column)] = temp;
+                    }
+                }
+            }
+        }
         
-        //Add to bitmap
         if !large_sprites
         {
             for row in 0..8
             {
                 for index in 0..8
                 {
-                    //println!("y_position {}", y_position);
                     if (y_position + row) >= 0 && (y_position + row) < 144
                     {
                         if (x_position + index) >= 0 && (x_position + index) < 160
@@ -333,7 +370,10 @@ fn apply_oam_table_to_bitmap(oam_table: &OAM_Table, scrolled_bitmap: Vec<u8>, pa
                             if pixel != 0
                             {
                                 let shade = pixel_shade_map(pixel, palette);
-                                bitmap[tile_position as usize] = shade;
+                                if behind == 0 || bitmap[tile_position as usize] == 0
+                                {
+                                    bitmap[tile_position as usize] = shade;
+                                }
                             }
                         }
                     }
