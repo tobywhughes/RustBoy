@@ -61,6 +61,7 @@ impl MMU
             {
                 0x00 => (),
                 0x01 => rom_flag = self.mbc1_parse(location, set_value),
+                0x03 => rom_flag = self.mbc1_parse(location, set_value),
                 _ => (),
             }
         }

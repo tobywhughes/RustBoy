@@ -340,21 +340,27 @@ fn apply_oam_table_to_bitmap(oam_table: &OAM_Table, scrolled_bitmap: Vec<u8>, pa
                     for index in 0..8
                     {
                         let temp = tile.data[(row * 8) + index];
-                        tile.data[(row * 8) + index] = tile.data[((15 - row) * 8) + index];
-                        tile.data[((15 - row) * 8) + index] = temp;
+                        tile.data[(row * 8) + index] = tile_big.data[((7 - row) * 8) + index];
+                        tile_big.data[((7 - row) * 8) + index] = temp;
                     }
                 }
             }
 
             if x_flip == 1
             {
-                for column in 0..8
+                for column in 0..4
                 {
                     for row in 0..8
                     {
                         let temp = tile.data[(row * 8) + column];
-                        tile.data[(row * 8) + column] = tile.data[(row * 8) + (15 - column)];
-                        tile.data[(row * 8) + (15 - column)] = temp;
+                        tile.data[(row * 8) + column] = tile.data[(row * 8) + (7 - column)];
+                        tile.data[(row * 8) + (7 - column)] = temp;
+                    }
+                    for row in 0..8
+                    {
+                        let temp = tile_big.data[(row * 8) + column];
+                        tile_big.data[(row * 8) + column] = tile_big.data[(row * 8) + (7 - column)];
+                        tile_big.data[(row * 8) + (7 - column)] = temp;
                     }
                 }
             }
@@ -404,7 +410,7 @@ fn apply_oam_table_to_bitmap(oam_table: &OAM_Table, scrolled_bitmap: Vec<u8>, pa
                             }
 
                             tile_position = ((y_position + row + 8) * 160) + (x_position + index);
-                            pixel = tile.data[((row + 8) as usize* 8) + index as usize];
+                            pixel = tile_big.data[(row as usize* 8) + index as usize];
                             if pixel != 0
                             {
                                 let shade = pixel_shade_map(pixel, palette);
