@@ -4,10 +4,11 @@ extern crate csv;
 extern crate hex;
 extern crate piston;
 extern crate graphics;
-extern crate glutin_window;
+//extern crate glutin_window;
 extern crate opengl_graphics;
 extern crate image;
-extern crate piston_window;
+extern crate sdl2_window;
+//extern crate piston_window;
 
 mod cpu;
 mod gpu;
@@ -15,12 +16,18 @@ mod system;
 mod mmu;
 mod timer;
 
-use piston_window::*;
+// use piston_window::*;
+// use piston_window::RenderEvent;
+// use piston_window::ReleaseEvent;
+// use piston_window::PressEvent;
 use image::ImageBuffer;
 use image::{RgbaImage, Rgba};
 use opengl_graphics::Texture;
 use piston::event_loop::*;
 use piston::input::*;
+use piston::window::WindowSettings;
+//use glutin_window::GlutinWindow as Window;
+use sdl2_window::Sdl2Window as Window;
 use opengl_graphics::{ GlGraphics, OpenGL };
 use std::env;
 use cpu::cpu::*;
@@ -48,8 +55,9 @@ fn main()
 
     //Initialize Screen
     let opengl = OpenGL::V3_2;
+    
     let scale_factor = 1.5;
-    let mut window: PistonWindow = WindowSettings::new("RustBoy", [(system_data.width as f64 * scale_factor) as u32, (system_data.height as f64 * scale_factor) as u32])
+    let mut window: Window = piston::window::WindowSettings::new("RustBoy", [(system_data.width as f64 * scale_factor) as u32, (system_data.height as f64 * scale_factor) as u32])
                                         .opengl(opengl)
                                         .exit_on_esc(true)
                                         .build()
@@ -57,9 +65,13 @@ fn main()
     //window.set_max_fps(60);
     let mut app = App
     {
-        gl: GlGraphics::new(opengl),
+        gl: GlGraphics::new(OpenGL::V3_2),
     };
+
+    
+    
     let mut events = Events::new(EventSettings::new());
+
     events.set_max_fps(65);
     let mut background_tile_map: TileMap = TileMap::new();
     let mut window_tile_map: TileMap = TileMap::new();
@@ -153,12 +165,14 @@ impl App
     {
             use graphics::*;
             let BLANK: types::Color = color::hex("9CBD0F");
-            let tile = Texture::from_image(&img, &TextureSettings::new());
+            let tile = Texture::from_image(img, &opengl_graphics::TextureSettings::new());
             
             self.gl.draw(args.viewport(), |c, gl| 
             {
                 clear(color::BLACK, gl);
-                let transform = c.transform.trans(0.0,0.0).zoom(scale_factor);
+                let transform2 = graphics::Transformed::trans(c.transform, 0.0, 0.0);
+                let transform = graphics::Transformed::zoom(transform2, scale_factor);
+                //let transform = c.transform.trans(0.0,0.0).zoom(scale_factor);
                 image(&tile, transform, gl);
             });
     }

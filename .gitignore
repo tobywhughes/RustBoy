@@ -3,3 +3,11 @@
 pandocs.txt
 .vscode
 *.sym
+rustboy/gnu-mingw/dll/32
+rustboy/gnu-mingw/dll/64
+rustboy/gnu-mingw/lib/32
+rustboy/gnu-mingw/lib/64
+rustboy/msvc/dll/32
+rustboy/msvc/dll/64
+rustboy/msvc/lib/32
+rustboy/msvc/lib/64
