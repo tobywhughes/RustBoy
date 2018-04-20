@@ -423,37 +423,25 @@ pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Re
 {
         system_data.cycles = 1;
         registers.flags = registers.flags & 0x10;
-        let mut register_code = ((opcode & 0x38) >> 3) + 1;
-        if register_code == 8 
-        {
-            register_code = 0;
+        let mut register_code = (((opcode & 0x38) >> 3) + 1) % 8;
+        let mut current_register_value = registers.mapped_register_getter(register_code);
+        
+        if current_register_value == 0xFF{
+            current_register_value = 0;
         }
-                
-        if register_code == 7
-        {
-            system_data.cycles = 0;
-            println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
+        else {
+            current_register_value += 1;
         }
-        else
+        registers.mapped_register_setter(register_code, current_register_value);
+        if current_register_value == 0
         {
-            let mut current_register_value = registers.mapped_register_getter(register_code);
-            if current_register_value == 0xFF{
-                current_register_value = 0;
-            }
-            else {
-                current_register_value += 1;
-            }
-            registers.mapped_register_setter(register_code, current_register_value);
-            if current_register_value == 0
-            {
-                registers.flags |= 0x80;
-            }
-            if current_register_value & 0x0F == 0
-            {
-                registers.flags |= 0x20;
-            }
-            registers.program_counter += 1;
+            registers.flags |= 0x80;
         }
+        if (current_register_value & 0x0F) == 0
+        {
+            registers.flags |= 0x20;
+        }
+        registers.program_counter += 1;
 }
 
 pub fn increment_hl_location(system_data: &mut SystemData, registers: &mut Registers)
@@ -463,6 +451,7 @@ pub fn increment_hl_location(system_data: &mut SystemData, registers: &mut Regis
     registers.flags = registers.flags & 0x10;
 
     let mut current_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
+    
     if current_value == 0xFF{
         current_value = 0;
     }
@@ -1906,85 +1895,35 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
     let mut system_data = system_data_original;
     let mut registers = registers_original;
     let opcode :u8 = system_data.mmu.get_from_memory((registers.program_counter + 1) as usize, false);
-    //bit b, r
-    if (opcode & 0xC0) == 0x40
+    
+    match opcode
     {
-        system_data.cycles = 2;
-        let test_bit: u8 = (opcode & 0x38) >> 3;
-        bit_check_register(&mut system_data, &mut registers, opcode, test_bit)
-    }
-    else if (opcode & 0xF8) == 0x00
-    {
-        rotate_register_left_carry_set(&mut system_data, &mut registers, opcode);      
-    }
-    else if (opcode & 0xF8) == 0x08
-    {
-        rotate_register_right_carry_set(&mut system_data, &mut registers, opcode);      
-    }
-    else if (opcode & 0xF8) == 0x20
-    {
-        shift_left_load_carry(&mut system_data, &mut registers, opcode);
-    }
-    else if (opcode & 0xF8) == 0x28
-    {
-        shift_right_load_carry(&mut system_data, &mut registers, opcode);
-    }
-    else if (opcode & 0xF8) == 0x10
-    {
-        rotate_left_through_carry(&mut system_data, &mut registers, opcode);
-    }
-    else if (opcode & 0xF8) == 0x30
-    {
-        swap_nibbles(&mut system_data, &mut registers, opcode);
-    }
-    else if (opcode & 0xC0) == 0xC0
-    {
-        if (opcode & 0x07) == 0x06
-        {
-            system_data.cycles = 4;
-            set_bit_of_hl_location(&mut system_data, &mut registers, opcode);
-        }
-        else 
-        {
-            system_data.cycles = 2;
-            set_bit_in_register(&mut system_data, &mut registers, opcode);
-        }
-    }
-    else if (opcode & 0xF8) == 0x38
-    {
-        if opcode == 0x3E
-        {
-            shift_hl_location_right_logical(&mut system_data, &mut registers);
-        }
-        else{
-            shift_right_register_logical(&mut system_data, &mut registers, opcode);
-        }
-    }
-    else if (opcode & 0xF8) == 0x18
-    {
-        if opcode == 0x1e
-        {
-            rotate_hl_location_right_through_carry(&mut system_data, &mut registers);
-        }
-        else 
-        {
-            rotate_right_through_carry(&mut system_data, &mut registers, opcode);
-        }
-    }
-    else if (opcode & 0xC0) == 0x80
-    {
-        reset_bit_in_register(&mut system_data, &mut registers, opcode);
+        0x00...0x07 => rotate_register_left_carry_set(&mut system_data, &mut registers, opcode),
+        0x08...0x0F => rotate_register_right_carry_set(&mut system_data, &mut registers, opcode),
+        0x10...0x17 => rotate_left_through_carry(&mut system_data, &mut registers, opcode),
+        0x18...0x1D | 0x1F=> rotate_right_through_carry(&mut system_data, &mut registers, opcode),
+        0x1E => rotate_hl_location_right_through_carry(&mut system_data, &mut registers),
+        0x20...0x27 => shift_left_load_carry(&mut system_data, &mut registers, opcode),
+        0x28...0x2F => shift_right_load_carry(&mut system_data, &mut registers, opcode),
+        0x30...0x37 => swap_nibbles(&mut system_data, &mut registers, opcode),
+        0x38...0x3D | 0x3F => shift_right_register_logical(&mut system_data, &mut registers, opcode),
+        0x3E => shift_hl_location_right_logical(&mut system_data, &mut registers),
+        0x40...0x7F => { let test_bit: u8 = (opcode & 0x38) >> 3; bit_check_register(&mut system_data, &mut registers, opcode, test_bit);},
+        0x80...0xBF => reset_bit_in_register(&mut system_data, &mut registers, opcode), 
+        0xC0...0xC5 | 0xC7...0xCD | 0xCF => set_bit_in_register(&mut system_data, &mut registers, opcode),
+        0xD0...0xD5 | 0xD7...0xDD | 0xDF => set_bit_in_register(&mut system_data, &mut registers, opcode),
+        0xE0...0xE5 | 0xE7...0xED | 0xEF => set_bit_in_register(&mut system_data, &mut registers, opcode),
+        0xF0...0xF5 | 0xF7...0xFD | 0xFF => set_bit_in_register(&mut system_data, &mut registers, opcode),
+        0xC6 | 0xCE | 0xD6 | 0xDE => set_bit_of_hl_location(&mut system_data, &mut registers, opcode),
+        0xE6 | 0xEE | 0xF6 | 0xFE => set_bit_of_hl_location(&mut system_data, &mut registers, opcode),
+        _ => (),
     }
 
-    else 
-    {
-        println!("Unimplemented CB code");
-        println!("Next Opcode: 0x{:x}", system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false));
-    }
 }
 
 pub fn bit_check_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8, test_bit: u8)
 {
+    system_data.cycles = 2;
     let mut register_code = (opcode & 0x07) + 1;
     if register_code == 8 
     {
@@ -2119,6 +2058,7 @@ pub fn set_bit_in_register(system_data: &mut SystemData, registers: &mut Registe
         registers.mapped_register_setter(register_code, start_value | (0x01 << bit_shift));
         registers.program_counter += 2;
     }
+    system_data.cycles = 2;
 }
 
 pub fn set_bit_of_hl_location(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
@@ -2127,6 +2067,7 @@ pub fn set_bit_of_hl_location(system_data: &mut SystemData, registers: &mut Regi
     let new_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize,true) | (0x01 << bit_shift);
     system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(3) as usize, new_value, true);
     registers.program_counter += 2;
+    system_data.cycles = 4;
 }
 
 pub fn shift_right_register_logical(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
