@@ -56,7 +56,7 @@ fn main()
     //Initialize Screen
     let opengl = OpenGL::V3_2;
     
-    let scale_factor = 1.5;
+    let scale_factor = 2.0;
     let mut window: Window = piston::window::WindowSettings::new("RustBoy", [(system_data.width as f64 * scale_factor) as u32, (system_data.height as f64 * scale_factor) as u32])
                                         .opengl(opengl)
                                         .exit_on_esc(true)

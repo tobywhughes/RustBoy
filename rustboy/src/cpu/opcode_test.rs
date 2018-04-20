@@ -39,7 +39,7 @@ mod opcode_test
             registers.mapped_register_setter(i as u8, 0xFF);
             increment_8_bit_register(&mut system_data, &mut registers, opcodes[i as usize]);
             assert_eq!(registers.mapped_register_getter(i as u8), 0x00);
-            assert_eq!(registers.flags, 0x80);
+            assert_eq!(registers.flags, 0xA0);
         }
     }
 
@@ -65,7 +65,7 @@ mod opcode_test
         system_data.mmu.mem_map[0x1234] = 0xFF;
         increment_hl_location(&mut system_data, &mut registers);
         assert_eq!(system_data.mmu.mem_map[0x1234], 0x00);
-        assert_eq!(registers.flags, 0x80);
+        assert_eq!(registers.flags, 0xA0);
     }
 
 
@@ -1494,7 +1494,7 @@ mod opcode_test
         registers.stack_pointer = 0x0001;
         system_data.mmu.mem_map[0x05] = 0xFF;
         load_hl_with_stack_pointer_plus_n(&mut system_data, &mut registers);
-        assert_eq!(registers.flags, 0x00);
+        assert_eq!(registers.flags, 0x30);
         assert_eq!(registers.mapped_16_bit_register_getter(3), 0x00);
     }
 
@@ -1790,7 +1790,7 @@ mod opcode_test
         let stack_pointer_init_values: Vec<u16> = vec![0x0000, 0x0001, 0x000F, 0x00F0];
         let stack_pointer_result_values: Vec<u16> = vec![0x0001, 0x0000, 0x0010, 0x0100];
         let add_values: Vec<u8> = vec![0x01, 0xFF, 0x01, 0x10];
-        let flag_values: Vec<u8> = vec![0x00, 0x00, 0x20, 0x10];
+        let flag_values: Vec<u8> = vec![0x00, 0x30, 0x20, 0x10];
 
         for i in 0..add_values.len()
         {

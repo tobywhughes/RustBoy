@@ -225,21 +225,23 @@ mod timer_tests
         let mut timer = Timer::new();
         timer.timer_control = 0x05;
         timer.timer_modulo = 0x10;
-        system_data.cycles = 1;
+        system_data.cycles = 4;
         let mut interrupt = false;
         
         for tick in 0..0xFF
         {
-            for cycles in 0..0x10
+            for cycles in 0..0x04
             {
+                timer.cycle_calculation(system_data.cycles, false);
                 interrupt = timer.tima_tick(system_data.cycles);
             }
             
             assert_eq!(timer.timer_counter, tick + 1);
             assert!(!interrupt);
         }
-        for cycles in 0..0x10
+        for cycles in 0..0x04
         {
+            timer.cycle_calculation(system_data.cycles, false);
             interrupt = timer.tima_tick(system_data.cycles);
         }
         assert_eq!(timer.timer_counter, 0x10);
