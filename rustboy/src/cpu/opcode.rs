@@ -1938,10 +1938,6 @@ pub fn bit_check_register(system_data: &mut SystemData, registers: &mut Register
     }
     else
     {
-        // if (registers.mapped_16_bit_register_getter(3) % 0x50 == 0)
-        // {
-        //     println!("{:x}", registers.mapped_16_bit_register_getter(3));
-        // }
         registers.flags = registers.flags & 0x10;
         if (registers.mapped_register_getter(register_code) >> test_bit) & 0x01 == 0x00
         {   
