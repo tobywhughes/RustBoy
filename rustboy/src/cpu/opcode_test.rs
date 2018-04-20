@@ -927,7 +927,7 @@ mod opcode_test
         for i in 0..opcodes.len()
         {
             system_data.mmu.mem_map[0x1234] = 0;
-            set_bit_of_hl_location(&mut system_data, &mut registers, opcodes[i]);
+            set_bit_in_register(&mut system_data, &mut registers, opcodes[i]);
             assert_eq!((system_data.mmu.mem_map[0x1234] >> i) & 0x01, 0x01);
         }
     }
@@ -1257,12 +1257,12 @@ mod opcode_test
 
         //Zero flag test
         system_data.mmu.mem_map[0x1234] = 0x00;
-        shift_hl_location_right_logical(&mut system_data, &mut registers);
+        shift_right_register_logical(&mut system_data, &mut registers, 0x3E);
         assert_eq!(system_data.mmu.mem_map[0x1234], 0x00);
         assert_eq!(registers.flags, 0x80);
 
         system_data.mmu.mem_map[0x1234] = 0xFF;
-        shift_hl_location_right_logical(&mut system_data, &mut registers);
+        shift_right_register_logical(&mut system_data, &mut registers, 0x3E);
         assert_eq!(registers.flags, 0x10);
         assert_eq!(system_data.mmu.mem_map[0x1234], 0x7F);
     }
@@ -1327,21 +1327,21 @@ mod opcode_test
         //No Set
         system_data.mmu.mem_map[0x1234] = 0x02;
         registers.flags = 0x00;
-        rotate_hl_location_right_through_carry(&mut system_data, &mut registers);
+        rotate_right_through_carry(&mut system_data, &mut registers, 0x1E);
         assert_eq!(system_data.mmu.mem_map[0x1234], 0x01);
         assert_eq!(registers.flags, 0x00);
 
         //Zero Flag
         system_data.mmu.mem_map[0x1234] = 0x00;
         registers.flags = 0x00;
-        rotate_hl_location_right_through_carry(&mut system_data, &mut registers);
+        rotate_right_through_carry(&mut system_data, &mut registers, 0x1E);
         assert_eq!(system_data.mmu.mem_map[0x1234], 0x00);
         assert_eq!(registers.flags, 0x80);
 
         //Carry
         system_data.mmu.mem_map[0x1234] = 0xFF;
         registers.flags = 0x10;
-        rotate_hl_location_right_through_carry(&mut system_data, &mut registers);
+        rotate_right_through_carry(&mut system_data, &mut registers, 0x1E);
         assert_eq!(system_data.mmu.mem_map[0x1234], 0xFF);
         assert_eq!(registers.flags, 0x10);
     }
