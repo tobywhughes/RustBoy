@@ -1,5 +1,6 @@
 use system::SystemData;
 use system::Registers;
+use cpu::opcode_helpers::*;
 
 use std::io;
 
@@ -92,6 +93,7 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
         registers.interrupt_master_enable_flag = true;
     }
 
+    system_data.cycles = cycle_parse(opcode);
 
     match opcode
     {
@@ -387,20 +389,17 @@ pub fn parse_opcode(system_data_original: &mut SystemData, registers_original: &
 
 pub fn no_operation(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 1;
     registers.program_counter += 1;
 }
 
 pub fn disable_interupts(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 1;
     registers.program_counter += 1;
     registers.interrupt_master_enable_flag = false;
 }
 
 pub fn enable_interupts(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 1;
     registers.program_counter += 1;
     registers.interrupt_master_enable_delay_flag = true;
 }
@@ -409,19 +408,16 @@ pub fn stop(system_data: &mut SystemData, registers: &mut Registers)
 {
     //Temporary debugging
     registers.program_counter += 2;
-    system_data.cycles = 1;
 }
 
 pub fn halt(system_data: &mut SystemData, registers: &mut Registers)
 {
     registers.program_counter += 1;
-    system_data.cycles = 1;
     registers.halt_flag = true;
 }
 
 pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-        system_data.cycles = 1;
         registers.flags = registers.flags & 0x10;
         let mut register_code = (((opcode & 0x38) >> 3) + 1) % 8;
         let mut current_register_value = registers.mapped_register_getter(register_code);
@@ -447,7 +443,6 @@ pub fn increment_8_bit_register(system_data: &mut SystemData, registers: &mut Re
 pub fn increment_hl_location(system_data: &mut SystemData, registers: &mut Registers)
 {
     registers.program_counter += 1;
-    system_data.cycles = 3;
     registers.flags = registers.flags & 0x10;
 
     let mut current_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
@@ -484,7 +479,6 @@ pub fn increment_16_bit_register(system_data: &mut SystemData, registers: &mut R
         current_register_value += 1;
     }
     registers.mapped_16_bit_register_setter(register_code, current_register_value);
-    system_data.cycles = 2;
 }
 
 pub fn decrement_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
@@ -501,12 +495,10 @@ pub fn decrement_16_bit_register(system_data: &mut SystemData, registers: &mut R
         current_register_value -= 1;
     }
     registers.mapped_16_bit_register_setter(register_code, current_register_value);
-    system_data.cycles = 2;
 }
 
 pub fn decrement_8_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 1;
     registers.flags = registers.flags & 0x10;
     registers.flags = registers.flags | 0x40;
     let mut register_code = ((opcode & 0x38) >> 3) + 1;
@@ -517,7 +509,6 @@ pub fn decrement_8_bit_register(system_data: &mut SystemData, registers: &mut Re
             
     if register_code == 7
     {
-        system_data.cycles = 0;
         println!("No Opcode Found--ad 0x{:04x}--op 0x{:x}", registers.program_counter, opcode);
     }
     else 
@@ -544,7 +535,6 @@ pub fn decrement_8_bit_register(system_data: &mut SystemData, registers: &mut Re
 
 pub fn add_8_bit(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 1;
     registers.flags = 0x00;
     let mut register_code = (opcode & 0x07) + 1;
     if register_code == 8
@@ -555,7 +545,6 @@ pub fn add_8_bit(system_data: &mut SystemData, registers: &mut Registers, opcode
     let mut add_num;
     if register_code == 7
     {
-        system_data.cycles += 1;
         add_num = system_data.mmu.get_from_memory((((registers.h_register as u16) << 8)|(registers.l_register as u16)) as usize, true);
     }
     else
@@ -583,7 +572,6 @@ pub fn add_8_bit(system_data: &mut SystemData, registers: &mut Registers, opcode
 
 pub fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 2;
     let mut register_code = ((opcode & 0x38) >> 3) + 1;
     if register_code == 8 
     {
@@ -591,7 +579,6 @@ pub fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Reg
     }
 
     if register_code == 7{
-        system_data.cycles = 0;
         println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
     }
     else
@@ -605,7 +592,6 @@ pub fn load_n_to_8bit_register(system_data: &mut SystemData, registers: &mut Reg
 
 pub fn load_n_to_hl_location(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 3;
     let n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(3) as usize, n_value, true);
     registers.program_counter += 2;
@@ -613,7 +599,6 @@ pub fn load_n_to_hl_location(system_data: &mut SystemData, registers: &mut Regis
 
 pub fn load_8_bit_register_to_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 1;
     //Load value from register
     let mut register_set_code = ((opcode & 0x38) >> 3) + 1;
     if register_set_code == 8 
@@ -628,7 +613,6 @@ pub fn load_8_bit_register_to_register(system_data: &mut SystemData, registers: 
 
     if register_set_code == 7 || register_get_code == 7
     {
-        system_data.cycles = 0;
         println!("No Opcode Found--ad 0x{:04x}--op 0x{:x}", registers.program_counter, opcode);
     }
     else {
@@ -642,21 +626,18 @@ pub fn load_8_bit_register_to_register(system_data: &mut SystemData, registers: 
 
 pub fn load_accumulator_to_io_port_with_c_offset(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     system_data.mmu.set_to_memory((0xFF00 + registers.c_register as u16) as usize ,registers.accumulator, true);
     registers.program_counter += 1;  
 }
 
 pub fn read_io_port_with_c_offset_to_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     registers.accumulator = system_data.mmu.get_from_memory((0xFF00 + registers.c_register as u16) as usize, false);
     registers.program_counter += 1;  
 }
 
 pub fn load_accumulator_to_io_port_with_n_offset(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 3;
     let n = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     system_data.mmu.set_to_memory((0xFF00 + n as u16) as usize ,registers.accumulator, true);
     registers.program_counter += 2;  
@@ -664,14 +645,12 @@ pub fn load_accumulator_to_io_port_with_n_offset(system_data: &mut SystemData, r
 
 pub fn load_accumulator_with_io_port_with_n_offset(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 3;
     let n = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     registers.accumulator = system_data.mmu.get_from_memory((0xFF00 + n as u16) as usize, false);
     registers.program_counter += 2;  
 } 
 
 pub fn load_nn_to_16bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8){
-    system_data.cycles = 3;
 
     let lower = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     let upper = system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16;
@@ -683,7 +662,6 @@ pub fn load_nn_to_16bit_register(system_data: &mut SystemData, registers: &mut R
         0x21 => registers.mapped_16_bit_register_setter(3, set_value),
         0x31 => registers.mapped_16_bit_register_setter(4, set_value),
         _ => {
-            system_data.cycles = 0;
             println!("ERROR- INVALID REGISTER CODE --ad 0x{:04x}--op 0x{:x}", registers.program_counter, opcode);
             return;
         }
@@ -710,7 +688,6 @@ pub fn xor_8_bit_register(system_data: &mut SystemData, registers: &mut Register
             registers.flags = 0x80;
         }
 
-        system_data.cycles = 1;
         registers.program_counter += 1;
     }
 }
@@ -732,15 +709,12 @@ pub fn or_8_bit_register(system_data: &mut SystemData, registers: &mut Registers
         {
             registers.flags = 0x80;
         }
-
-        system_data.cycles = 1;
         registers.program_counter += 1;
     }
 }
 
 pub fn and_8_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 1;
     let mut register_code = (opcode & 0x07) + 1;
     if register_code == 8
     {
@@ -750,7 +724,6 @@ pub fn and_8_bit_register(system_data: &mut SystemData, registers: &mut Register
     if register_code == 7
     {
         compare_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
-        system_data.cycles = 2;
     }
     else {
         compare_value = registers.mapped_register_getter(register_code);
@@ -766,14 +739,12 @@ pub fn and_8_bit_register(system_data: &mut SystemData, registers: &mut Register
 
 pub fn jump_displacement(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 3;
     let pc_dest: i8 = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as i8;
     registers.program_counter = ((registers.program_counter as i32 + pc_dest as i32) as u16) + 2;
 }
 
 pub fn jump_address(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 4;
     let upper: u16 = system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16;
     let lower: u16 = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     registers.program_counter = (upper << 8) | lower;
@@ -792,7 +763,6 @@ pub fn load_decrement_hl_register_location_with_accumulator(system_data: &mut Sy
     }
     registers.l_register = (mem_loc & 0x00FF) as u8;
     registers.h_register = ((mem_loc & 0xFF00) >> 8) as u8;
-    system_data.cycles = 2;
     registers.program_counter += 1;
 }
 
@@ -810,7 +780,6 @@ pub fn load_increment_hl_register_location_with_accumulator(system_data: &mut Sy
     }
     registers.l_register = (mem_loc & 0x00FF) as u8;
     registers.h_register = ((mem_loc & 0xFF00) >> 8) as u8;
-    system_data.cycles = 2;
     registers.program_counter += 1;
 }
 
@@ -818,7 +787,6 @@ pub fn load_increment_hl_register_location_with_accumulator(system_data: &mut Sy
 pub fn load_hl_address_with_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
     let mem_loc: u16 = registers.l_register as u16 | (registers.h_register as u16) << 8;
-    system_data.cycles = 2;
     let mut register_code = (opcode & 0x07) + 1;
     if register_code == 8 
     {
@@ -826,7 +794,6 @@ pub fn load_hl_address_with_register(system_data: &mut SystemData, registers: &m
     }
     if register_code == 7
     {
-        system_data.cycles = 0;
         println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
     }
     else
@@ -840,7 +807,6 @@ pub fn load_hl_address_with_register(system_data: &mut SystemData, registers: &m
 
 pub fn load_accumulator_with_de_address(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     let mem_loc: u16 = registers.e_register as u16 | (registers.d_register as u16) << 8;
     registers.accumulator = system_data.mmu.get_from_memory(mem_loc as usize, true);
     registers.program_counter += 1;
@@ -848,7 +814,6 @@ pub fn load_accumulator_with_de_address(system_data: &mut SystemData, registers:
 
 pub fn call_nn(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 6;
     let incremented_program_counter = registers.program_counter + 3;
     registers.stack_pointer -= 2;
     system_data.mmu.set_to_memory(registers.stack_pointer as usize + 1, ((incremented_program_counter & 0xFF00) >> 8) as u8, true);
@@ -858,14 +823,12 @@ pub fn call_nn(system_data: &mut SystemData, registers: &mut Registers)
 
 pub fn return_from_call(system_data: &mut SystemData, registers: &mut Registers)
 {
-   system_data.cycles = 4;
    registers.program_counter = (system_data.mmu.get_from_memory(registers.stack_pointer as usize, true) as u16) | (system_data.mmu.get_from_memory(registers.stack_pointer as usize + 1, true) as u16) << 8;
    registers.stack_pointer += 2;
 }
 
 pub fn return_from_call_ei(system_data: &mut SystemData, registers: &mut Registers)
 {
-   system_data.cycles = 4;
    registers.program_counter = (system_data.mmu.get_from_memory(registers.stack_pointer as usize, true) as u16) | (system_data.mmu.get_from_memory(registers.stack_pointer as usize + 1, true) as u16) << 8;
    registers.stack_pointer += 2;
    registers.interrupt_master_enable_delay_flag = true;
@@ -873,7 +836,6 @@ pub fn return_from_call_ei(system_data: &mut SystemData, registers: &mut Registe
 
 pub fn push_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 4;
     let mut register_code = ((opcode & 0x30) >> 4) + 1;
     if register_code == 4 
     {
@@ -892,7 +854,6 @@ pub fn push_16_bit_register(system_data: &mut SystemData, registers: &mut Regist
 
 pub fn pop_16_bit_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 3;
     let mut register_code = 0;
     match opcode
     {
@@ -929,12 +890,10 @@ pub fn rotate_accumulator_left_through_carry(system_data: &mut SystemData, regis
     val = val | carry_bit;
     registers.accumulator = val;
     registers.program_counter += 1;
-    system_data.cycles = 1;
 }
 
 pub fn compare_with_n(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     registers.flags = 0x40;
     let n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     if registers.accumulator < n_value
@@ -956,7 +915,6 @@ pub fn compare_with_n(system_data: &mut SystemData, registers: &mut Registers)
 
 pub fn compare_with_hl_address(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     registers.flags = 0x40;
     let hl_value = system_data.mmu.get_from_memory((((registers.h_register as u16) << 8) | (registers.l_register as u16)) as usize, true);
     if registers.accumulator < hl_value
@@ -978,7 +936,6 @@ pub fn compare_with_hl_address(system_data: &mut SystemData, registers: &mut Reg
 
 pub fn load_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 4;
     let mem_loc = (system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16) | (system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16) << 8;
     system_data.mmu.set_to_memory(mem_loc as usize, registers.accumulator, true);
     registers.program_counter += 3;
@@ -987,7 +944,6 @@ pub fn load_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Re
 
 pub fn subtract_8_bit(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 1;
     registers.flags = 0x40;
     let mut register_code = (opcode & 0x07) + 1;
     if register_code == 8 
@@ -998,7 +954,6 @@ pub fn subtract_8_bit(system_data: &mut SystemData, registers: &mut Registers, o
     if register_code == 7
     {
         sub_register = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
-        system_data.cycles = 2;
     }
     else 
     {
@@ -1025,7 +980,6 @@ pub fn subtract_8_bit(system_data: &mut SystemData, registers: &mut Registers, o
 
 pub fn load_accumulator_with_hl_then_increment(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     let mut address = registers.mapped_16_bit_register_getter(3);
     registers.accumulator = system_data.mmu.get_from_memory(address as usize, true);
     if address == 0xFFFF
@@ -1041,7 +995,6 @@ pub fn load_accumulator_with_hl_then_increment(system_data: &mut SystemData, reg
 
 pub fn load_accumulator_with_hl_then_decrement(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     let mut address = registers.mapped_16_bit_register_getter(3);
     registers.accumulator = system_data.mmu.get_from_memory(address as usize, true);
     registers.accumulator = system_data.mmu.get_from_memory(address as usize, true);
@@ -1058,7 +1011,6 @@ pub fn load_accumulator_with_hl_then_decrement(system_data: &mut SystemData, reg
 
 pub fn ones_complement(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 1;
     registers.program_counter += 1;
     registers.accumulator ^= 0xFF;
     registers.flags |= 0x60;
@@ -1066,7 +1018,6 @@ pub fn ones_complement(system_data: &mut SystemData, registers: &mut Registers)
 
 pub fn and_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     let nn = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     registers.accumulator &= nn;
     registers.flags = 0x20;
@@ -1079,7 +1030,6 @@ pub fn and_nn_with_accumulator(system_data: &mut SystemData, registers: &mut Reg
 
 pub fn rst_jump(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 4;
     registers.program_counter += 1;
     registers.stack_pointer -= 1;
     system_data.mmu.set_to_memory(registers.stack_pointer as usize, ((registers.program_counter & 0xFF00) >> 8) as u8, true);
@@ -1093,7 +1043,6 @@ pub fn rst_jump(system_data: &mut SystemData, registers: &mut Registers, opcode:
 pub fn add_16_bit_register_to_hl(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
     registers.flags &= 0x8F;
-    system_data.cycles = 2;
     registers.program_counter += 1;
     let mut register_code = (opcode & 0x30) >> 4;
     register_code += 1;
@@ -1116,17 +1065,14 @@ pub fn add_16_bit_register_to_hl(system_data: &mut SystemData, registers: &mut R
 
 pub fn jump_to_hl(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 1;
     registers.program_counter = registers.mapped_16_bit_register_getter(3);
 }
 
 pub fn load_register_with_hl_location(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 2;
     let mut register_code = ((opcode & 0x38) >> 3) + 1;
     if register_code == 7
     {
-        system_data.cycles = 0;
         println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
     }
     else 
@@ -1143,7 +1089,6 @@ pub fn load_register_with_hl_location(system_data: &mut SystemData, registers: &
 
 pub fn or_n(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     registers.accumulator |= system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     registers.flags = 0x00;
     if registers.accumulator == 0
@@ -1155,11 +1100,9 @@ pub fn or_n(system_data: &mut SystemData, registers: &mut Registers)
 
 pub fn subtract_register_and_carry_from_accumulator(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 1;
     let mut register_code = (opcode & 0x07) + 1;
     if register_code == 7
     {
-        system_data.cycles = 0;
         println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
     }
     else
@@ -1200,8 +1143,6 @@ pub fn subtract_register_and_carry_from_accumulator(system_data: &mut SystemData
 
 pub fn subtract_hl_location_and_carry_from_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
-
     let mut accumulator_value = registers.accumulator as u16;
     let location_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true) as u16;
     let carry_bit= ((registers.flags & 0x10) >> 4) as u16;
@@ -1233,7 +1174,6 @@ pub fn subtract_hl_location_and_carry_from_accumulator(system_data: &mut SystemD
 
 pub fn load_accumulator_with_nn_address(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 4;
     let lower = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     let upper = system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16;
     let retrieved_value = system_data.mmu.get_from_memory((lower | (upper << 8)) as usize, true);
@@ -1243,7 +1183,6 @@ pub fn load_accumulator_with_nn_address(system_data: &mut SystemData, registers:
 
 pub fn load_stack_pointer_to_nn_address(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 5;
     let lower = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     let upper = system_data.mmu.get_from_memory(registers.program_counter as usize + 2, false) as u16;
     let address = lower | (upper << 8);
@@ -1257,7 +1196,6 @@ pub fn call_function_nn_on_conditional(system_data: &mut SystemData, registers: 
     let condition_code = (opcode & 0x38) >> 3;
     if condition_code > 3
     {
-        system_data.cycles = 0;
         println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
         println!("Opcode Does Not Exist On Opcode Table");
     }
@@ -1312,14 +1250,12 @@ pub fn call_function_nn_on_conditional(system_data: &mut SystemData, registers: 
         else
         {
             registers.program_counter += 3;
-            system_data.cycles = 3;
         }
     }
 }
 
 pub fn add_8_bit_to_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     let n = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     let accumulator_value = registers.accumulator as u16;
     registers.flags = 0x00;
@@ -1348,7 +1284,6 @@ pub fn add_8_bit_to_accumulator(system_data: &mut SystemData, registers: &mut Re
 
 pub fn subtraction_n_from_accumulator(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     let n = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     let accumulator_value = registers.accumulator as u16;
     registers.flags = 0x40;
@@ -1377,7 +1312,6 @@ pub fn subtraction_n_from_accumulator(system_data: &mut SystemData, registers: &
 
 pub fn load_accumulator_with_bc_address(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     let bc_address: usize = registers.mapped_16_bit_register_getter(1) as usize;
     registers.accumulator = system_data.mmu.get_from_memory(bc_address, true);
     registers.program_counter += 1;
@@ -1398,7 +1332,6 @@ pub fn jump_displacement_on_flag(system_data: &mut SystemData, registers: &mut R
 
     if call_flag != true
     {
-        system_data.cycles = 2;
         registers.program_counter += 2;
     }
 
@@ -1413,7 +1346,6 @@ pub fn jump_displacement_on_flag(system_data: &mut SystemData, registers: &mut R
 
 pub fn rotate_accumulator_right_through_carry(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 1;
     let carry_bit = (registers.flags & 0x10) << 3;
     let carry_set_bit = (registers.accumulator & 0x01) << 4;
     registers.flags = 0x00;
@@ -1425,7 +1357,6 @@ pub fn rotate_accumulator_right_through_carry(system_data: &mut SystemData, regi
 
 pub fn add_8_bit_to_accumulator_with_carry(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     let carry_bit = (registers.flags & 0x10) >> 4;
     let n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     let add_value = (n_value as u16) + (carry_bit as u16);
@@ -1456,7 +1387,6 @@ pub fn add_8_bit_to_accumulator_with_carry(system_data: &mut SystemData, registe
 
 pub fn subtract_8_bit_from_accumulator_with_carry(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     let carry_bit = (registers.flags & 0x10) >> 4;
     let n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     let sub_value = (n_value as u16) + (carry_bit as u16);
@@ -1501,7 +1431,6 @@ pub fn return_from_call_conditional(system_data: &mut SystemData, registers: &mu
 
     if call_flag  == false
     {
-        system_data.cycles = 2;
         registers.program_counter += 1;
     }
     else
@@ -1529,7 +1458,6 @@ pub fn jump_address_with_conditional(system_data: &mut SystemData, registers: &m
     }
     if call_flag == false
     {
-        system_data.cycles = 3;
         registers.program_counter += 3;
     }
     else
@@ -1543,7 +1471,6 @@ pub fn jump_address_with_conditional(system_data: &mut SystemData, registers: &m
 
 pub fn xor_hl_location(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     registers.flags = 0x00;
     registers.accumulator ^= system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
     if registers.accumulator == 0x00
@@ -1555,7 +1482,6 @@ pub fn xor_hl_location(system_data: &mut SystemData, registers: &mut Registers)
 
 pub fn xor_accumulator_with_n(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 2;
     registers.flags = 0x00;
     let n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false);
     registers.accumulator ^= n_value;
@@ -1580,7 +1506,6 @@ pub fn add_registers_to_accumulator_with_carry(system_data: &mut SystemData, reg
         0x8D => register_code = 6,
         0x8E => register_code = 7,
         _ => {
-            system_data.cycles = 0; 
             println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
             return;
             },
@@ -1632,7 +1557,6 @@ pub fn or_hl_location(system_data: &mut SystemData, registers: &mut Registers)
         registers.flags |= 0x80;
     }
     registers.accumulator = new_value;
-    system_data.cycles = 2;
 }
 
 pub fn decrement_hl_location(system_data: &mut SystemData, registers: &mut Registers)
@@ -1659,7 +1583,6 @@ pub fn decrement_hl_location(system_data: &mut SystemData, registers: &mut Regis
     {
         registers.flags |= 0x80;
     }
-    system_data.cycles = 3;
 }
 
 pub fn load_de_location_with_accumulator(system_data: &mut SystemData, registers: &mut Registers)
@@ -1667,12 +1590,10 @@ pub fn load_de_location_with_accumulator(system_data: &mut SystemData, registers
     registers.program_counter += 1;
     let hl_location = registers.mapped_16_bit_register_getter(2);
     system_data.mmu.set_to_memory(hl_location as usize, registers.accumulator, true);
-    system_data.cycles = 2;
 }
 
 pub fn load_hl_with_stack_pointer_plus_n(system_data: &mut SystemData, registers: &mut Registers)
 {
-    system_data.cycles = 3;
     let unsigned_n_value = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as u16;
     let n_value: i32 = system_data.mmu.get_from_memory(registers.program_counter as usize + 1, false) as i8 as i32;
     let stack_pointer = registers.stack_pointer as i32;
@@ -1714,13 +1635,11 @@ pub fn compare_register_to_accumulator(system_data: &mut SystemData, registers: 
         0xBD => register_code = 6,
         _ => 
         {
-            system_data.cycles = 0;
             println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
             return;
         },
     }
     registers.program_counter +=1; 
-    system_data.cycles = 1;
     let register_value = registers.mapped_register_getter(register_code);
     if registers.accumulator == register_value
     {
@@ -1739,14 +1658,12 @@ pub fn compare_register_to_accumulator(system_data: &mut SystemData, registers: 
 pub fn load_hl_to_stack_pointer(system_data: &mut SystemData, registers: &mut Registers)
 {
     registers.program_counter += 1;
-    system_data.cycles = 2;
     registers.stack_pointer = registers.mapped_16_bit_register_getter(3);
 }
 
 pub fn bcd_adjust(system_data: &mut SystemData, registers: &mut Registers)
 {
     registers.program_counter += 1;
-    system_data.cycles = 1;
     let mut add_value = 0;
     let mut carry_set = 0x00;
     let n_flag = (registers.flags & 0x40) >> 6;
@@ -1804,7 +1721,6 @@ pub fn rlca(system_data: &mut SystemData, registers: &mut Registers)
     registers.accumulator = registers.accumulator << 1;
     registers.accumulator |= set_bit;
     registers.flags |= (set_bit << 4);
-    system_data.cycles = 1;
 }
 
 pub fn rrca(system_data: &mut SystemData, registers: &mut Registers)
@@ -1815,13 +1731,11 @@ pub fn rrca(system_data: &mut SystemData, registers: &mut Registers)
     registers.accumulator = registers.accumulator >> 1;
     registers.accumulator |= set_bit << 7;
     registers.flags |= (set_bit << 4);
-    system_data.cycles = 1;
 }
 
 pub fn set_carry_flag(system_data: &mut SystemData, registers: &mut Registers)
 {
     registers.program_counter += 1;
-    system_data.cycles = 1;
     registers.flags &= 0x80;
     registers.flags |= 0x10;
 }
@@ -1829,7 +1743,6 @@ pub fn set_carry_flag(system_data: &mut SystemData, registers: &mut Registers)
 pub fn flip_carry_flag(system_data: &mut SystemData, registers: &mut Registers)
 {
     registers.program_counter += 1;
-    system_data.cycles = 1;
     let carry_set = (registers.flags ^ 0xFF) & 0x10;
     registers.flags &= 0x80;
     registers.flags |= carry_set;
@@ -1839,7 +1752,6 @@ pub fn load_accumulator_to_address_at_bc(system_data: &mut SystemData, registers
 {
     registers.program_counter += 1;
     system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(1) as usize, registers.accumulator, true);
-    system_data.cycles = 2;
 }
 
 pub fn add_signed_8_bit_to_stack_pointer(system_data: &mut SystemData, registers: &mut Registers)
@@ -1871,7 +1783,6 @@ pub fn add_signed_8_bit_to_stack_pointer(system_data: &mut SystemData, registers
     {
         registers.stack_pointer = (add_value + stack_ponter_value) as u16;
     }
-    system_data.cycles = 4;
     registers.program_counter += 2;
 }
 
