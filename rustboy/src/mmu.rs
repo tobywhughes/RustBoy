@@ -6,10 +6,13 @@ pub struct MMU
 {
     pub mem_map: Vec<u8>,
     pub memory_banks: Vec<Vec<u8>>,
+    pub ram_banks: Vec<Vec<u8>>,
     pub cartridge_type: u8,
     pub rom_size: u8,
     pub ram_size: u8,
     pub rom_bank: u8,
+    pub ram_bank: u8,
+    pub ram_enable: bool,
     pub banking_mode: u8,
     pub div_reset: bool,
 }
@@ -22,10 +25,13 @@ impl MMU
         {
             mem_map: vec![0; 0x10000],
             memory_banks: vec![vec![0; 0x4000]; 0x100],
+            ram_banks: vec![vec![0; 0x2000]; 0x04],
             cartridge_type: 0,
             rom_size: 0x00,
             ram_size: 0x00,
             rom_bank: 1,
+            ram_bank: 0,
+            ram_enable: false,
             banking_mode: 0,
             div_reset: false,
         }
@@ -96,6 +102,29 @@ impl MMU
         {
             return self.mem_map[location_fixed] | 0b11111000;
         }
+        if location_fixed >= 0x4000 && location_fixed < 0x8000
+        {
+            return self.memory_banks[self.rom_bank as usize][location_fixed - 0x4000];
+        }
+        if location_fixed >= 0xA000 && location_fixed < 0xC000
+        {
+            if self.ram_enable
+            {
+                if (self.ram_size == 2 && location_fixed > 0xA7FF) || self.ram_size == 0
+                {
+                    return 0xFF;
+                }
+                else 
+                {
+                    return self.ram_banks[self.ram_bank as usize][location_fixed - 0xA000];
+                }
+                
+            }
+            else 
+            {
+                return 0xFF;
+            }
+        }
         return self.mem_map[location_fixed];
     }
 
@@ -108,6 +137,13 @@ impl MMU
             {
                 //println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
                 //println!("DEBUG: ram enable` {}", value);
+                if (value & 0x0F) == 0x0A
+                {
+                    self.ram_enable = true;
+                }
+                else {
+                    self.ram_enable = false;
+                }
                 return true;
             },
             0x2000...0x3FFF => 
@@ -138,6 +174,10 @@ impl MMU
                 if self.banking_mode == 0{
                     self.rom_bank |= ((value & 0x03) << 5);
                 }
+                else 
+                {
+                    self.ram_bank = (value & 0x03);  
+                }
                 self.update_rom_bank();
                 return true;
             },
@@ -145,9 +185,25 @@ impl MMU
             {
                 //println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
                 //println!("DEBUG: mode {}", value);
-                self.banking_mode = value;
+                self.banking_mode = (value & 0x01);
+                if self.banking_mode == 0
+                {
+                    self.ram_bank = 0;
+                }
+                else 
+                {
+                    self.rom_bank &= 0x1F;    
+                }
                 return true;
             },
+            0xA000...0xBFFF =>
+            {
+                if self.ram_enable
+                {
+                    self.ram_banks[self.ram_bank as usize][location - 0xA000] = value;
+                }
+                return true;
+            }
             _ => 
             {
                  //println!("Value: 0x{:02X} Location: 0x{:04X}", value, location); 
@@ -159,12 +215,12 @@ impl MMU
 
     fn update_rom_bank(&mut self)
     {
-        let bank = self.rom_bank as usize;
+        //let bank = self.rom_bank as usize;
         //println!("Rom-bank switch: 0x{:02x}", bank);
-        for i in 0..0x4000
-        {
-            self.mem_map[(i as usize) + 0x4000] = self.memory_banks[bank][i];
-        }
+        // for i in 0..0x4000
+        // {
+        //     self.mem_map[(i as usize) + 0x4000] = self.memory_banks[bank][i];
+        // }
     }
 
     pub fn read_gb_file(&self, file_name: &str) -> Vec<u8>
