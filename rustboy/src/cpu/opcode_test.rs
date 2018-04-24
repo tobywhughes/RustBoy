@@ -644,7 +644,6 @@ mod opcode_test
         system_data.mmu.mem_map[0x0002] = 0x12;
         jump_address(&mut system_data, &mut registers);
         assert_eq!(registers.program_counter, 0x1234);
-        assert_eq!(system_data.cycles, 4);
     }
 
     #[test]

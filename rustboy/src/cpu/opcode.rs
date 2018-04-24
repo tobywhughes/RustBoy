@@ -1807,6 +1807,8 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
     let mut registers = registers_original;
     let opcode :u8 = system_data.mmu.get_from_memory((registers.program_counter + 1) as usize, false);
     
+    system_data.cycles = cb_cycle_parse(opcode);
+
     match opcode
     {
         0x00...0x07 => rotate_register_left_carry_set(&mut system_data, &mut registers, opcode),
@@ -1827,7 +1829,6 @@ pub fn cb_codes(system_data_original: &mut SystemData, registers_original: &mut 
 
 pub fn bit_check_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8, test_bit: u8)
 {
-    system_data.cycles = 2;
     let mut register_code = (opcode & 0x07) + 1;
     if register_code == 8 
     {
@@ -1836,7 +1837,6 @@ pub fn bit_check_register(system_data: &mut SystemData, registers: &mut Register
 
     if register_code == 7
     {
-        system_data.cycles = 3;
         registers.flags = registers.flags & 0x10;
         if (system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize ,true) >> test_bit) & 0x01 == 0x00
         {   
@@ -1865,7 +1865,6 @@ pub fn bit_check_register(system_data: &mut SystemData, registers: &mut Register
 
 pub fn rotate_left_through_carry(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 2;
     let carry_bit = (registers.flags & 0x10) >> 4;
     registers.flags = 0x00;
     let mut register_code = (opcode & 0x07) + 1;
@@ -1877,7 +1876,6 @@ pub fn rotate_left_through_carry(system_data: &mut SystemData, registers: &mut R
     if register_code == 7
     {
         val = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
-        system_data.cycles = 4;
     }
     else 
     {
@@ -1905,7 +1903,6 @@ pub fn rotate_left_through_carry(system_data: &mut SystemData, registers: &mut R
 
 pub fn swap_nibbles(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 2;
     let mut register_code = (opcode & 0x07) + 1;
     if register_code == 8
     {
@@ -1915,7 +1912,6 @@ pub fn swap_nibbles(system_data: &mut SystemData, registers: &mut Registers, opc
     if register_code == 7
     {
         previous_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
-        system_data.cycles = 4;
     }
     else 
     {
@@ -1949,7 +1945,6 @@ pub fn set_bit_in_register(system_data: &mut SystemData, registers: &mut Registe
         let new_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize,true) | (0x01 << bit_shift);
         system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(3) as usize, new_value, true);
         registers.program_counter += 2;
-        system_data.cycles = 4;
     }
     else {
         if register_code == 8
@@ -1960,7 +1955,6 @@ pub fn set_bit_in_register(system_data: &mut SystemData, registers: &mut Registe
         let start_value = registers.mapped_register_getter(register_code);
         registers.mapped_register_setter(register_code, start_value | (0x01 << bit_shift));
         registers.program_counter += 2;
-        system_data.cycles = 2;
     }
 }
 
@@ -1993,11 +1987,9 @@ pub fn shift_right_register_logical(system_data: &mut SystemData, registers: &mu
     if register_code == 7
     {
         system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(3) as usize, set_value, true);
-        system_data.cycles = 4;
     }
     else
     {
-        system_data.cycles = 2;
         registers.mapped_register_setter(register_code, set_value);
     }
 }
@@ -2031,18 +2023,15 @@ pub fn rotate_right_through_carry(system_data: &mut SystemData, registers: &mut 
     if register_code == 7
     {
         system_data.mmu.set_to_memory(registers.mapped_16_bit_register_getter(3) as usize, new_value, true);
-        system_data.cycles = 4;
     }
     else
     {
         registers.mapped_register_setter(register_code, new_value);
-        system_data.cycles = 2;
     }
 }
 
 pub fn reset_bit_in_register(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 2;
     let mut register_code = 0;
     match opcode
     {
@@ -2054,7 +2043,6 @@ pub fn reset_bit_in_register(system_data: &mut SystemData, registers: &mut Regis
         0x84 | 0x8C | 0x94 | 0x9C | 0xA4 | 0xAC | 0xB4 | 0xBC => register_code = 5, 
         0x85 | 0x8D | 0x95 | 0x9D | 0xA5 | 0xAD | 0xB5 | 0xBD => register_code = 6, 
         _ => {
-            system_data.cycles = 4;
             let bit_shift = (opcode & 0x38) >> 3;
             let start_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
             let bit_removal = 0xFF ^ (0x01 << bit_shift);
@@ -2073,7 +2061,6 @@ pub fn reset_bit_in_register(system_data: &mut SystemData, registers: &mut Regis
 
 pub fn rotate_register_left_carry_set(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 2;
     let mut register_code = 0;
     match opcode
     {
@@ -2086,7 +2073,6 @@ pub fn rotate_register_left_carry_set(system_data: &mut SystemData, registers: &
         0x05 => register_code = 6,
         0x06 => register_code = 7,
         _ => {
-            system_data.cycles = 0;
             println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
             return;
         },
@@ -2096,7 +2082,6 @@ pub fn rotate_register_left_carry_set(system_data: &mut SystemData, registers: &
     let mut current_value = 0;
     if register_code == 7
     {
-        system_data.cycles = 4;
         current_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
     }
     else 
@@ -2124,7 +2109,6 @@ pub fn rotate_register_left_carry_set(system_data: &mut SystemData, registers: &
 pub fn rotate_register_right_carry_set(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
     let mut register_code = 0;
-    system_data.cycles = 2;
     match opcode
     {
         0x0F => register_code = 0,
@@ -2136,7 +2120,6 @@ pub fn rotate_register_right_carry_set(system_data: &mut SystemData, registers: 
         0x0D => register_code = 6,
         0x0E => register_code = 7,
         _ => {
-            system_data.cycles = 0;
             println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
             return;
         },
@@ -2146,7 +2129,6 @@ pub fn rotate_register_right_carry_set(system_data: &mut SystemData, registers: 
     let mut current_value = 0;
     if register_code == 7
     {
-        system_data.cycles = 4;
         current_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
     }
     else 
@@ -2173,7 +2155,6 @@ pub fn rotate_register_right_carry_set(system_data: &mut SystemData, registers: 
 
 pub fn shift_left_load_carry(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
-    system_data.cycles = 2;
     let mut register_code = 0;
     match opcode
     {
@@ -2186,7 +2167,6 @@ pub fn shift_left_load_carry(system_data: &mut SystemData, registers: &mut Regis
         0x25 => register_code = 6,
         0x26 => register_code = 7,
         _ => {
-            system_data.cycles = 0;
             println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
             return;
         },
@@ -2195,7 +2175,6 @@ pub fn shift_left_load_carry(system_data: &mut SystemData, registers: &mut Regis
     let mut current_value = 0;
     if register_code == 7
     {
-        system_data.cycles = 4;
         current_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
     }
     else {
@@ -2222,7 +2201,6 @@ pub fn shift_left_load_carry(system_data: &mut SystemData, registers: &mut Regis
 pub fn shift_right_load_carry(system_data: &mut SystemData, registers: &mut Registers, opcode: u8)
 {
     let mut register_code = 0;
-    system_data.cycles = 2;
     match opcode
     {
         0x2F => register_code = 0,
@@ -2234,7 +2212,6 @@ pub fn shift_right_load_carry(system_data: &mut SystemData, registers: &mut Regi
         0x2D => register_code = 6,
         0x2E => register_code = 7,
         _ => {
-            system_data.cycles = 0;
             println!("No Opcode Found - 0x{:X} --- 0x{:X}", registers.program_counter, opcode);
             return;
         },
@@ -2243,7 +2220,6 @@ pub fn shift_right_load_carry(system_data: &mut SystemData, registers: &mut Regi
     let mut current_value = 0;
     if register_code == 7
     {
-        system_data.cycles = 4;
         current_value = system_data.mmu.get_from_memory(registers.mapped_16_bit_register_getter(3) as usize, true);
     }
     else 
