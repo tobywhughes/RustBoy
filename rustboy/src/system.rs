@@ -22,6 +22,11 @@ impl SystemData{
         //println!("@@@@@");
         self.timer.cycle_calculation(self.cycles, self.mmu.div_reset);
         self.timer.update_registers(&self.mmu.mem_map);
+        if self.timer.mod_delay && self.timer.timer_counter == 0
+        {
+            self.timer.timer_counter = self.timer.timer_modulo;
+        }
+        self.timer.mod_delay = false;
         //self.timer.divider_tick(self.cycles, self.mmu.div_reset);
         if self.mmu.div_reset
         {
@@ -29,6 +34,7 @@ impl SystemData{
         }
         let overflow_flag = self.timer.tima_tick(self.cycles);
         self.mmu.mem_map[0xFF05] = self.timer.timer_counter;
+        self.mmu.mem_map[0xFF04] = self.timer.divider_register;
         if overflow_flag
         {
             let mut value = self.mmu.get_from_memory(0xFF0F, false);

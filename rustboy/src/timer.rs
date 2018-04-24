@@ -10,6 +10,7 @@ pub struct Timer
     pub divider_cycles: u16,
     pub cycle_register: u16,
     pub tima_increment: u8,
+    pub mod_delay: bool,
 }
 
 impl Timer
@@ -26,6 +27,7 @@ impl Timer
             tima_cycles: 0,
             cycle_register: 0,
             tima_increment: 0,
+            mod_delay: false,
         }
     }
 
@@ -121,44 +123,6 @@ impl Timer
         }
     }
 
-//     pub fn tima_tick(&mut self, cycles: u8) -> bool
-//     {
-//         if (self.timer_control & 0x04) == 0x00
-//         {
-//             return false;
-//         }
-//         let mut overflow_flag = false;
-//         self.tima_cycles += cycles as u16;
-        
-//         let cycle_tick_threshold = self.map_timer_control_speed();
-//         if self.tima_cycles >= cycle_tick_threshold
-//         {
-//             let mut increment = 0;
-//             while self.tima_cycles >= cycle_tick_threshold
-//             {
-//                 increment += 1;
-//                 self.tima_cycles -= cycle_tick_threshold;
-//             }
-//             while increment > 0
-//             {
-//                 if self.timer_counter == 0xFF
-//                 {
-//                     self.timer_counter = self.timer_modulo;
-                    
-//                     overflow_flag = true;
-//                 }
-//                 else 
-//                 {
-//                     self.timer_counter += 1;
-//                 }
-//                 increment -= 1;
-//             }
-            
-//         }
-//         return overflow_flag;
-//     }
-// }
-
     pub fn tima_tick(&mut self, cycles: u8) -> bool
     {
         let mut overflow_flag = false;
@@ -166,8 +130,15 @@ impl Timer
         {
             if self.timer_counter == 0xFF
             {
-                self.timer_counter = self.timer_modulo;
-                
+                if self.cycle_register >= 4
+                {
+                    self.timer_counter = self.timer_modulo;
+                }
+                else 
+                {
+                    self.timer_control = 0;
+                    self.mod_delay = true;
+                }
                 overflow_flag = true;
             }
             else 
