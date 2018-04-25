@@ -140,7 +140,7 @@ fn main()
                 window_tile_map.populate_tile_map(&mut system_data, gpu_registers.lcdc_register.tile_data, gpu_registers.lcdc_register.window_display_select);
                 oam_tile_map.populate_tile_map(&mut system_data, true, true);
                 oam_table.populate_oam_table(&system_data);
-                let image: RgbaImage = create_background_img(&background_tile_map, &gpu_registers, &system_data, &oam_table, &oam_tile_map);
+                let image: RgbaImage = create_background_img(&background_tile_map, &window_tile_map, &gpu_registers, &system_data, &oam_table, &oam_tile_map);
                 app.render(&image, &r, scale_factor);
                 // break;
         }
