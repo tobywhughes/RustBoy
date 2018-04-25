@@ -194,15 +194,20 @@ pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_regist
     }
 }
 
-pub fn create_background_img(background_tile_map: &TileMap, gpu_registers: &GPU_Registers, system_data: &SystemData, oam_table: &OAM_Table, oam_tile_map: &TileMap) -> RgbaImage
+pub fn create_background_img(background_tile_map: &TileMap, window_tile_map: &TileMap, gpu_registers: &GPU_Registers, system_data: &SystemData, oam_table: &OAM_Table, oam_tile_map: &TileMap) -> RgbaImage
 {
     //Technically switchable by the row, will implement later
     let palette_data = system_data.mmu.mem_map[0xFF47];
     let object_palette_0 = system_data.mmu.mem_map[0xFF48];
     let object_palette_1 = system_data.mmu.mem_map[0xFF49];
     let mut image_buffer = ImageBuffer::new(160, 144);
-    let background_buffer = build_background_bitmap(background_tile_map, gpu_registers.lcdc_register.tile_data, palette_data, gpu_registers.lcdc_register.display_enable);
+    let background_buffer = build_bitmap(background_tile_map, gpu_registers.lcdc_register.tile_data, palette_data, gpu_registers.lcdc_register.display_enable);
     let mut scrolled_buffer = scroll_background_bitmap(background_buffer, &gpu_registers.lcd_position);
+    if gpu_registers.lcdc_register.window_enable
+    {
+        let window_buffer = build_bitmap(window_tile_map, gpu_registers.lcdc_register.tile_data, palette_data, gpu_registers.lcdc_register.window_enable);
+        scrolled_buffer = place_window(scrolled_buffer, window_buffer, &gpu_registers.lcd_position)
+    }
     if gpu_registers.lcdc_register.sprite_enable
     {
         scrolled_buffer = apply_oam_table_to_bitmap(&oam_table, scrolled_buffer, object_palette_0, object_palette_1, gpu_registers.lcdc_register.sprite_size, &oam_tile_map);
@@ -235,7 +240,30 @@ fn scroll_background_bitmap(buffer: Vec<u8>, scroll: &LCD_Position) -> Vec<u8>
     return bitmap;
 }
 
-fn build_background_bitmap(background_tile_map: &TileMap, tile_data_select: bool, palette_data:u8, enable: bool) -> Vec<u8>
+fn place_window(scrolled_bitmap: Vec<u8>, window_bitmap: Vec<u8>, scroll: &LCD_Position) -> Vec<u8>
+{
+    let mut bitmap = scrolled_bitmap;
+    for row_y in 0..144
+    {
+        for row_x in 0..160
+        {
+            let scrolled_y = (row_y + scroll.window_y as usize);
+            let mut possible_negative = (row_x + scroll.window_x as usize - 7);
+            if possible_negative < 0
+            {
+                possible_negative = 0xFF;
+            }
+            let scrolled_x = possible_negative as usize;
+            if scrolled_y < 144 && scrolled_x < 160
+            {
+                bitmap[(scrolled_y * 160) + scrolled_x] = window_bitmap[(row_y as usize * 160) + row_x as usize];
+            }
+        }
+    }
+    return bitmap;
+}
+
+fn build_bitmap(background_tile_map: &TileMap, tile_data_select: bool, palette_data:u8, enable: bool) -> Vec<u8>
 {
 
     let mut buffer = vec![0; 0x10000];
