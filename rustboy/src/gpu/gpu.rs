@@ -139,7 +139,7 @@ pub fn get_tile_data(tile_index: u8, system_data: &mut SystemData, lcdc_data_sel
         vram_offset = 0x8000;
     }
     else {
-        vram_offset = 0x8800
+        vram_offset = 0x8800;
     }
 
     let mem_loc: u16 = vram_offset + (tile_index as u16 * 16);
@@ -256,7 +256,7 @@ fn place_window(scrolled_bitmap: Vec<u8>, window_bitmap: Vec<u8>, scroll: &LCD_P
             let scrolled_x = possible_negative as usize;
             if scrolled_y < 144 && scrolled_x < 160
             {
-                bitmap[(scrolled_y * 160) + scrolled_x] = window_bitmap[(row_y as usize * 160) + row_x as usize];
+                bitmap[(scrolled_y * 160) + scrolled_x] = window_bitmap[(row_y * 256) + row_x];
             }
         }
     }
