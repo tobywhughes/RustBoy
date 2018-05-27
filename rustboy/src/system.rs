@@ -14,6 +14,7 @@ pub struct SystemData
     pub horizontal_sync: u32,
     pub vertical_sync: f64,
     pub cycles: u8,
+    pub debug_flag1: bool,
 }
 
 impl SystemData{
@@ -32,6 +33,7 @@ impl SystemData{
         {
             self.mmu.div_reset = false;
         }
+        self.timer.divider_register = ((self.timer.cycle_register & 0xFF00) >> 8) as u8;
         let overflow_flag = self.timer.tima_tick(self.cycles);
         self.mmu.mem_map[0xFF05] = self.timer.timer_counter;
         self.mmu.mem_map[0xFF04] = self.timer.divider_register;
@@ -322,7 +324,8 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
             clock_speed: 4194304,
             horizontal_sync: 9198000,
             vertical_sync: 59.73,
-            cycles: 0
+            cycles: 0,
+            debug_flag1: false,
         },
         _ => {println!("NOT VALID EMULATOR TYPE");
         return SystemData
@@ -337,7 +340,8 @@ pub fn get_system_data(emulator_type: &str) -> SystemData
             clock_speed: 0,
             horizontal_sync: 0,
             vertical_sync: 0.0,
-            cycles: 0
+            cycles: 0,
+            debug_flag1: false,
         }},
 
     }

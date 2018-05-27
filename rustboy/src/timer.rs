@@ -63,8 +63,6 @@ impl Timer
                 self.tima_increment += 1;
             }
         }
-
-        self.divider_register = ((self.cycle_register & 0xFF00) >> 8) as u8;
     }
 
     pub fn map_tac_check(&self) -> u8
@@ -136,7 +134,7 @@ impl Timer
                 }
                 else 
                 {
-                    self.timer_control = 0;
+                    self.timer_counter = 0;
                     self.mod_delay = true;
                 }
                 overflow_flag = true;
