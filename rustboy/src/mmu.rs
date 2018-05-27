@@ -15,6 +15,8 @@ pub struct MMU
     pub ram_enable: bool,
     pub banking_mode: u8,
     pub div_reset: bool,
+    pub rtc_enable: bool,
+    pub ram_rtc_bank: u8,
 }
 
 impl MMU
@@ -34,6 +36,8 @@ impl MMU
             ram_enable: false,
             banking_mode: 0,
             div_reset: false,
+            rtc_enable: false,
+            ram_rtc_bank: 0,
         }
     }
 
@@ -66,8 +70,8 @@ impl MMU
             match self.cartridge_type
             {
                 0x00 => (),
-                0x01 => rom_flag = self.mbc1_parse(location, set_value),
-                0x03 => rom_flag = self.mbc1_parse(location, set_value),
+                0x01 | 0x02 | 0x03 => rom_flag = self.mbc1_parse(location, set_value),
+                0x13 => rom_flag = self.mbc3_parse(location, set_value),
                 _ => (),
             }
         }
@@ -108,7 +112,7 @@ impl MMU
         }
         if location_fixed >= 0xA000 && location_fixed < 0xC000
         {
-            if self.ram_enable
+            if self.ram_enable && !self.rtc_enable
             {
                 if (self.ram_size == 2 && location_fixed > 0xA7FF) || self.ram_size == 0
                 {
@@ -117,6 +121,23 @@ impl MMU
                 else 
                 {
                     return self.ram_banks[self.ram_bank as usize][location_fixed - 0xA000];
+                }
+                
+            }
+            if self.ram_enable && self.rtc_enable
+            {
+                if self.ram_rtc_bank >= 0x04
+                {
+                    //implement rtc
+                    return 0;
+                }
+                else if (self.ram_size == 2 && location_fixed > 0xA7FF) || self.ram_size == 0
+                {
+                    return 0xFF;
+                }
+                else 
+                {
+                    return self.ram_banks[self.ram_rtc_bank as usize][location_fixed - 0xA000];
                 }
                 
             }
@@ -135,8 +156,6 @@ impl MMU
         {
             0x0000...0x1FFF =>
             {
-                //println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
-                //println!("DEBUG: ram enable` {}", value);
                 if (value & 0x0F) == 0x0A
                 {
                     self.ram_enable = true;
@@ -148,11 +167,6 @@ impl MMU
             },
             0x2000...0x3FFF => 
             {
-            //     for i in 0..0x4000
-            //     {
-            //         self.memory_banks[self.rom_bank as usize][i] = self.mem_map[(i as usize) + 0x4000];
-            //     }
-            //println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
                 let mut bank = value & 0x1F;
                 if bank == 0
                 {
@@ -160,16 +174,10 @@ impl MMU
                 }
                 self.rom_bank &= 0xE0;
                 self.rom_bank |= bank;
-                self.update_rom_bank();
                 return true;
             },
             0x4000...0x5FFF =>
             {
-                // for i in 0..0x4000
-                // {
-                //     self.memory_banks[self.rom_bank as usize][i] = self.mem_map[(i as usize) + 0x4000];
-                // }
-                //println!("Value: 0x{:02X} -- {} Location: 0x{:04X}", value, (value & 0x03) << 5 ,location);
                 self.rom_bank &= 0x1F;
                 if self.banking_mode == 0{
                     self.rom_bank |= ((value & 0x03) << 5);
@@ -178,13 +186,10 @@ impl MMU
                 {
                     self.ram_bank = (value & 0x03);  
                 }
-                self.update_rom_bank();
                 return true;
             },
             0x6000...0x7FFF =>
             {
-                //println!("Value: 0x{:02X} Location: 0x{:04X}", value, location);
-                //println!("DEBUG: mode {}", value);
                 self.banking_mode = (value & 0x01);
                 if self.banking_mode == 0
                 {
@@ -206,21 +211,66 @@ impl MMU
             }
             _ => 
             {
-                 //println!("Value: 0x{:02X} Location: 0x{:04X}", value, location); 
-                 //io::stdin().read_line(&mut String::new());
                  return false;
             },
         }
     }
 
-    fn update_rom_bank(&mut self)
+fn mbc3_parse(&mut self, location: usize, value: u8) -> bool
     {
-        //let bank = self.rom_bank as usize;
-        //println!("Rom-bank switch: 0x{:02x}", bank);
-        // for i in 0..0x4000
-        // {
-        //     self.mem_map[(i as usize) + 0x4000] = self.memory_banks[bank][i];
-        // }
+        
+        match location
+        {
+            0x0000...0x1FFF =>
+            {
+                if (value & 0x0F) == 0x0A
+                {
+                    self.ram_enable = true;
+                    self.rtc_enable = true;
+                }
+                else {
+                    self.ram_enable = false;
+                    self.rtc_enable = false;
+                }
+                return true;
+            },
+            0x2000...0x3FFF => 
+            {
+                let mut bank = value & 0x7F;
+                if bank == 0
+                {
+                    bank += 1;
+                }
+                self.rom_bank = bank;
+                return true;
+            },
+            0x4000...0x5FFF =>
+            {
+                self.ram_rtc_bank = value & 0x0F;
+                return true;
+            },
+            0x6000...0x7FFF =>
+            {
+                //IMPLEMENT LATCH
+                return true;
+            },
+            0xA000...0xBFFF =>
+            {
+                if self.ram_enable && self.ram_rtc_bank < 0x04
+                {
+                    self.ram_banks[self.ram_bank as usize][location - 0xA000] = value;
+                }
+                else if self.rtc_enable && self.ram_rtc_bank >= 0x4000
+                {
+                    //Implement trc
+                }
+                return true;
+            }
+            _ => 
+            {
+                 return false;
+            },
+        }
     }
 
     pub fn read_gb_file(&self, file_name: &str) -> Vec<u8>
@@ -369,16 +419,16 @@ mod mmu_tests
         assert_eq!(mmu.rom_size, 4);
         assert_eq!(mmu.ram_size, 0);
         assert_eq!(mmu.cartridge_type, 1);
-        assert_eq!(mmu.mem_map[0x0000], 0x3C);
-        assert_eq!(mmu.mem_map[0x4300], 0x3E);
+        assert_eq!(mmu.get_from_memory(0x0000, false), 0x3C);
+        assert_eq!(mmu.get_from_memory(0x4300, false), 0x3E);
         mmu.mbc1_parse(0x2000, 0x00);
-        assert_eq!(mmu.mem_map[0x4300], 0x3E);
+        assert_eq!(mmu.get_from_memory(0x4300, false), 0x3E);
         mmu.mbc1_parse(0x2000, 0x02);
-        assert_eq!(mmu.mem_map[0x4300], 0xE0);
+        assert_eq!(mmu.get_from_memory(0x4300, false), 0xE0);
         mmu.mbc1_parse(0x2000, 0x03);
-        assert_eq!(mmu.mem_map[0x4900], 0x72);
+        assert_eq!(mmu.get_from_memory(0x4900, false), 0x72);
         mmu.mbc1_parse(0x2000, 0x00);
-        assert_eq!(mmu.mem_map[0x4300], 0x3E);
+        assert_eq!(mmu.get_from_memory(0x4300, false), 0x3E);
     }
 
     #[test]
