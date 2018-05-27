@@ -369,16 +369,16 @@ mod mmu_tests
         assert_eq!(mmu.rom_size, 4);
         assert_eq!(mmu.ram_size, 0);
         assert_eq!(mmu.cartridge_type, 1);
-        assert_eq!(mmu.mem_map[0x0000], 0x3C);
-        assert_eq!(mmu.mem_map[0x4300], 0x3E);
+        assert_eq!(mmu.get_from_memory(0x0000, false), 0x3C);
+        assert_eq!(mmu.get_from_memory(0x4300, false), 0x3E);
         mmu.mbc1_parse(0x2000, 0x00);
-        assert_eq!(mmu.mem_map[0x4300], 0x3E);
+        assert_eq!(mmu.get_from_memory(0x4300, false), 0x3E);
         mmu.mbc1_parse(0x2000, 0x02);
-        assert_eq!(mmu.mem_map[0x4300], 0xE0);
+        assert_eq!(mmu.get_from_memory(0x4300, false), 0xE0);
         mmu.mbc1_parse(0x2000, 0x03);
-        assert_eq!(mmu.mem_map[0x4900], 0x72);
+        assert_eq!(mmu.get_from_memory(0x4900, false), 0x72);
         mmu.mbc1_parse(0x2000, 0x00);
-        assert_eq!(mmu.mem_map[0x4300], 0x3E);
+        assert_eq!(mmu.get_from_memory(0x4300, false), 0x3E);
     }
 
     #[test]
