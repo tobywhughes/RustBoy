@@ -173,6 +173,7 @@ pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_regist
     let tick_flag = gpu_registers.lcd_position.ly_register.add_sub_cycles(&system_data);
     if tick_flag
     {
+        //println!("ly_value: {}, {:08b}", gpu_registers.lcd_position.ly_register.value, gpu_registers.lcdc_register.value);
         let reset_flag = gpu_registers.lcd_position.ly_register.tick(&mut system_data);
         let ly_value = gpu_registers.lcd_position.ly_register.value;
         if ly_value == 144
@@ -185,6 +186,8 @@ pub fn LCD_Y_Coordinate_Update(system_data_original: &mut SystemData, gpu_regist
         {
             gpu_registers.lcd_position.scroll_x_buffer[ly_value as usize] = gpu_registers.lcd_position.scroll_x;
             gpu_registers.lcd_position.scroll_y_buffer[ly_value as usize] = gpu_registers.lcd_position.scroll_y;
+            gpu_registers.lcd_position.window_x_buffer[ly_value as usize] = gpu_registers.lcd_position.window_x;
+            gpu_registers.lcd_position.window_y_buffer[ly_value as usize] = gpu_registers.lcd_position.window_y;
         }
         if reset_flag
         {
@@ -247,8 +250,8 @@ fn place_window(scrolled_bitmap: Vec<u8>, window_bitmap: Vec<u8>, scroll: &LCD_P
     {
         for row_x in 0..160
         {
-            let scrolled_y = (row_y + scroll.window_y as usize);
-            let mut possible_negative = (row_x + scroll.window_x as usize - 7);
+            let scrolled_y = (row_y + scroll.window_y_buffer[row_y] as usize);
+            let mut possible_negative = (row_x + scroll.window_x_buffer[row_y] as usize - 7);
             if possible_negative < 0
             {
                 possible_negative = 0xFF;

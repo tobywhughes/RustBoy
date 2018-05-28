@@ -37,6 +37,8 @@ pub struct LCD_Position
     pub window_y: u8,
     pub scroll_x_buffer: Vec<u8>,
     pub scroll_y_buffer: Vec<u8>,
+    pub window_x_buffer: Vec<u8>,
+    pub window_y_buffer: Vec<u8>,
 }
 
 impl LCD_Position
@@ -53,6 +55,8 @@ impl LCD_Position
             window_y: 0,
             scroll_x_buffer: vec![0; 144],
             scroll_y_buffer: vec![0; 144],
+            window_x_buffer: vec![0; 144],
+            window_y_buffer: vec![0; 144],
         }
     }
 
@@ -134,9 +138,11 @@ impl LY_Register
     pub fn add_sub_cycles(&mut self, system_data: &SystemData) -> bool
     {
         self.sub_cycle_count += system_data.cycles as u16;
-        if self.sub_cycle_count >= 456
+        let sub_cycle_max = 456;
+        
+        if self.sub_cycle_count >= sub_cycle_max
         {
-            self.sub_cycle_count-= 456;
+            self.sub_cycle_count-= sub_cycle_max;
             return true;
         }
         return false;
